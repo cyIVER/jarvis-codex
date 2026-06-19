@@ -4,9 +4,49 @@ import argparse
 import html
 import json
 import mimetypes
+import re
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+
+
+SAFE_STEP_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
+
+
+def next_steps_state_path(state_dir: Path) -> Path:
+    return state_dir / "next-steps" / "selection.json"
+
+
+def load_next_steps_selection(state_dir: Path) -> dict[str, object]:
+    path = next_steps_state_path(state_dir)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"selected": [], "brief": "", "updated_at": None}
+    selected = raw.get("selected", [])
+    if not isinstance(selected, list):
+        selected = []
+    safe_selected = [item for item in selected if isinstance(item, str) and SAFE_STEP_ID.match(item)]
+    brief = raw.get("brief", "")
+    return {
+        "selected": safe_selected,
+        "brief": brief if isinstance(brief, str) else "",
+        "updated_at": raw.get("updated_at") if isinstance(raw.get("updated_at"), int) else None,
+    }
+
+
+def save_next_steps_selection(state_dir: Path, selected: list[object], brief: object = "") -> dict[str, object]:
+    safe_selected = [item for item in selected if isinstance(item, str) and SAFE_STEP_ID.match(item)]
+    data = {
+        "selected": safe_selected,
+        "brief": brief if isinstance(brief, str) else "",
+        "updated_at": int(time.time()),
+    }
+    path = next_steps_state_path(state_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return data
 
 
 INDEX_HTML = """<!doctype html>
@@ -26,6 +66,8 @@ INDEX_HTML = """<!doctype html>
       --line: #273142;
       --accent: #5eead4;
       --accent-2: #7dd3fc;
+      --warn: #fbbf24;
+      --danger: #fb7185;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; }
@@ -144,13 +186,145 @@ INDEX_HTML = """<!doctype html>
     }
     button.active { border-color: var(--accent); background: #14242a; }
     button:active { transform: translateY(1px); }
+    button.primary {
+      border-color: rgba(94, 234, 212, .7);
+      background: var(--accent);
+      color: #061014;
+      font-weight: 700;
+      text-align: center;
+    }
+    button.secondary { text-align: center; }
+    button.filter {
+      min-height: 34px;
+      padding: 0 10px;
+      font-size: 13px;
+      text-align: center;
+    }
+    button.filter.active { color: #061014; background: var(--accent); }
     .status { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
     .doc { padding-bottom: 48px; min-width: 0; overflow-wrap: anywhere; }
     .doc blockquote { margin-left: 0; border-left: 3px solid var(--accent); padding-left: 14px; color: var(--muted); }
+    .next-shell { display: grid; gap: 24px; padding-bottom: 48px; }
+    .next-header { display: grid; gap: 14px; max-width: 900px; }
+    .next-header h1 { margin-bottom: 0; }
+    .next-header p { margin: 0; max-width: 68ch; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .metric strong { display: block; font-size: 25px; line-height: 1; }
+    .metric span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .step-list {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .step-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      border: 1px solid var(--line);
+      background: #111720;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .step-row.selected { border-color: rgba(94, 234, 212, .75); background: #122126; }
+    .step-row input {
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      accent-color: var(--accent);
+    }
+    .step-body { min-width: 0; }
+    .step-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .step-title strong { font-size: 15px; line-height: 1.3; }
+    .step-body p { margin: 7px 0 0; color: #c5cedb; font-size: 13px; line-height: 1.5; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 8px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .badge.ready { border-color: rgba(94, 234, 212, .35); color: var(--accent); }
+    .badge.gated { border-color: rgba(251, 191, 36, .35); color: var(--warn); }
+    .badge.risk { border-color: rgba(251, 113, 133, .35); color: var(--danger); }
+    .step-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .priority { color: var(--accent-2); font-size: 12px; line-height: 1.4; white-space: nowrap; }
+    .proceed-panel {
+      position: sticky;
+      top: 24px;
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 16px;
+      min-width: 0;
+    }
+    .proceed-panel h2 {
+      margin: 0;
+      border: 0;
+      padding: 0;
+      font-size: 21px;
+    }
+    .proceed-panel p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .brief {
+      width: 100%;
+      min-height: 230px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0a0d12;
+      color: var(--text);
+      padding: 12px;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .empty-note {
+      border: 1px dashed #3a4659;
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      background: #10151d;
+    }
     @media (max-width: 860px) {
       .shell { display: block; }
       aside { position: static; height: auto; }
       main { padding-top: 20px; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .step-grid { grid-template-columns: 1fr; }
+      .proceed-panel { position: static; }
+      .step-row { grid-template-columns: 28px minmax(0, 1fr); }
+      .priority { grid-column: 2; }
       .diagram-flow { grid-template-columns: 1fr; }
       .diagram-level:not(:last-child)::after {
         top: auto;
@@ -175,6 +349,80 @@ INDEX_HTML = """<!doctype html>
     const tabs = document.getElementById('tabs');
     const doc = document.getElementById('doc');
     const status = document.getElementById('status');
+    const STORAGE_KEY = 'jarvis-next-step-selection';
+    let serverSelected = new Set();
+    const NEXT_STEPS = [
+      {
+        id: 'commit-push-baseline',
+        title: 'Push Gate 2 baseline',
+        category: 'Git',
+        status: 'gated',
+        priority: 'P0',
+        summary: 'Push the committed local viewer baseline after confirming the remote target and branch policy.',
+        owner: 'main thread',
+        command: 'git push origin main'
+      },
+      {
+        id: 'refresh-worktrunk-lanes',
+        title: 'Refresh Worktrunk lanes',
+        category: 'Worktrunk',
+        status: 'gated',
+        priority: 'P0',
+        summary: 'Inspect each lane worktree, decide hold or abandon, then refresh only after explicit approval.',
+        owner: 'worktree coordinator',
+        command: 'git worktree list'
+      },
+      {
+        id: 'voice-notification-hardening',
+        title: 'Harden voice notification hooks',
+        category: 'Voice',
+        status: 'ready',
+        priority: 'P1',
+        summary: 'Move the hook classification helpers toward reusable tests and document the speech defaults.',
+        owner: 'local AI OS hooks',
+        command: 'python3 ~/.codex/bin/codex_notify_jarvis.py --test'
+      },
+      {
+        id: 'viewer-selection-persistence',
+        title: 'Persist selected next steps',
+        category: 'UI',
+        status: 'ready',
+        priority: 'P1',
+        summary: 'Promote browser-only selections into a local state file when a durable queue is approved.',
+        owner: 'viewer UI',
+        command: 'uv run jarvis-plan-viewer --dir plans/jarvis-codex-swarm'
+      },
+      {
+        id: 'hardware-runtime-gate',
+        title: 'Define hardware runtime gates',
+        category: 'Hardware',
+        status: 'ready',
+        priority: 'P1',
+        summary: 'Turn CUDA, Docker, and NPU detection into explicit workload gate checks before heavy local runs.',
+        owner: 'runtime boundary',
+        command: 'uv run jarvis-codex hardware --workload video'
+      },
+      {
+        id: 'remotion-review-gate',
+        title: 'Plan Remotion review assets',
+        category: 'Remotion',
+        status: 'gated',
+        priority: 'P2',
+        summary: 'Define local-only video review assets, storage boundaries, and browser verification before generation.',
+        owner: 'visual review lane',
+        command: 'pending local-only Remotion gate'
+      },
+      {
+        id: 'codex-bridge-contract',
+        title: 'Revisit Codex bridge contract',
+        category: 'Bridge',
+        status: 'risk',
+        priority: 'P2',
+        summary: 'Review bridge scope before adding execution adapters so tool use remains approval-aware.',
+        owner: 'codex bridge lane',
+        command: 'uv run jarvis-codex handoff --objective "Review Codex bridge contract"'
+      }
+    ];
 
     function escapeHtml(value) {
       return value.replace(/[&<>"']/g, (ch) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
@@ -369,6 +617,156 @@ INDEX_HTML = """<!doctype html>
       return '<section class="diagram"><div class="diagram-title">Mermaid Class Map</div><div class="diagram-stack">' + body + '</div></section>';
     }
 
+    function selection() {
+      if (serverSelected.size) return new Set(serverSelected);
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return new Set(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        return new Set();
+      }
+    }
+
+    async function loadServerSelection() {
+      try {
+        const res = await fetch('/api/next-steps');
+        if (!res.ok) throw new Error('selection unavailable');
+        const data = await res.json();
+        const selected = Array.isArray(data.selected) ? data.selected : [];
+        serverSelected = new Set(selected);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+      } catch {
+        serverSelected = selection();
+      }
+    }
+
+    async function saveSelection(ids, brief = '') {
+      const selected = [...ids];
+      serverSelected = new Set(selected);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+      try {
+        const res = await fetch('/api/next-steps', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selected, brief }),
+        });
+        if (!res.ok) throw new Error('save failed');
+        status.textContent = 'Next steps saved locally';
+      } catch {
+        status.textContent = 'Next steps saved in this browser';
+      }
+    }
+
+    function selectedSteps() {
+      const ids = selection();
+      return NEXT_STEPS.filter((step) => ids.has(step.id));
+    }
+
+    function categoryCounts() {
+      const selected = selectedSteps();
+      return {
+        selected: selected.length,
+        gated: selected.filter((step) => step.status === 'gated').length,
+        ready: selected.filter((step) => step.status === 'ready').length,
+        risk: selected.filter((step) => step.status === 'risk').length,
+      };
+    }
+
+    function buildProceedBrief(steps) {
+      if (!steps.length) return 'Select one or more next steps to build a proceed brief.';
+      return [
+        '# Proceed Brief',
+        '',
+        'Selected next steps:',
+        ...steps.map((step, index) => `${index + 1}. ${step.title} [${step.priority}, ${step.status}]`),
+        '',
+        'Execution notes:',
+        ...steps.map((step) => `- ${step.title}: ${step.summary} Owner: ${step.owner}. Check: ${step.command}`),
+        '',
+        'Boundaries:',
+        '- Ask before push, merge, rebase, branch deletion, worktree removal, hook edits, shell integration, or GPU/Docker execution.',
+        '- Keep generated runtime state out of Git.',
+      ].join('\\n');
+    }
+
+    function renderNextSteps(activeCategory = 'All') {
+      for (const item of tabs.querySelectorAll('button')) item.classList.remove('active');
+      const nextButton = tabs.querySelector('[data-view="next-steps"]');
+      if (nextButton) nextButton.classList.add('active');
+      const ids = selection();
+      const categories = ['All', ...new Set(NEXT_STEPS.map((step) => step.category))];
+      const steps = activeCategory === 'All' ? NEXT_STEPS : NEXT_STEPS.filter((step) => step.category === activeCategory);
+      const counts = categoryCounts();
+      doc.innerHTML = `
+        <section class="next-shell">
+          <div class="next-header">
+            <h1>Next Steps</h1>
+            <p>Select the work you want to proceed with and use the generated brief as the handoff for the next Codex pass.</p>
+          </div>
+          <div class="summary-grid" aria-live="polite">
+            <div class="metric"><strong>${counts.selected}</strong><span>selected</span></div>
+            <div class="metric"><strong>${counts.ready}</strong><span>ready</span></div>
+            <div class="metric"><strong>${counts.gated}</strong><span>approval gated</span></div>
+            <div class="metric"><strong>${counts.risk}</strong><span>needs review</span></div>
+          </div>
+          <div class="toolbar">
+            ${categories.map((category) => `<button class="filter ${category === activeCategory ? 'active' : ''}" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('')}
+          </div>
+          <div class="step-grid">
+            <div class="step-list">
+              ${steps.map((step) => `
+                <label class="step-row ${ids.has(step.id) ? 'selected' : ''}">
+                  <input type="checkbox" data-step="${escapeHtml(step.id)}" ${ids.has(step.id) ? 'checked' : ''} />
+                  <span class="step-body">
+                    <span class="step-title"><strong>${escapeHtml(step.title)}</strong><span class="badge ${escapeHtml(step.status)}">${escapeHtml(step.status)}</span></span>
+                    <p>${escapeHtml(step.summary)}</p>
+                    <span class="step-meta">
+                      <span class="badge">${escapeHtml(step.category)}</span>
+                      <span class="badge">${escapeHtml(step.owner)}</span>
+                    </span>
+                  </span>
+                  <span class="priority">${escapeHtml(step.priority)}</span>
+                </label>
+              `).join('') || '<div class="empty-note">No steps match this filter.</div>'}
+            </div>
+            <aside class="proceed-panel">
+              <h2>Proceed Brief</h2>
+              <p>${counts.selected ? `${counts.selected} step${counts.selected === 1 ? '' : 's'} selected.` : 'No steps selected.'}</p>
+              <textarea class="brief" id="proceedBrief" readonly>${escapeHtml(buildProceedBrief(selectedSteps()))}</textarea>
+              <button class="primary" id="copyBrief">Copy Brief</button>
+              <button class="secondary" id="clearSelection">Clear Selection</button>
+            </aside>
+          </div>
+        </section>
+      `;
+      status.textContent = 'Next steps ready';
+      for (const button of doc.querySelectorAll('[data-category]')) {
+        button.addEventListener('click', () => renderNextSteps(button.dataset.category || 'All'));
+      }
+      for (const input of doc.querySelectorAll('[data-step]')) {
+        input.addEventListener('change', () => {
+          const next = selection();
+          if (input.checked) next.add(input.dataset.step);
+          else next.delete(input.dataset.step);
+          saveSelection(next, buildProceedBrief(NEXT_STEPS.filter((step) => next.has(step.id))));
+          renderNextSteps(activeCategory);
+        });
+      }
+      doc.querySelector('#clearSelection').addEventListener('click', () => {
+        saveSelection(new Set());
+        renderNextSteps(activeCategory);
+      });
+      doc.querySelector('#copyBrief').addEventListener('click', async () => {
+        const brief = doc.querySelector('#proceedBrief').value;
+        try {
+          await navigator.clipboard.writeText(brief);
+          status.textContent = 'Proceed brief copied';
+        } catch {
+          status.textContent = 'Proceed brief ready to copy';
+        }
+      });
+    }
+
     async function loadFile(file, button) {
       for (const item of tabs.querySelectorAll('button')) item.classList.remove('active');
       button.classList.add('active');
@@ -381,15 +779,21 @@ INDEX_HTML = """<!doctype html>
     async function boot() {
       const res = await fetch('/api/files');
       const files = await res.json();
+      await loadServerSelection();
       tabs.innerHTML = '';
+      const nextSteps = document.createElement('button');
+      nextSteps.textContent = 'Next steps';
+      nextSteps.dataset.view = 'next-steps';
+      nextSteps.addEventListener('click', () => renderNextSteps());
+      tabs.appendChild(nextSteps);
       for (const file of files) {
         const button = document.createElement('button');
         button.textContent = file;
+        button.dataset.view = 'file';
         button.addEventListener('click', () => loadFile(file, button));
         tabs.appendChild(button);
       }
-      if (files[0]) await loadFile(files[0], tabs.querySelector('button'));
-      else status.textContent = 'No MDX files found.';
+      renderNextSteps();
     }
     boot().catch((err) => { status.textContent = err.message; });
   </script>
@@ -400,6 +804,7 @@ INDEX_HTML = """<!doctype html>
 
 class PlanViewerHandler(BaseHTTPRequestHandler):
     plan_dir: Path
+    state_dir: Path
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -413,6 +818,10 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
             files = sorted(path.name for path in self.plan_dir.glob("*.mdx"))
             self._send(200, json.dumps(files).encode("utf-8"), "application/json")
             return
+        if parsed.path == "/api/next-steps":
+            data = load_next_steps_selection(self.state_dir)
+            self._send(200, json.dumps(data).encode("utf-8"), "application/json")
+            return
         if parsed.path.startswith("/api/file/"):
             name = unquote(parsed.path.removeprefix("/api/file/"))
             if "/" in name or "\\" in name:
@@ -425,6 +834,37 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
             self._send(200, path.read_bytes(), mimetypes.types_map.get(".md", "text/markdown"))
             return
         self._send(404, b"not found", "text/plain")
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path != "/api/next-steps":
+            self._send(404, b"not found", "text/plain")
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        if length > 20000:
+            self._send(413, b"payload too large", "text/plain")
+            return
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            self._send(400, b"invalid json", "text/plain")
+            return
+        if not isinstance(payload, dict):
+            self._send(400, b"invalid payload", "text/plain")
+            return
+        selected = payload.get("selected", [])
+        if not isinstance(selected, list):
+            self._send(400, b"selected must be a list", "text/plain")
+            return
+        try:
+            data = save_next_steps_selection(self.state_dir, selected, payload.get("brief", ""))
+        except OSError:
+            self._send(500, b"could not save selection", "text/plain")
+            return
+        self._send(200, json.dumps(data).encode("utf-8"), "application/json")
 
     def log_message(self, format: str, *args: object) -> None:
         return
@@ -441,6 +881,7 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
 def main() -> int:
     parser = argparse.ArgumentParser(prog="jarvis-plan-viewer")
     parser.add_argument("--dir", default="plans/jarvis-codex-swarm", help="Plan directory containing .mdx files")
+    parser.add_argument("--state", default="state", help="State directory for local viewer selections")
     parser.add_argument("--host", default="127.0.0.1", help="Bind host")
     parser.add_argument("--port", type=int, default=8765, help="Bind port")
     args = parser.parse_args()
@@ -449,6 +890,7 @@ def main() -> int:
     if not plan_dir.exists():
         parser.error(f"plan directory does not exist: {html.escape(str(plan_dir))}")
     PlanViewerHandler.plan_dir = plan_dir
+    PlanViewerHandler.state_dir = Path(args.state).resolve()
     server = ThreadingHTTPServer((args.host, args.port), PlanViewerHandler)
     print(f"Jarvis local plan viewer: http://{args.host}:{args.port}")
     print(f"Serving: {plan_dir}")

@@ -30,6 +30,7 @@ jarvis-codex approve request "summary"    # create an approval request
 jarvis-codex handoff                      # generate a Codex handoff brief
 jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilities
 jarvis-codex doctor                       # inspect local state
+jarvis-plan-viewer                        # serve the local plan and next-step selector
 ```
 
 ## Safety Boundary
@@ -46,6 +47,23 @@ uv run jarvis-codex hardware --workload video
 ```
 
 NPU use is routed conservatively. In WSL, NPUs are usually accessed through Windows runtimes such as ONNX Runtime DirectML or OpenVINO rather than as a normal Linux device. Jarvis reports that boundary instead of assuming NPU access.
+
+## Local Review UI
+
+`jarvis-plan-viewer` serves the Gate 2 plan and a local next-step selector from `127.0.0.1`.
+
+```bash
+uv run jarvis-plan-viewer --dir plans/jarvis-codex-swarm --state state
+```
+
+Selected next steps are written to `state/next-steps/selection.json`, which is ignored by Git. The tracked `state/next-steps/.gitkeep` file only preserves the local state directory.
+
+## Gate Docs
+
+- `docs/VOICE_NOTIFICATIONS.md`
+- `docs/RUNTIME_GATES.md`
+- `docs/REMOTION_REVIEW.md`
+- `docs/WORKTRUNK_LANES.md`
 
 ## Roadmap
 
