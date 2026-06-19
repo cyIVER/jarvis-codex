@@ -13,6 +13,7 @@ dev = ["pytest>=9.1.1"]
 
 [project.scripts]
 jarvis-codex = "jarvis_codex.cli:main"
+jarvis-plan-viewer = "jarvis_codex.plan_viewer:main"
 
 [build-system]
 requires = ["hatchling"]

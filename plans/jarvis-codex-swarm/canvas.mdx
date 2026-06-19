@@ -1,101 +1,100 @@
-# Jarvis Codex Swarm Canvas
+# Jarvis Codex Gate 2 Canvas
 
 ## Task Graph
 
 ```mermaid
 flowchart TD
-  P[Committed visual plan artifacts]
-  ANV[Agent-Native local verify]
-  ANS[Agent-Native local serve]
-  CH[Open Windows Chrome review]
-  WTP[Worktrunk preflight]
-  WTI[Install or verify Worktrunk]
-  WTV[Create lane worktrees]
-  VE[Verification/eval lane]
-  MS[Memory/state lane]
-  CB[Codex bridge lane]
-  VI[Voice ingress lane]
-  VP[Visual plan UI lane]
-  INT[Main-thread integration gate]
-  FULL[Full checks]
+  Base[Record main baseline]
+  Viewer[Package local viewer]
+  Plan[Revise Gate 2 MDX]
+  WT[Inventory Worktrunk lanes]
+  Voice[Stabilize voice hooks]
+  HW[Confirm hardware boundary]
+  Tests[Run CLI and pytest checks]
+  Browser[Run Playwright viewer smoke]
+  Gate[Gate 2 acceptance]
+  Remotion[Future local Remotion review gate]
 
-  P --> ANV --> ANS --> CH
-  WTP --> WTI --> WTV
-  WTV --> VE
-  WTV --> MS
-  WTV --> CB
-  WTV --> VI
-  WTV --> VP
-  VE --> INT
-  MS --> INT
-  CB --> INT
-  VI --> INT
-  VP --> INT
-  INT --> FULL
+  Base --> Viewer
+  Base --> Plan
+  Base --> WT
+  Base --> Voice
+  Base --> HW
+  Viewer --> Browser
+  Voice --> Tests
+  HW --> Tests
+  Plan --> Browser
+  Tests --> Gate
+  Browser --> Gate
+  Gate --> Remotion
 ```
 
 ## File Ownership
 
-| Area | Current files | Likely lane owner |
+| Area | Current files | Gate 2 owner |
 | --- | --- | --- |
-| CLI commands | `src/jarvis_codex/cli.py` | voice-ingress, codex-bridge, verification-eval |
-| State model | `src/jarvis_codex/state.py` | memory-state, codex-bridge |
-| Tests | `tests/test_state.py`, future smoke tests | verification-eval |
-| Product docs | `README.md`, `docs/VISION.md`, `docs/HARNESS.md` | visual-plan-ui, codex-bridge |
-| Runtime state placeholders | `state/**/.gitkeep` | verification-eval |
-| Visual plan | `plans/jarvis-codex-swarm/*.mdx` | visual-plan-ui |
+| Packaged viewer | `src/jarvis_codex/plan_viewer.py`, `pyproject.toml` | Main-thread integration |
+| Visual plan | `plans/jarvis-codex-swarm/*.mdx` | Main-thread integration |
+| Notification hooks | `~/.codex/hooks/user_prompt_submit.py`, `~/.codex/bin/codex_notify_jarvis.py` | Local AI OS hooks |
+| Runtime state placeholders | `state/**/.gitkeep` | Verification gate |
+| Hardware boundary | `src/jarvis_codex/hardware.py`, `src/jarvis_codex/cli.py` | Verification gate |
+| Worktrunk lanes | sibling `jarvis-codex.lane-*` worktrees | Human-approved Worktrunk operation |
+
+## Runtime Boundaries
+
+```mermaid
+flowchart LR
+  Prompt[User prompt]
+  StartHook[UserPromptSubmit hook]
+  StartSpeech[Concise start speech]
+  Codex[Codex turn]
+  CompleteHook[Completion notifier]
+  Desktop[Desktop notification]
+  ActionSpeech[Action-needed speech]
+  Logs[Local JSONL logs]
+
+  Prompt --> StartHook --> StartSpeech
+  StartHook --> Logs
+  Prompt --> Codex --> CompleteHook
+  CompleteHook --> Desktop
+  CompleteHook --> ActionSpeech
+  CompleteHook --> Logs
+```
 
 ## Data Contracts
 
 ```mermaid
 classDiagram
-  class Episode {
-    string id
-    int created_at
-    string text
-    string source
-    string status
+  class PromptStart {
+    string category
+    string phrase
+    bool speech_attempted
+    list pack_hints
   }
-  class Memory {
-    string id
-    int created_at
-    string key
-    string value
-    string source
+  class Completion {
+    string category
+    string title
+    string body
+    string spoken
+    bool speech_attempted
+    bool notified
   }
-  class ApprovalRequest {
-    string id
-    int created_at
-    string summary
-    string status
+  class WorktrunkWorkerSummary {
+    string role
+    string lane
+    string branch
+    string worktree_path
+    string base_commit
+    string merge_recommendation
   }
-  class Handoff {
-    string objective
-    list recent_episodes
-    list memories
-    list pending_approvals
-  }
-  Episode --> Handoff
-  Memory --> Handoff
-  ApprovalRequest --> Handoff
+  PromptStart --> Completion
+  WorktrunkWorkerSummary --> Completion
 ```
 
 ## Integration Gate
 
-The main thread owns merges and final verification. Lane workers may edit only their assigned worktree, must not push or merge, and must not delete worktrees or branches. Any lane that needs to cross ownership boundaries must report the dependency rather than editing across the boundary.
+The main thread owns final integration and verification. Lane worktrees are inventory only in Gate 2 unless the user explicitly approves refresh, rebase, branch deletion, merge, push, hook edits, shell integration, or worktree removal.
 
-## Context Budget Gate
+## Local Viewer Gate
 
-```mermaid
-flowchart LR
-  Notice[Skills descriptions shortened]
-  Catalog[Read pack catalog]
-  Pack[Load narrow pack manifest]
-  Skill[Load only direct skill bodies]
-  Ref[Load one-level references only if needed]
-  Summary[Return structured lane summary]
-
-  Notice --> Catalog --> Pack --> Skill --> Ref --> Summary
-```
-
-Use partitioned lane worktrees to keep detailed context isolated. The coordinator should aggregate only structured worker outputs: lane, path, files inspected, files changed, verification, risks, and merge recommendation.
+The viewer must run from the installed script, bind to `127.0.0.1`, serve files from `plans/jarvis-codex-swarm`, render Mermaid code fences as diagrams, and show no raw `flowchart` or `classDiagram` blocks in the rendered document body.

@@ -1,97 +1,125 @@
-# Jarvis Codex Visual-Planning Swarm
+# Jarvis Codex Gate 2 Stabilization
 
 ## Intent
 
-Build the next phase of `cyIVER/jarvis-codex` with five isolated Worktrunk lanes and a local-first Agent-Native review surface. The implementation keeps Jarvis Codex small, filesystem-backed, approval-aware, and ready for future Codex App Server and desktop voice integrations.
+Reconcile the baseline before new feature work. `main` is the authoritative branch for this gate, the packaged `jarvis-plan-viewer` is the canonical local MDX/Mermaid review surface, and the old lane plan is revised in place instead of published to any hosted Agent-Native path.
 
 ## Source Of Truth
 
 - Repository: `https://github.com/cyIVER/jarvis-codex.git`
 - Base branch: `main`
-- Current product: Python CLI with episode capture, durable memory, approval requests, handoff generation, and `doctor`.
-- Runtime state policy: commit only `.gitkeep` placeholders under `state/`; never commit generated JSON, JSONL, or markdown handoffs.
-- Voice policy: build a licensed/local assistant voice style; exact fictional JARVIS or Iron Man voice cloning is out of scope.
+- Gate focus: baseline reconciliation, local viewer packaging, Worktrunk lane refresh planning, hardware/runtime boundary clarity, and concise voice notifications.
+- Runtime state policy: commit only `.gitkeep` placeholders under `state/`; never commit generated JSON, JSONL, markdown handoffs, `.plan-url`, or local server artifacts.
+- Voice policy: use short local Piper phrases through the existing Windows `notify.ps1` / `say.ps1` backend. Do not clone fictional voices or narrate routine successes by default.
+- Remotion policy: future local-only review asset gate. Do not integrate Remotion generation in Gate 2.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  User[User voice or text intent]
-  Capture[Voice/text ingress]
-  Episodes[Episode inbox]
-  Memory[Durable memory ledger]
-  Approvals[Approval ledger]
-  Handoff[Codex handoff contract]
-  Bridge[Future Codex App Server bridge]
-  Worktrunk[Worktrunk isolated lanes]
-  Checks[Verification and eval harness]
+  Main[main baseline]
+  Viewer[jarvis-plan-viewer]
+  Plan[Gate 2 MDX plan]
+  Hooks[Codex hooks]
+  Notify[Windows Piper notifier]
+  Worktrunk[Worktrunk lane inventory]
+  Hardware[Hardware runtime detector]
+  Future[Future Remotion review assets]
 
-  User --> Capture
-  Capture --> Episodes
-  Episodes --> Memory
-  Episodes --> Approvals
-  Memory --> Handoff
-  Approvals --> Handoff
-  Handoff --> Bridge
-  Bridge --> Worktrunk
-  Checks --> Capture
-  Checks --> Memory
-  Checks --> Approvals
-  Checks --> Handoff
+  Main --> Viewer
+  Main --> Plan
+  Main --> Hooks
+  Hooks --> Notify
+  Main --> Worktrunk
+  Main --> Hardware
+  Plan --> Future
 ```
 
-## Lane Map
+## Gate 2 Workstreams
 
-| Lane | Branch | Ownership | Deliverable |
-| --- | --- | --- | --- |
-| Verification/eval | `lane/verification-eval` | Tests, smoke scripts, acceptance checklist, fixture safety | Harness that proves CLI and state behavior before other lane merges |
-| Memory/state | `lane/memory-state` | Memory schema, episode lifecycle, import/export, cleanup invariants | Durable state contracts that stay debuggable and local-first |
-| Codex bridge | `lane/codex-bridge` | Handoff contracts, approval ledger, app-server adapter stubs | Clear execution boundary without uncontrolled tool execution |
-| Voice ingress | `lane/voice-ingress` | Text/speech capture interfaces, hotkey/desktop intake design | Adapter boundary for future speech and desktop entrypoints |
-| Visual plan UI | `lane/visual-plan-ui` | MDX plan files, local serve workflow, Chrome launch helper docs/scripts | Review surface and repeatable local-plan workflow |
+| Workstream | Ownership | Gate 2 outcome |
+| --- | --- | --- |
+| Baseline reconciliation | Main thread | Treat `main` as authoritative, keep user work intact, record current worktree state, and avoid destructive cleanup without approval. |
+| Local viewer | `src/jarvis_codex/plan_viewer.py`, `pyproject.toml` | Package `jarvis-plan-viewer`, serve only local `.mdx` files from `127.0.0.1`, render Mermaid blocks as diagrams, and verify with Playwright. |
+| Visual plan | `plans/jarvis-codex-swarm/*.mdx` | Revise the existing plan in place for Gate 2 acceptance and remove hosted publish assumptions. |
+| Worktrunk lanes | Existing sibling lane worktrees | Inventory and refresh plan from current `main`; keep branch creation, deletion, merge, push, shell integration, and hooks gated. |
+| Voice notifications | `~/.codex/hooks/user_prompt_submit.py`, `~/.codex/bin/codex_notify_jarvis.py` | Speak at prompt start by task type; speak on completion only for action-needed events by default. |
+| Hardware/runtime | `jarvis-codex hardware` | Preserve local GPU/NPU/Docker detection as a recommendation boundary, not an autonomous execution path. |
 
-## Execution Workflow
+## Worktrunk Lane Reconciliation
 
-1. Verify the visual plan locally with Agent-Native.
-2. Install and verify Worktrunk using Cargo if `wt` is not already available.
-3. Create one worktree per lane with `wt switch --create lane/<lane-name> --no-cd --format=json`.
-4. Delegate lane implementation only inside the assigned worktree and branch.
-5. Require each worker to return lane name, worktree path, files changed, tests run, risks or blockers, and merge recommendation.
-6. Integrate in this order after lane review: verification/eval, memory-state, codex-bridge, voice-ingress, visual-plan-ui.
-7. Run full project checks after each merge and before final commit.
+Current lanes remain isolated sibling worktrees until explicitly refreshed or removed:
 
-## Context Routing
+| Lane | Branch | Status rule |
+| --- | --- | --- |
+| Codex bridge | `lane/codex-bridge` | Rebase/refresh only after approval; do not push or merge from the lane. |
+| Memory/state | `lane/memory-state` | Rebase/refresh only after approval; preserve runtime state ignore policy. |
+| Verification/eval | `lane/verification-eval` | Rebase/refresh only after approval; own smoke scripts and tests when assigned. |
+| Visual plan UI | `lane/visual-plan-ui` | Superseded by packaged viewer on `main`; abandon or refresh only after human decision. |
+| Voice ingress | `lane/voice-ingress` | Superseded by hook stabilization on `main`; abandon or refresh only after human decision. |
 
-Codex may shorten skill descriptions when the skills context budget is tight. Treat the shortened list as discovery only, not as the full procedure. For this swarm, route through the pack catalog and progressively disclose details:
+Lane workers must use this contract:
 
-1. Read `~/.codex/packs/catalog.yaml`.
-2. Select the narrowest matching pack; for this task the active route is `agent-engineering`, with focused use of `visual-planning`, `worktrunk-worktrees`, and `context-engineering` where their triggers apply.
-3. Load only the chosen pack manifests and only the skill bodies directly referenced by the active step.
-4. For context-budget work, use the installed concrete skills referenced by the `context-engineering` pack: `context-optimization`, `context-mode`, `context-compression`, `memory-systems`, and `evaluation`.
-5. Do not load broad skill directories or unrelated references. Store durable lessons only through `knowledge-graph-memory` when that tool is available; otherwise keep project-local context in committed docs or local runtime state.
+```yaml
+role:
+lane:
+branch:
+worktree_path:
+base_commit:
+task_summary:
+files_inspected:
+files_changed:
+commands_run:
+verification_performed:
+findings:
+integration_notes:
+risks_or_blockers:
+merge_recommendation: merge | hold | abandon | needs-human-decision
+next_action:
+```
 
-The current environment has a valid `context-engineering` pack manifest, but no standalone `~/.codex/skills/context-engineering/SKILL.md` wrapper. Future agents should not chase that missing wrapper; they should follow the pack's referenced concrete skill paths.
+Workers must not push, merge, rebase, delete branches, remove worktrees, edit hooks, configure shell integration, or launch Docker/GPU execution unless the main thread gets explicit approval for that specific action.
 
-## Approval Boundaries
+## Voice Notification Policy
 
-- Approved now: commit local visual plan artifacts, install Worktrunk with Cargo if Rust is compatible, create lane worktrees and branches, verify and serve the local plan, open the local plan in Windows Chrome.
-- Still gated: shell integration, hooks, lane merges, pushes, rebases, branch deletion, worktree removal, external service publishing, credential changes, and autonomous tool execution.
+Prompt start speech is enabled by default with `CODEX_NOTIFY_SPEAK_START=true`.
+
+| Prompt category | Phrase |
+| --- | --- |
+| Planning | Planning pass started. |
+| UI/browser | Reviewing the interface. |
+| Agent swarm | Swarm coordination started. |
+| Worktrunk | Worktree operation queued. |
+| Hardware/ML | Checking local acceleration. |
+| GitHub | Checking the GitHub workflow. |
+| Coding | Code change pass started. |
+| General | I'm on it. |
+
+Completion speech defaults to `CODEX_NOTIFY_SPEAK_COMPLETIONS=action-needed`. Routine successful completions may still produce a desktop notification when the duration threshold is met, but speech is reserved for:
+
+- Error: `The task needs attention.`
+- Approval wait: `Approval is needed.`
+- Blocked: `I'm blocked and need input.`
+- User action needed: `Input is needed.`
+
+`CODEX_NOTIFY_THRESHOLD_SECONDS=0` remains an override, not the default, because speaking every routine completion is noisy.
 
 ## Acceptance Checks
 
-- Pack routing validation confirms `agent-engineering`, `visual-planning`, `worktrunk-worktrees`, and `context-engineering` manifests exist, and the concrete context skills referenced by `context-engineering` are loadable.
-- `npx @agent-native/core@latest plan local verify --dir plans/jarvis-codex-swarm --kind plan` passes.
-- Local plan serve starts and produces a local URL; generated `.plan-url` remains untracked.
-- Windows Chrome opens the served local URL when available.
-- `wt --version` succeeds.
-- `git worktree list` shows five lane worktrees on the expected branches.
+- `git status --short --branch` records the baseline and shows only intentional Gate 2 changes.
+- `git worktree list` records current lane worktrees.
+- `git ls-files state` confirms only `.gitkeep` runtime placeholders are tracked.
 - `uv run pytest` passes.
-- `uv run jarvis-codex doctor` works.
-- CLI smoke commands for `capture`, `memory add`, `approve request`, and `handoff` work against a temporary state directory.
-- `git status --short` has no committed runtime state artifacts.
+- `uv run jarvis-codex --state /tmp/jarvis-codex-state doctor` succeeds.
+- `uv run jarvis-codex hardware --workload video` succeeds.
+- `jarvis-plan-viewer` starts on `127.0.0.1` and Playwright confirms tabs, diagrams, no console errors, no raw Mermaid leaks, and no horizontal overflow.
+- `python3 ~/.codex/bin/codex_notify_jarvis.py --test` completes and logs category/speech decisions.
+- Simulated prompt-submit payloads select planning, UI/browser, swarm, Worktrunk, hardware, GitHub, coding, and general start phrases.
+- Simulated completion payloads select success, failure, blocked, approval-needed, and user-action-needed behavior.
 
 ## Open Risks
 
-- Worktrunk may require a newer Rust toolchain than the local host provides; if so, stop before fallback and report the upgrade requirement.
-- Agent-Native local serve may leave a long-running process; keep the session identified and stop it after verification unless the user needs it left open.
-- Windows Chrome path is assumed to be `C:\Program Files\Google\Chrome\Application\chrome.exe`; WSL host configuration may differ.
+- Actual audible speech depends on the Windows Piper scripts being reachable from WSL.
+- Worktrunk lane refresh is intentionally gated because it can rebase branches or mutate worktrees.
+- Docker/GPU execution remains a recommendation and approval boundary, not an automatic action.
+- Future Remotion review assets need a separate local-only gate with asset ownership and verification defined before implementation.
