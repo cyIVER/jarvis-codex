@@ -5,6 +5,7 @@ import html
 import json
 import mimetypes
 import re
+import subprocess
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -47,6 +48,48 @@ def save_next_steps_selection(state_dir: Path, selected: list[object], brief: ob
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return data
+
+
+def document_sources(repo_dir: Path, plan_dir: Path) -> list[dict[str, str]]:
+    docs = [{"id": path.name, "label": path.name, "path": str(path)} for path in sorted(plan_dir.glob("*.mdx"))]
+    white_paper = repo_dir / "docs" / "JARVIS_WHITE_PAPER.md"
+    if white_paper.exists():
+        docs.append({"id": "jarvis-white-paper", "label": "Jarvis White Paper", "path": str(white_paper)})
+    return docs
+
+
+def run_git(args: list[str], cwd: Path) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def build_current_state(repo_dir: Path, state_dir: Path) -> dict[str, object]:
+    status = run_git(["status", "--short", "--branch"], repo_dir)
+    worktrees = [line for line in run_git(["worktree", "list"], repo_dir).splitlines() if line.strip()]
+    tracked_state = [line for line in run_git(["ls-files", "state"], repo_dir).splitlines() if line.strip()]
+    selection = load_next_steps_selection(state_dir)
+    return {
+        "branch": status.splitlines()[0] if status else "",
+        "dirty": len(status.splitlines()) > 1,
+        "worktree_count": len(worktrees),
+        "tracked_state_files": len(tracked_state),
+        "selected_count": len(selection.get("selected", [])),
+        "selected_ids": selection.get("selected", []),
+        "docs_ready": all((repo_dir / path).exists() for path in (
+            "docs/VOICE_NOTIFICATIONS.md",
+            "docs/RUNTIME_GATES.md",
+            "docs/REMOTION_REVIEW.md",
+            "docs/WORKTRUNK_LANES.md",
+        )),
+        "hardware_gate_doc": (repo_dir / "docs/RUNTIME_GATES.md").exists(),
+        "notification_policy_module": (repo_dir / "src/jarvis_codex/notifications.py").exists(),
+    }
 
 
 INDEX_HTML = """<!doctype html>
@@ -208,6 +251,27 @@ INDEX_HTML = """<!doctype html>
     .next-header { display: grid; gap: 14px; max-width: 900px; }
     .next-header h1 { margin-bottom: 0; }
     .next-header p { margin: 0; max-width: 68ch; }
+    .state-band {
+      display: grid;
+      gap: 14px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 0;
+    }
+    .band-header {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .band-header h2 {
+      margin: 0;
+      border: 0;
+      padding: 0;
+      font-size: 22px;
+    }
+    .band-header p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -222,6 +286,52 @@ INDEX_HTML = """<!doctype html>
     }
     .metric strong { display: block; font-size: 25px; line-height: 1; }
     .metric span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .state-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .state-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .state-card p {
+      margin: 0;
+      color: #c5cedb;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .goal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .goal-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #111720 0%, #0f151d 100%);
+      border-radius: 8px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .goal-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--accent-2);
+    }
+    .goal-card p {
+      margin: 0 0 10px;
+      color: #d6dde8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
     .toolbar {
       display: flex;
       gap: 8px;
@@ -321,6 +431,8 @@ INDEX_HTML = """<!doctype html>
       aside { position: static; height: auto; }
       main { padding-top: 20px; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .state-grid { grid-template-columns: 1fr; }
+      .goal-grid { grid-template-columns: 1fr; }
       .step-grid { grid-template-columns: 1fr; }
       .proceed-panel { position: static; }
       .step-row { grid-template-columns: 28px minmax(0, 1fr); }
@@ -351,6 +463,25 @@ INDEX_HTML = """<!doctype html>
     const status = document.getElementById('status');
     const STORAGE_KEY = 'jarvis-next-step-selection';
     let serverSelected = new Set();
+    let currentState = null;
+    let documents = [];
+    const DESIRED_END_STATE = [
+      {
+        title: 'Stable local review surface',
+        summary: 'The viewer reflects live repo state, persists next-step choices locally, and passes browser verification on desktop and mobile.',
+        status: 'ready'
+      },
+      {
+        title: 'Approval-aware execution boundary',
+        summary: 'Push, Worktrunk mutations, hooks, and GPU or Docker execution remain gated and explicit.',
+        status: 'gated'
+      },
+      {
+        title: 'Documented runtime and media gates',
+        summary: 'Voice notifications, hardware runtime routing, Remotion review assets, and lane reconciliation all have local docs and tests.',
+        status: 'ready'
+      }
+    ];
     const NEXT_STEPS = [
       {
         id: 'commit-push-baseline',
@@ -640,6 +771,16 @@ INDEX_HTML = """<!doctype html>
       }
     }
 
+    async function loadCurrentState() {
+      try {
+        const res = await fetch('/api/current-state');
+        if (!res.ok) throw new Error('state unavailable');
+        currentState = await res.json();
+      } catch {
+        currentState = null;
+      }
+    }
+
     async function saveSelection(ids, brief = '') {
       const selected = [...ids];
       serverSelected = new Set(selected);
@@ -689,6 +830,52 @@ INDEX_HTML = """<!doctype html>
       ].join('\\n');
     }
 
+    function renderCurrentState() {
+      if (!currentState) {
+        return '<div class="empty-note">Current state could not be loaded from the local viewer.</div>';
+      }
+      return `
+        <div class="state-grid">
+          <section class="state-card">
+            <h3>Repo status</h3>
+            <p>${escapeHtml(currentState.branch || 'branch unavailable')}</p>
+            <div class="step-meta">
+              <span class="badge ${currentState.dirty ? 'risk' : 'ready'}">${currentState.dirty ? 'working tree changed' : 'working tree clean'}</span>
+            </div>
+          </section>
+          <section class="state-card">
+            <h3>Worktree inventory</h3>
+            <p>${escapeHtml(String(currentState.worktree_count || 0))} worktrees are currently attached to this repo.</p>
+            <div class="step-meta">
+              <span class="badge">${escapeHtml(String(currentState.tracked_state_files || 0))} tracked state placeholders</span>
+            </div>
+          </section>
+          <section class="state-card">
+            <h3>Selection state</h3>
+            <p>${escapeHtml(String(currentState.selected_count || 0))} next step${currentState.selected_count === 1 ? '' : 's'} currently selected.</p>
+            <div class="step-meta">
+              <span class="badge ${currentState.notification_policy_module ? 'ready' : 'risk'}">${currentState.notification_policy_module ? 'notification policy module present' : 'notification policy module missing'}</span>
+              <span class="badge ${currentState.docs_ready ? 'ready' : 'gated'}">${currentState.docs_ready ? 'gate docs present' : 'gate docs incomplete'}</span>
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    function renderDesiredState() {
+      return `
+        <div class="goal-grid">
+          ${DESIRED_END_STATE.map((goal) => `
+            <section class="goal-card">
+              <h3>${escapeHtml(goal.title)}</h3>
+              <p>${escapeHtml(goal.summary)}</p>
+              <span class="badge ${escapeHtml(goal.status)}">${escapeHtml(goal.status)}</span>
+            </section>
+          `).join('')}
+        </div>
+      `;
+    }
+
     function renderNextSteps(activeCategory = 'All') {
       for (const item of tabs.querySelectorAll('button')) item.classList.remove('active');
       const nextButton = tabs.querySelector('[data-view="next-steps"]');
@@ -701,7 +888,21 @@ INDEX_HTML = """<!doctype html>
         <section class="next-shell">
           <div class="next-header">
             <h1>Next Steps</h1>
-            <p>Select the work you want to proceed with and use the generated brief as the handoff for the next Codex pass.</p>
+            <p>Review the live current state, compare it to the desired end state, then select the next actions you want to queue.</p>
+          </div>
+          <section class="state-band">
+            <div class="band-header">
+              <h2>Current State</h2>
+              <p>Live facts from this local repo and viewer state.</p>
+            </div>
+            ${renderCurrentState()}
+          </section>
+          <section class="state-band">
+            <div class="band-header">
+              <h2>Desired End State</h2>
+              <p>The target condition this gate is trying to reach.</p>
+            </div>
+            ${renderDesiredState()}
           </div>
           <div class="summary-grid" aria-live="polite">
             <div class="metric"><strong>${counts.selected}</strong><span>selected</span></div>
@@ -773,12 +974,14 @@ INDEX_HTML = """<!doctype html>
       const res = await fetch('/api/file/' + encodeURIComponent(file));
       const text = await res.text();
       doc.innerHTML = renderMarkdown(text);
-      status.textContent = file + ' loaded from localhost';
+      const active = documents.find((docItem) => docItem.id === file);
+      status.textContent = (active ? active.label : file) + ' loaded from localhost';
     }
 
     async function boot() {
       const res = await fetch('/api/files');
-      const files = await res.json();
+      documents = await res.json();
+      await loadCurrentState();
       await loadServerSelection();
       tabs.innerHTML = '';
       const nextSteps = document.createElement('button');
@@ -786,11 +989,11 @@ INDEX_HTML = """<!doctype html>
       nextSteps.dataset.view = 'next-steps';
       nextSteps.addEventListener('click', () => renderNextSteps());
       tabs.appendChild(nextSteps);
-      for (const file of files) {
+      for (const file of documents) {
         const button = document.createElement('button');
-        button.textContent = file;
+        button.textContent = file.label;
         button.dataset.view = 'file';
-        button.addEventListener('click', () => loadFile(file, button));
+        button.addEventListener('click', () => loadFile(file.id, button));
         tabs.appendChild(button);
       }
       renderNextSteps();
@@ -804,6 +1007,7 @@ INDEX_HTML = """<!doctype html>
 
 class PlanViewerHandler(BaseHTTPRequestHandler):
     plan_dir: Path
+    repo_dir: Path
     state_dir: Path
 
     def do_GET(self) -> None:
@@ -815,11 +1019,15 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
             self._send(204, b"", "image/x-icon")
             return
         if parsed.path == "/api/files":
-            files = sorted(path.name for path in self.plan_dir.glob("*.mdx"))
+            files = document_sources(self.repo_dir, self.plan_dir)
             self._send(200, json.dumps(files).encode("utf-8"), "application/json")
             return
         if parsed.path == "/api/next-steps":
             data = load_next_steps_selection(self.state_dir)
+            self._send(200, json.dumps(data).encode("utf-8"), "application/json")
+            return
+        if parsed.path == "/api/current-state":
+            data = build_current_state(self.repo_dir, self.state_dir)
             self._send(200, json.dumps(data).encode("utf-8"), "application/json")
             return
         if parsed.path.startswith("/api/file/"):
@@ -827,8 +1035,9 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
             if "/" in name or "\\" in name:
                 self._send(400, b"invalid file name", "text/plain")
                 return
-            path = self.plan_dir / name
-            if path.suffix != ".mdx" or not path.exists():
+            sources = {item["id"]: Path(item["path"]) for item in document_sources(self.repo_dir, self.plan_dir)}
+            path = sources.get(name)
+            if not path or path.suffix not in {".mdx", ".md"} or not path.exists():
                 self._send(404, b"not found", "text/plain")
                 return
             self._send(200, path.read_bytes(), mimetypes.types_map.get(".md", "text/markdown"))
@@ -890,6 +1099,7 @@ def main() -> int:
     if not plan_dir.exists():
         parser.error(f"plan directory does not exist: {html.escape(str(plan_dir))}")
     PlanViewerHandler.plan_dir = plan_dir
+    PlanViewerHandler.repo_dir = Path.cwd().resolve()
     PlanViewerHandler.state_dir = Path(args.state).resolve()
     server = ThreadingHTTPServer((args.host, args.port), PlanViewerHandler)
     print(f"Jarvis local plan viewer: http://{args.host}:{args.port}")
