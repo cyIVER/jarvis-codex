@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .hardware import inspect_hardware, recommend_backend
 from .state import JarvisState
 
 
@@ -31,6 +32,14 @@ def main() -> int:
     handoff = sub.add_parser("handoff", help="Generate a Codex handoff")
     handoff.add_argument("--objective", default="Continue Jarvis Codex work")
 
+    hardware = sub.add_parser("hardware", help="Inspect local acceleration capabilities")
+    hardware.add_argument(
+        "--workload",
+        choices=["general", "llm", "vision", "voice", "video", "background"],
+        default="general",
+        help="Workload to recommend a backend for",
+    )
+
     sub.add_parser("doctor", help="Inspect state")
 
     args = parser.parse_args()
@@ -55,6 +64,13 @@ def main() -> int:
         path = state.write_handoff(args.objective)
         print(json.dumps({"handoff": str(path)}, sort_keys=True))
         return 0
+    if args.command == "hardware":
+        profile = inspect_hardware()
+        data = profile.to_dict()
+        data["selected_workload"] = args.workload
+        data["selected_backend"] = recommend_backend(profile, args.workload)
+        print(json.dumps(data, indent=2, sort_keys=True))
+        return 0
     if args.command == "doctor":
         print(json.dumps(state.doctor(), indent=2, sort_keys=True))
         return 0
@@ -63,4 +79,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

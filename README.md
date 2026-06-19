@@ -28,12 +28,24 @@ jarvis-codex memory add KEY VALUE         # add durable memory
 jarvis-codex memory list                  # print memory records
 jarvis-codex approve request "summary"    # create an approval request
 jarvis-codex handoff                      # generate a Codex handoff brief
+jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilities
 jarvis-codex doctor                       # inspect local state
 ```
 
 ## Safety Boundary
 
 This project prepares work for Codex. It does not execute tools, modify repositories, push branches, create PRs, deploy software, or spend money unless a future integration adds that behavior behind an approval gate.
+
+## Local Acceleration
+
+Jarvis Codex can inspect local CPU, NVIDIA CUDA GPU, Windows NPU, WSL GPU bridge, and Docker Desktop availability:
+
+```bash
+uv run jarvis-codex hardware --workload voice
+uv run jarvis-codex hardware --workload video
+```
+
+NPU use is routed conservatively. In WSL, NPUs are usually accessed through Windows runtimes such as ONNX Runtime DirectML or OpenVINO rather than as a normal Linux device. Jarvis reports that boundary instead of assuming NPU access.
 
 ## Roadmap
 
@@ -42,5 +54,5 @@ This project prepares work for Codex. It does not execute tools, modify reposito
 3. Codex App Server bridge.
 4. Approval-aware tool execution.
 5. Worktrunk-powered parallel coding sessions.
-6. Desktop/mobile UI.
-
+6. Local browser UI and Remotion video review surface.
+7. Hardware-aware GPU/NPU acceleration adapters.
