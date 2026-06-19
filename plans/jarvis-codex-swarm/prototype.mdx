@@ -1,0 +1,49 @@
+# Jarvis Codex Prototype Flow
+
+## Voice Or Text Intake
+
+```text
++----------------------------------------------------------+
+| Jarvis Codex                                             |
+| Local assistant layer for Codex                          |
++----------------------------------------------------------+
+| Input source                                             |
+| [ Text ] [ Future speech adapter ] [ Desktop hotkey ]    |
+|                                                          |
+| "Capture the idea, preserve memory, prepare a handoff"   |
+|                                                          |
+| [ Capture episode ]  [ Add memory ]  [ Request approval ]|
++----------------------------------------------------------+
+```
+
+## Review And Handoff
+
+```text
++----------------------------------------------------------+
+| Episode Inbox                    | Approval Boundary     |
+| - ep_... Build the voice loop    | - approval_... pending|
+| - ep_... Add Codex bridge        |                       |
++----------------------------------------------------------+
+| Relevant Memory                                          |
+| - tone: pragmatic                                       |
+| - project_name: Jarvis Codex                            |
++----------------------------------------------------------+
+| Codex Handoff                                            |
+| Objective: Continue Jarvis Codex work                    |
+| [ Generate handoff ] [ Open in editor ] [ Future bridge ]|
++----------------------------------------------------------+
+```
+
+## Command Flow
+
+```bash
+uv run jarvis-codex capture "Build the voice loop" --source text
+uv run jarvis-codex memory add tone "pragmatic"
+uv run jarvis-codex approve request "Run Codex against a repo"
+uv run jarvis-codex handoff --objective "Ship the next prototype"
+uv run jarvis-codex doctor
+```
+
+## Expected Interaction
+
+The first useful screen is operational, not a landing page: capture intent, inspect durable context, and generate a handoff. Future UI work should preserve the same approval-first behavior and avoid hiding state transitions behind opaque automation.

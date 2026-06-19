@@ -10,3 +10,4 @@ state/**/*.jsonl
 state/**/*.json
 state/**/*.md
 !state/**/.gitkeep
+plans/**/.plan-url

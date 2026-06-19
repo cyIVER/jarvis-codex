@@ -1,0 +1,101 @@
+# Jarvis Codex Swarm Canvas
+
+## Task Graph
+
+```mermaid
+flowchart TD
+  P[Committed visual plan artifacts]
+  ANV[Agent-Native local verify]
+  ANS[Agent-Native local serve]
+  CH[Open Windows Chrome review]
+  WTP[Worktrunk preflight]
+  WTI[Install or verify Worktrunk]
+  WTV[Create lane worktrees]
+  VE[Verification/eval lane]
+  MS[Memory/state lane]
+  CB[Codex bridge lane]
+  VI[Voice ingress lane]
+  VP[Visual plan UI lane]
+  INT[Main-thread integration gate]
+  FULL[Full checks]
+
+  P --> ANV --> ANS --> CH
+  WTP --> WTI --> WTV
+  WTV --> VE
+  WTV --> MS
+  WTV --> CB
+  WTV --> VI
+  WTV --> VP
+  VE --> INT
+  MS --> INT
+  CB --> INT
+  VI --> INT
+  VP --> INT
+  INT --> FULL
+```
+
+## File Ownership
+
+| Area | Current files | Likely lane owner |
+| --- | --- | --- |
+| CLI commands | `src/jarvis_codex/cli.py` | voice-ingress, codex-bridge, verification-eval |
+| State model | `src/jarvis_codex/state.py` | memory-state, codex-bridge |
+| Tests | `tests/test_state.py`, future smoke tests | verification-eval |
+| Product docs | `README.md`, `docs/VISION.md`, `docs/HARNESS.md` | visual-plan-ui, codex-bridge |
+| Runtime state placeholders | `state/**/.gitkeep` | verification-eval |
+| Visual plan | `plans/jarvis-codex-swarm/*.mdx` | visual-plan-ui |
+
+## Data Contracts
+
+```mermaid
+classDiagram
+  class Episode {
+    string id
+    int created_at
+    string text
+    string source
+    string status
+  }
+  class Memory {
+    string id
+    int created_at
+    string key
+    string value
+    string source
+  }
+  class ApprovalRequest {
+    string id
+    int created_at
+    string summary
+    string status
+  }
+  class Handoff {
+    string objective
+    list recent_episodes
+    list memories
+    list pending_approvals
+  }
+  Episode --> Handoff
+  Memory --> Handoff
+  ApprovalRequest --> Handoff
+```
+
+## Integration Gate
+
+The main thread owns merges and final verification. Lane workers may edit only their assigned worktree, must not push or merge, and must not delete worktrees or branches. Any lane that needs to cross ownership boundaries must report the dependency rather than editing across the boundary.
+
+## Context Budget Gate
+
+```mermaid
+flowchart LR
+  Notice[Skills descriptions shortened]
+  Catalog[Read pack catalog]
+  Pack[Load narrow pack manifest]
+  Skill[Load only direct skill bodies]
+  Ref[Load one-level references only if needed]
+  Summary[Return structured lane summary]
+
+  Notice --> Catalog --> Pack --> Skill --> Ref --> Summary
+```
+
+Use partitioned lane worktrees to keep detailed context isolated. The coordinator should aggregate only structured worker outputs: lane, path, files inspected, files changed, verification, risks, and merge recommendation.
