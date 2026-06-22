@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .state import JarvisState
 
@@ -39,8 +40,8 @@ def main() -> int:
         default="general",
         help="Workload to recommend a backend for",
     )
-
-    sub.add_parser("doctor", help="Inspect state")
+    doctor = sub.add_parser("doctor", help="Inspect state")
+    doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
     args = parser.parse_args()
     state = JarvisState(Path(args.state))
@@ -72,7 +73,13 @@ def main() -> int:
         print(json.dumps(data, indent=2, sort_keys=True))
         return 0
     if args.command == "doctor":
-        print(json.dumps(state.doctor(), indent=2, sort_keys=True))
+        data = state.doctor()
+        if args.governance:
+            governance = validate_phase1_governance()
+            data["codex_governance"] = governance.compact_summary()
+            print(json.dumps(data, indent=2, sort_keys=True))
+            return 0 if governance.failure_count == 0 else 1
+        print(json.dumps(data, indent=2, sort_keys=True))
         return 0
     return 2
 
