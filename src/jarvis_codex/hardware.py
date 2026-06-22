@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any, Literal
 
 Workload = Literal["general", "llm", "vision", "voice", "video", "background"]
@@ -75,6 +76,37 @@ def recommend_backend(profile: HardwareProfile, workload: Workload = "general") 
     if workload in {"voice", "background"}:
         return "cpu now; prefer NPU when a Windows ONNX/OpenVINO adapter is configured"
     return "cpu"
+
+
+def preflight_check(profile: HardwareProfile, workload: Workload, state_dir: Path) -> dict[str, Any]:
+    backend = recommend_backend(profile, workload)
+    needs_approval = backend.startswith("cuda") or backend.startswith("docker") or backend.startswith("windows-npu")
+    
+    flag_path = state_dir / "approvals" / "hardware_flag.json"
+    approved = False
+    if flag_path.exists():
+        try:
+            flag = json.loads(flag_path.read_text(encoding="utf-8"))
+            if flag.get("approved"):
+                approved = True
+        except (OSError, json.JSONDecodeError):
+            pass
+            
+    decision = {
+        "workload": workload,
+        "recommended_backend": backend,
+        "needs_approval": needs_approval,
+        "approved": approved,
+        "can_proceed": not needs_approval or approved
+    }
+    
+    log_dir = state_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    record_path = log_dir / "hardware_gate_checks.jsonl"
+    with record_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(decision, sort_keys=True) + "\n")
+        
+    return decision
 
 
 def _nvidia_accelerators() -> list[Accelerator]:

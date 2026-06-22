@@ -1,4 +1,6 @@
-from jarvis_codex.hardware import Accelerator, HardwareProfile, _looks_like_npu, recommend_backend
+from jarvis_codex.hardware import Accelerator, HardwareProfile, _looks_like_npu, recommend_backend, preflight_check
+from pathlib import Path
+import json
 
 
 def profile_with(*accelerators: Accelerator, docker: bool = False) -> HardwareProfile:
@@ -47,3 +49,28 @@ def test_npu_matching_does_not_confuse_input_devices():
     assert _looks_like_npu("Neural Processing Unit")
     assert not _looks_like_npu("USB Input Device")
     assert not _looks_like_npu("Microsoft Input Configuration Device")
+
+def test_preflight_check_deny_path(tmp_path):
+    profile = profile_with(Accelerator("gpu", "RTX", "cuda", True))
+    state_dir = tmp_path / "state"
+    
+    # Run preflight without approval
+    decision = preflight_check(profile, "llm", state_dir)
+    assert decision["recommended_backend"].startswith("cuda")
+    assert decision["needs_approval"] is True
+    assert decision["approved"] is False
+    assert decision["can_proceed"] is False
+    
+    # Check that it logged the decision
+    log_file = state_dir / "logs" / "hardware_gate_checks.jsonl"
+    assert log_file.exists()
+    
+    # Add approval flag
+    flag_path = state_dir / "approvals" / "hardware_flag.json"
+    flag_path.parent.mkdir(parents=True, exist_ok=True)
+    flag_path.write_text(json.dumps({"approved": True}))
+    
+    # Run preflight again
+    decision2 = preflight_check(profile, "llm", state_dir)
+    assert decision2["approved"] is True
+    assert decision2["can_proceed"] is True
