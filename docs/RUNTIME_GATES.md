@@ -20,6 +20,38 @@ uv run jarvis-codex hardware --workload voice
 - Docker GPU containers are recommended only when Docker is reachable and CUDA is available.
 - Runtime probes should not write generated state into Git-tracked files.
 
+## Codex Governance Gate
+
+Before Phase 2 governance changes, run:
+
+```bash
+python3 scripts/validate-jarvis-codex-phase1.py
+```
+
+The validator must report `Status: PASS` with zero warnings and zero failures before changing project-local Codex governance files.
+
+This validator checks Codex governance only. It is not a replacement for unit tests, browser checks, hardware checks, or runtime validation.
+
+Do not run installs, migrations, service launches, daemons, runtime workflows, Worktrunk mutation, or git mutation without explicit approval.
+
+`jarvis-codex doctor` does not run this validator by default.
+
+Use the opt-in governance check when a doctor summary should include project-local Codex governance status:
+
+```bash
+jarvis-codex doctor --governance
+```
+
+The standalone manual validator remains:
+
+```bash
+python3 scripts/validate-jarvis-codex-phase1.py
+```
+
+The validator remains stdout-only and does not write reports.
+
+Governance validation does not approve installs, migrations, service launches, runtime workflows, Worktrunk mutation, or git mutation.
+
 ## Current Acceptance
 
 For a video workload, the accepted backend should be one of:

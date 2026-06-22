@@ -37,6 +37,36 @@ jarvis-plan-viewer                        # serve the local plan and next-step s
 
 This project prepares work for Codex. It does not execute tools, modify repositories, push branches, create PRs, deploy software, or spend money unless a future integration adds that behavior behind an approval gate.
 
+## Codex Governance
+
+Jarvis Codex includes project-local Codex governance files for read-only planning, review, docs research, and Worktrunk lane planning.
+
+Validate the local governance state manually:
+
+```bash
+python3 scripts/validate-jarvis-codex-phase1.py
+```
+
+The validator is stdout-only and does not write reports. It checks the project-local `.codex/config.toml`, `.codex/agents/*.toml`, and `.agents/skills/*/SKILL.md` files.
+
+`jarvis-codex doctor` does not run governance validation by default.
+
+Use the opt-in governance check when needed:
+
+```bash
+jarvis-codex doctor --governance
+```
+
+This adds a compact `codex_governance` summary to doctor output. The standalone validator remains available:
+
+```bash
+python3 scripts/validate-jarvis-codex-phase1.py
+```
+
+The governance validator is stdout-only and does not write reports. It checks project-local Codex governance files; it is not a replacement for unit tests, browser checks, hardware checks, or runtime validation.
+
+Governance validation does not approve installs, migrations, service launches, runtime workflows, Worktrunk mutation, or git mutation.
+
 ## Local Acceleration
 
 Jarvis Codex can inspect local CPU, NVIDIA CUDA GPU, Windows NPU, WSL GPU bridge, and Docker Desktop availability:

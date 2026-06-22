@@ -12,6 +12,27 @@ Jarvis Codex work should stay within a small, explicit context budget even when 
 6. Keep long tool outputs out of the main thread unless they are needed for active debugging.
 7. Use Worktrunk lane summaries as the coordinator context boundary.
 
+## Project-local Jarvis Routing
+
+Use the main thread for intake, approvals, final integration, and verification.
+
+Use project-local agents only for read-only Jarvis governance work:
+
+| Need | Project-local agent |
+| --- | --- |
+| Repo map, state inventory, governance surface discovery | `jarvis_explorer` |
+| Correctness, security, gate, or missing-test review | `jarvis_reviewer` |
+| Local docs and Codex/Jarvis reference synthesis | `jarvis_docs_researcher` |
+| Worktrunk lane planning without mutation | `jarvis_worktrunk_planner` |
+
+Use repo-local skills for Jarvis-specific governance tasks before falling back to broad global skills.
+
+Global agents remain available for broader pack-scoped work, but they should not replace project-local Jarvis governance routing when the task is about this repo.
+
+There is no `jarvis_worker_fixer` agent yet. Implementation remains main-thread and approval-gated.
+
+Project-local `skills.config` scoping is deferred until trial runs show repeated routing noise and the exact entries are approved.
+
 ## Active Route For The Swarm
 
 - Primary pack: `agent-engineering`

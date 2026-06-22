@@ -1,23 +1,38 @@
 # Worktrunk Lane Reconciliation
 
-This is a read-only Gate 2 inventory. No lanes were refreshed, rebased, merged, pushed, removed, or deleted.
+This is a read-only lane inventory. `git worktree list` is the execution truth.
 
-## Current Worktrees
+## Current Registered Worktrees
 
-| Worktree | Branch | Observed state | Recommendation |
-| --- | --- | --- | --- |
-| `/home/iveri/repos/jarvis-codex.lane-codex-bridge` | `lane/codex-bridge` | Untracked `video/` | Hold. Inspect `video/` before deciding whether to preserve or discard. |
-| `/home/iveri/repos/jarvis-codex.lane-memory-state` | `lane/memory-state` | Untracked `docs/LOCAL_ML_RUNTIME.md` | Hold. Compare against `docs/RUNTIME_GATES.md` before merging or discarding. |
-| `/home/iveri/repos/jarvis-codex.lane-verification-eval` | `lane/verification-eval` | Clean | Candidate for refresh from `main` after approval. |
-| `/home/iveri/repos/jarvis-codex.lane-visual-plan-ui` | `lane/visual-plan-ui` | Modified `README.md`; untracked `docs/PLAN_VIEWER.md`, `scripts/`, `tools/` | Needs human decision. Likely stale because packaged `jarvis-plan-viewer` now owns the viewer path on `main`. |
-| `/home/iveri/repos/jarvis-codex.lane-voice-ingress` | `lane/voice-ingress` | Clean | Candidate to abandon or refresh after confirming no unique voice-ingress work remains. |
+| Worktree | Branch | Status |
+| --- | --- | --- |
+| `/home/iveri/repos/jarvis-codex` | `main` | Current registered worktree |
+
+## Stale Lane Notes
+
+Previous planning docs referenced sibling lane worktrees for `lane/codex-bridge`, `lane/memory-state`, `lane/verification-eval`, `lane/visual-plan-ui`, and `lane/voice-ingress`.
+
+Those entries are planning history only until a fresh read-only reconciliation proves they exist in current Git worktree metadata.
+
+## Read-only Lane Planning Policy
+
+Use `jarvis_worktrunk_planner` and `worktrunk-lane-governance` only for read-only lane planning and approval-gated command proposals.
+
+Do not treat displayed lane commands, plan-viewer commands, or historical lane notes as execution authority.
 
 ## Approval-Gated Actions
 
 Ask before any of these:
 
+- `wt`
+- `git checkout`
+- `git reset`
+- `git clean`
+- `git merge`
+- `git rebase`
 - `git push`
-- lane merge or rebase
+- `git worktree add`
+- `git worktree remove`
 - branch deletion
 - worktree removal
 - Worktrunk shell integration
