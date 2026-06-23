@@ -88,7 +88,10 @@ pattern: product-readiness-triage
 - [x] PM-027 - HUD release gate status
   Loop action: added read-only runtime RPC and HUD panel for release gate status, evidence counts, latest reviewer metadata, and no gate closure.
   Human decision: HUD gate status is display-only and does not approve publication or close gates.
-- [ ] PM-028 - Next product slice
+- [x] PM-028 - HUD release evidence recording
+  Loop action: added runtime-token-gated HUD evidence metadata recording for release gates with no browser artifact path input and no gate closure.
+  Human decision: HUD evidence recording is metadata only and does not substitute for external validation or acceptance.
+- [ ] PM-029 - Next product slice
   Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and background scheduling.
   Human decision: not selected yet.
 
@@ -117,3 +120,4 @@ Run log: 2026-06-23 | findings: external security review remained an unsurfaced 
 Run log: 2026-06-23 | findings: remaining external gates needed a safe evidence intake path | actions: added state-only release evidence ledger with state-local artifact hashing and no gate closure authority | escalations: 0
 Run log: 2026-06-23 | findings: release evidence needed a non-authoritative status summary | actions: added read-only gate status command that reports open gates and evidence counts without closure | escalations: 0
 Run log: 2026-06-23 | findings: release gate status was CLI-only | actions: surfaced read-only gate status in runtime RPC and HUD with display-only semantics | escalations: 0
+Run log: 2026-06-23 | findings: operator evidence recording needed a HUD path | actions: added runtime-token-gated HUD metadata recording with no browser artifact hashing or gate closure | escalations: 0

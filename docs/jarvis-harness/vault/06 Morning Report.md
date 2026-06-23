@@ -221,6 +221,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated a HUD Release Gates panel backed by read-only `release.gate_status` runtime RPC.
 - Ran final targeted validation: governance PASS, loop readiness PASS, and 303 tests passed.
 - Committed HUD release gate status in `6556e91`.
+- Implemented and validated runtime-token-gated HUD release evidence metadata recording with no browser artifact path input.
+- Ran final targeted validation: governance PASS, loop readiness PASS, HUD browser evidence-flow smoke, and 305 tests passed.
+- Committed HUD release evidence recording in `f2d050e`.
 
 ## Pending
 
