@@ -11,9 +11,24 @@ def write(path: Path, text: str = "ok") -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def electron_package(with_builder: bool = False) -> dict:
+    package = {
+        "scripts": {"start": "electron ."},
+        "devDependencies": {"electron": "42.4.1"},
+    }
+    if with_builder:
+        package["scripts"].update(
+            {
+                "package": "electron-builder --dir --config electron-builder.json",
+                "make": "electron-builder --config electron-builder.json --publish never",
+            }
+        )
+        package["devDependencies"]["electron-builder"] = "26.15.3"
+    return package
+
+
 def test_packaging_preflight_is_read_only_and_detects_electron_package(tmp_path: Path) -> None:
-    package = {"devDependencies": {"electron": "42.4.1"}}
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps(package))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package()))
     before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
 
     preflight = build_packaging_preflight(tmp_path, {})
@@ -21,6 +36,9 @@ def test_packaging_preflight_is_read_only_and_detects_electron_package(tmp_path:
     after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
     assert preflight.electron_hud_present is True
     assert preflight.electron_version == "42.4.1"
+    assert preflight.electron_builder_version is None
+    assert preflight.electron_builder_config_present is False
+    assert preflight.packaging_scripts_present is False
     assert preflight.install_performed is False
     assert preflight.package_build_performed is False
     assert preflight.signing_performed is False
@@ -32,7 +50,7 @@ def test_packaging_preflight_is_read_only_and_detects_electron_package(tmp_path:
 
 
 def test_packaging_preflight_reports_missing_lock_and_install(tmp_path: Path) -> None:
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package()))
 
     preflight = build_packaging_preflight(tmp_path, {})
 
@@ -40,10 +58,13 @@ def test_packaging_preflight_reports_missing_lock_and_install(tmp_path: Path) ->
     assert preflight.node_modules_present is False
     assert any("package-lock.json is missing" in warning for warning in preflight.warnings)
     assert any("dependencies are not installed" in warning for warning in preflight.warnings)
+    assert any("Electron Builder is not declared" in warning for warning in preflight.warnings)
+    assert any("package/make scripts are missing" in warning for warning in preflight.warnings)
 
 
 def test_packaging_preflight_detects_lock_install_and_signing_signal(tmp_path: Path) -> None:
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
     write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
     (tmp_path / "tools/electron-hud/node_modules").mkdir(parents=True)
 
@@ -51,6 +72,9 @@ def test_packaging_preflight_detects_lock_install_and_signing_signal(tmp_path: P
 
     assert preflight.package_lock_present is True
     assert preflight.node_modules_present is True
+    assert preflight.electron_builder_version == "26.15.3"
+    assert preflight.electron_builder_config_present is True
+    assert preflight.packaging_scripts_present is True
     assert preflight.signing_signal_present is True
     assert "secret-signing-material" not in str(preflight.to_dict())
 
@@ -65,7 +89,8 @@ def test_packaging_preflight_missing_package_needs_setup(tmp_path: Path) -> None
 
 
 def test_packaging_preflight_keeps_packaging_commands_as_recommendations(tmp_path: Path) -> None:
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
 
     preflight = build_packaging_preflight(tmp_path, {})
 
@@ -76,8 +101,19 @@ def test_packaging_preflight_keeps_packaging_commands_as_recommendations(tmp_pat
     assert "approve dependency installation before creating node_modules" in preflight.remaining_gates
 
 
+def test_packaging_preflight_does_not_recommend_package_commands_without_reviewed_scripts(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package()))
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert "npm run package" not in preflight.recommended_commands
+    assert "npm run make" not in preflight.recommended_commands
+    assert "add reviewed Electron Builder dependency, config, and package/make scripts" in preflight.remaining_gates
+
+
 def test_packaging_preflight_drops_lock_generation_gate_when_lock_exists(tmp_path: Path) -> None:
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
     write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
 
     preflight = build_packaging_preflight(tmp_path, {})
@@ -89,7 +125,8 @@ def test_packaging_preflight_drops_lock_generation_gate_when_lock_exists(tmp_pat
 
 
 def test_packaging_preflight_drops_install_gate_when_node_modules_exists(tmp_path: Path) -> None:
-    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
     write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
     (tmp_path / "tools/electron-hud/node_modules").mkdir(parents=True)
 
@@ -99,4 +136,4 @@ def test_packaging_preflight_drops_install_gate_when_node_modules_exists(tmp_pat
     assert "npm install" not in preflight.recommended_commands
     assert "approve dependency installation before creating node_modules" not in preflight.remaining_gates
     assert "npm run package" in preflight.recommended_commands
-    assert "add reviewed Electron packaging scripts before running package or make commands" in preflight.remaining_gates
+    assert "add reviewed Electron Builder dependency, config, and package/make scripts" not in preflight.remaining_gates

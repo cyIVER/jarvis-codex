@@ -18,12 +18,21 @@ Then, from this directory after installing the Electron dependency in a separate
 npm start
 ```
 
+Reviewed packaging scripts are present for a future local package/signing phase:
+
+```bash
+npm run package
+npm run make
+```
+
+These commands write package artifacts under the ignored `tools/electron-hud/dist/` directory. They do not imply signing, distribution approval, runtime launch, or artifact publication.
+
 Safety boundaries:
 
 - Loads `http://127.0.0.1:8765` by default.
 - `package-lock.json` pins Electron dependency resolution; it does not mean dependencies are installed.
 - `node_modules` is a local setup artifact only and is ignored by git.
-- Dependency installation, packaging, signing, and artifact copy remain separate approval-gated actions.
+- `electron-builder.json` and the `package`/`make` scripts define a reviewed local packaging path; package execution, signing, and artifact copy remain separate approval-gated actions.
 - Non-loopback runtime URLs require `JARVIS_ELECTRON_ALLOW_NON_LOOPBACK=1` and should be treated as an explicit private-network operator decision.
 - Renderer Node integration is disabled.
 - Context isolation and sandboxing are enabled.

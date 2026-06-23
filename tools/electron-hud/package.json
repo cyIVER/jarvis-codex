@@ -5,9 +5,12 @@
   "description": "Local-only Electron shell for the Jarvis Codex runtime HUD.",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "package": "electron-builder --dir --config electron-builder.json",
+    "make": "electron-builder --config electron-builder.json --publish never"
   },
   "devDependencies": {
-    "electron": "42.4.1"
+    "electron": "42.4.1",
+    "electron-builder": "26.15.3"
   }
 }

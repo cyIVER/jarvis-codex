@@ -18,6 +18,9 @@ class PackagingPreflight:
     npm_available: bool
     node_modules_present: bool
     package_lock_present: bool
+    electron_builder_version: str | None
+    electron_builder_config_present: bool
+    packaging_scripts_present: bool
     signing_signal_present: bool
     install_performed: bool
     package_build_performed: bool
@@ -42,8 +45,12 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     package_json = electron_dir / "package.json"
     package_lock = electron_dir / "package-lock.json"
     node_modules = electron_dir / "node_modules"
+    builder_config = electron_dir / "electron-builder.json"
 
-    electron_version = _electron_version(package_json)
+    package_data = _package_data(package_json)
+    electron_version = _dev_dependency_version(package_data, "electron")
+    electron_builder_version = _dev_dependency_version(package_data, "electron-builder")
+    packaging_scripts_present = _has_packaging_scripts(package_data)
     npm_available = shutil.which("npm") is not None
     signing_signal_present = any(
         bool(source_env.get(name))
@@ -65,10 +72,17 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         warnings.append("Electron HUD package-lock.json is missing; dependency resolution is not pinned yet.")
     if not node_modules.exists():
         warnings.append("Electron HUD dependencies are not installed; do not run npm install without explicit approval.")
+    if electron_builder_version is None:
+        warnings.append("Electron Builder is not declared; packaging scripts cannot build local artifacts yet.")
+    if not builder_config.exists():
+        warnings.append("Electron Builder config is missing; package and make commands are not reviewed yet.")
+    if not packaging_scripts_present:
+        warnings.append("Electron HUD package/make scripts are missing or unreviewed.")
     if not signing_signal_present:
         warnings.append("No signing credential signal detected; signed installers remain blocked.")
 
-    status = "READY_FOR_APPROVAL" if package_json.exists() and npm_available else "NEEDS_SETUP"
+    package_build_ready = package_json.exists() and npm_available and bool(electron_builder_version) and builder_config.exists() and packaging_scripts_present
+    status = "READY_FOR_APPROVAL" if package_build_ready else "NEEDS_SETUP"
 
     recommended_commands: list[str] = []
     remaining_gates: list[str] = []
@@ -78,10 +92,12 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     if not node_modules.exists():
         recommended_commands.append("npm install")
         remaining_gates.append("approve dependency installation before creating node_modules")
-    recommended_commands.extend(["npm run package", "npm run make"])
+    if package_build_ready:
+        recommended_commands.extend(["npm run package", "npm run make"])
+    else:
+        remaining_gates.append("add reviewed Electron Builder dependency, config, and package/make scripts")
     remaining_gates.extend(
         [
-            "add reviewed Electron packaging scripts before running package or make commands",
             "choose Windows/macOS/Linux artifact targets",
             "configure and verify signing credentials without committing secrets",
             "run packaging in an isolated release worktree or clean checkout",
@@ -98,6 +114,9 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         npm_available=npm_available,
         node_modules_present=node_modules.exists(),
         package_lock_present=package_lock.exists(),
+        electron_builder_version=electron_builder_version,
+        electron_builder_config_present=builder_config.exists(),
+        packaging_scripts_present=packaging_scripts_present,
         signing_signal_present=signing_signal_present,
         install_performed=False,
         package_build_performed=False,
@@ -112,15 +131,26 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     )
 
 
-def _electron_version(package_json: Path) -> str | None:
+def _package_data(package_json: Path) -> dict[str, Any]:
     if not package_json.exists():
-        return None
+        return {}
     try:
-        data = json.loads(package_json.read_text(encoding="utf-8"))
+        value = json.loads(package_json.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return None
-    dev_dependencies = data.get("devDependencies")
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _dev_dependency_version(package_data: Mapping[str, Any], dependency: str) -> str | None:
+    dev_dependencies = package_data.get("devDependencies")
     if not isinstance(dev_dependencies, dict):
         return None
-    value = dev_dependencies.get("electron")
+    value = dev_dependencies.get(dependency)
     return str(value) if value is not None else None
+
+
+def _has_packaging_scripts(package_data: Mapping[str, Any]) -> bool:
+    scripts = package_data.get("scripts")
+    if not isinstance(scripts, dict):
+        return False
+    return scripts.get("package") == "electron-builder --dir --config electron-builder.json" and scripts.get("make") == "electron-builder --config electron-builder.json --publish never"

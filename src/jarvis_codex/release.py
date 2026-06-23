@@ -297,6 +297,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "tools/electron-hud/electron-builder.json",
+            "electron-hud-builder-config",
+            True,
+            False,
+            "Reviewed Electron Builder package configuration; it is not evidence that package or signing commands ran.",
+        ),
+        _artifact(
+            root,
             "tools/electron-hud/main.js",
             "electron-hud-main",
             True,

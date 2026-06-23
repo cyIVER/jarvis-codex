@@ -168,10 +168,11 @@ This note backs the morning HTML dashboard.
 - Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
 - Ran final integrated validation: governance PASS, 248 tests passed.
 - Refreshed Codeburn snapshot: month `$625.53`, 6657 calls.
+- Added Electron Builder `26.15.3`, `electron-builder.json`, and reviewed package/make scripts so packaging preflight can recommend `npm run package` and `npm run make` while keeping package execution, signing, and artifact distribution gated.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron package/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approval-gated Electron package execution/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
