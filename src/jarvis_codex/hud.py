@@ -135,7 +135,7 @@ HUD_HTML = """<!doctype html>
       margin: 0 auto;
       padding: 12px 0;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       gap: 12px;
     }
 
@@ -260,6 +260,36 @@ HUD_HTML = """<!doctype html>
       line-height: 1.45;
       border-top: 1px solid var(--line-soft);
       padding-top: 10px;
+    }
+
+    .operator-command {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: rgba(1, 13, 20, 0.86);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .operator-command label {
+      color: var(--green);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .operator-command input {
+      min-width: 0;
+    }
+
+    .operator-command-status {
+      grid-column: 2 / -1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
     }
 
     .page-stack {
@@ -472,10 +502,15 @@ HUD_HTML = """<!doctype html>
     @media (max-width: 1000px) {
       header,
       .app-layout,
+      .operator-command,
       .page-grid,
       .flow-grid,
       .quick-start {
         grid-template-columns: 1fr;
+      }
+
+      .operator-command-status {
+        grid-column: 1;
       }
 
       .shell {
@@ -517,6 +552,15 @@ HUD_HTML = """<!doctype html>
       </div>
       <div class="core" aria-label="runtime core status"><span><strong>ONLINE</strong>Runtime Core</span></div>
     </header>
+
+    <section class="operator-command" aria-label="Jarvis operator command line">
+      <label for="shell-command-input">Jarvis&gt;</label>
+      <input id="shell-command-input" type="text" autocomplete="off" placeholder="Type intent. Enter records; no execution.">
+      <button id="shell-command-record" type="button">Record Intent</button>
+      <button id="shell-command-create" type="button">New Session</button>
+      <button id="shell-command-voice" type="button">Voice</button>
+      <div id="shell-command-status" class="operator-command-status">Shell input is state-only. Create or select a session, then record intent or use Voice for microphone input.</div>
+    </section>
 
     <section class="app-layout" aria-label="Jarvis workspace">
       <nav class="nav-pane" aria-label="Jarvis pages">
@@ -796,6 +840,11 @@ HUD_JS = r"""(() => {
   const recordReleaseEvidence = document.getElementById("record-release-evidence");
   const releaseEvidenceStatus = document.getElementById("release-evidence-status");
   const refreshReadiness = document.getElementById("refresh-readiness");
+  const shellCommandInput = document.getElementById("shell-command-input");
+  const shellCommandRecord = document.getElementById("shell-command-record");
+  const shellCommandCreate = document.getElementById("shell-command-create");
+  const shellCommandVoice = document.getElementById("shell-command-voice");
+  const shellCommandStatus = document.getElementById("shell-command-status");
   const navButtons = Array.from(document.querySelectorAll("[data-page-target]"));
   const pages = Array.from(document.querySelectorAll("[data-page]"));
   let socket;
@@ -871,6 +920,10 @@ HUD_JS = r"""(() => {
     return sessionProfile.value || "observe";
   }
 
+  function hasActiveOperatorSession() {
+    return Boolean(activeSessionId && activeSessionId !== "hud");
+  }
+
   function showPage(name) {
     for (const page of pages) {
       page.classList.toggle("active", page.dataset.page === name);
@@ -885,6 +938,42 @@ HUD_JS = r"""(() => {
 
   for (const button of navButtons) {
     button.addEventListener("click", () => showPage(button.dataset.pageTarget));
+  }
+
+  function createHudSession() {
+    request("session.create", {
+      title: `HUD session ${new Date().toLocaleString()}`,
+      profile_id: selectedProfileId(),
+      source_client: "hud",
+      actor_id: "user"
+    });
+    shellCommandStatus.textContent = "Session creation requested. Recording intent remains state-only.";
+    log("HUD session creation requested.");
+  }
+
+  function recordPromptText(text, sourceClient) {
+    const cleanText = text.trim();
+    if (!cleanText) {
+      shellCommandStatus.textContent = "Nothing recorded. Type an intent first.";
+      log("Prompt text is empty; nothing recorded.");
+      return false;
+    }
+    if (!hasActiveOperatorSession()) {
+      shellCommandStatus.textContent = "Create or select a HUD session before recording shell input. No command was executed.";
+      showPage("session");
+      log("Shell input requires an active session. Nothing executed.");
+      return false;
+    }
+    request("prompt.send", {
+      session_id: currentSessionId(),
+      text: cleanText,
+      target: "planning",
+      source_client: sourceClient,
+      actor_id: "user"
+    });
+    shellCommandStatus.textContent = "Intent record requested. This does not execute Codex, Antigravity, PTYs, Worktrunk, or shell commands.";
+    log("Prompt record requested. This does not execute a command or agent.");
+    return true;
   }
 
   function swarmLaunchRoles() {
@@ -981,6 +1070,8 @@ HUD_JS = r"""(() => {
       if (frame.type === "response" && frame.result && frame.result.prompt_event_id) {
         log(`Prompt recorded for ${frame.result.session_id}. No execution authority granted.`);
         promptText.value = "";
+        shellCommandInput.value = "";
+        shellCommandStatus.textContent = `Intent recorded for ${frame.result.session_id}. No execution authority granted.`;
         refreshSessionHistory();
         requestIndex.delete(frame.id);
         return;
@@ -1053,6 +1144,7 @@ HUD_JS = r"""(() => {
       if (frame.type === "response" && frame.result && frame.result.session_id) {
         activeSessionId = frame.result.session_id;
         activeSession.textContent = `Active session: ${activeSessionId}`;
+        shellCommandStatus.textContent = `Active session ${activeSessionId}. Shell input records planning context only.`;
         log(`HUD session active: ${activeSessionId}.`);
         request("session.list", { status: "active", limit: 25 });
         refreshSessionHistory();
@@ -1182,15 +1274,7 @@ HUD_JS = r"""(() => {
     });
   });
 
-  createSession.addEventListener("click", () => {
-    request("session.create", {
-      title: `HUD session ${new Date().toLocaleString()}`,
-      profile_id: selectedProfileId(),
-      source_client: "hud",
-      actor_id: "user"
-    });
-    log("HUD session creation requested.");
-  });
+  createSession.addEventListener("click", createHudSession);
 
   setSessionProfile.addEventListener("click", () => {
     request("profile.set", {
@@ -1204,19 +1288,29 @@ HUD_JS = r"""(() => {
   });
 
   sendPrompt.addEventListener("click", () => {
-    const text = promptText.value.trim();
-    if (!text) {
-      log("Prompt text is empty; nothing recorded.");
-      return;
+    recordPromptText(promptText.value, "hud");
+  });
+
+  shellCommandRecord.addEventListener("click", () => {
+    recordPromptText(shellCommandInput.value, "hud.command_bar");
+  });
+
+  shellCommandInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      recordPromptText(shellCommandInput.value, "hud.command_bar");
     }
-    request("prompt.send", {
-      session_id: currentSessionId(),
-      text,
-      target: "planning",
-      source_client: "hud",
-      actor_id: "user"
-    });
-    log("Prompt record requested. This does not execute a command or agent.");
+  });
+
+  shellCommandCreate.addEventListener("click", () => {
+    showPage("session");
+    createHudSession();
+  });
+
+  shellCommandVoice.addEventListener("click", () => {
+    showPage("voice");
+    micToggle.focus();
+    shellCommandStatus.textContent = "Voice page selected. Click Mic to request browser microphone permission.";
   });
 
   recordSwarmPlan.addEventListener("click", () => {

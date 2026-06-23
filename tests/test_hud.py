@@ -20,6 +20,13 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'data-page-target="loop"' in response.text
     assert 'data-page-target="release"' in response.text
     assert "Use pages like a shell workspace" in response.text
+    assert 'aria-label="Jarvis operator command line"' in response.text
+    assert 'id="shell-command-input"' in response.text
+    assert 'id="shell-command-record"' in response.text
+    assert 'id="shell-command-create"' in response.text
+    assert 'id="shell-command-voice"' in response.text
+    assert "Shell input is state-only" in response.text
+    assert "no execution" in response.text
     assert 'id="mic-toggle"' in response.text
     assert 'id="speak-status"' in response.text
     assert 'id="proposal-preview"' in response.text
@@ -127,6 +134,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "SpeechSynthesisUtterance" in response.text
     assert "showPage(name)" in response.text
     assert "Page selected" in response.text
+    assert "recordPromptText" in response.text
+    assert "hud.command_bar" in response.text
+    assert "Shell input requires an active session" in response.text
+    assert "This does not execute Codex, Antigravity, PTYs, Worktrunk, or shell commands" in response.text
     assert "speakRuntimeStatus" in response.text
     assert "No local TTS command was run" in response.text
     assert "MediaRecorder" in response.text

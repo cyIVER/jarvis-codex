@@ -76,6 +76,12 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
             page.locator("[data-page-target='session']").click()
             page.locator("#create-session").click()
             expect(page.locator("#active-session")).to_contain_text("Active session:", timeout=5000)
+            expect(page.locator("#shell-command-status")).to_contain_text("Shell input records planning context only", timeout=5000)
+
+            page.locator("#shell-command-input").fill("Summarize current release readiness")
+            page.locator("#shell-command-record").click()
+            expect(page.locator("#shell-command-status")).to_contain_text("Intent recorded", timeout=5000)
+            expect(page.locator("#console")).to_contain_text("Prompt recorded", timeout=5000)
 
             page.locator("[data-page-target='loop']").click()
             page.locator("#loop-objective").fill("Continue governed overnight loop")
@@ -127,6 +133,8 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
 
             page.locator("[data-page-target='session']").click()
             page.locator("#refresh-session-history").click()
+            expect(page.locator("#session-history")).to_contain_text("prompt.sent", timeout=5000)
+            expect(page.locator("#session-history")).to_contain_text("Summarize current release readiness", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("command.proposed", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("loop.started", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("swarm.started", timeout=5000)
