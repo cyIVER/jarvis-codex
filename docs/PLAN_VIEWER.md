@@ -63,6 +63,12 @@ The `--open` flag belongs only to the static viewer script. It opens the local v
 
 The static viewer does not publish, call hosted Agent-Native URLs, load external CDN assets, or execute plan content.
 
+## Browser Smoke Validation
+
+`tests/test_static_plan_viewer_browser.py` starts the static viewer handler on a random `127.0.0.1` port with a temporary plans directory and renders it in headless Chromium through Playwright.
+
+The smoke test verifies the page title, active plan selection, rendered headings, rendered fenced code, outline entries, and absence of browser console or page errors. It does not use `--open`, does not execute displayed commands, and shuts down the local test server during teardown.
+
 ## Review Scope
 
 The viewers render headings, paragraphs, lists, tables, blockquotes, fenced code, and inline links or code. Mermaid and MDX-specific blocks are treated as readable review content, not as a full MDX runtime.

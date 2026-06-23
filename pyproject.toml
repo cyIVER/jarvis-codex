@@ -9,7 +9,10 @@ authors = [{ name = "cyiver" }]
 dependencies = []
 
 [dependency-groups]
-dev = ["pytest>=9.1.1"]
+dev = [
+    "playwright>=1.60.0",
+    "pytest>=9.1.1",
+]
 
 [project.scripts]
 jarvis-codex = "jarvis_codex.cli:main"
