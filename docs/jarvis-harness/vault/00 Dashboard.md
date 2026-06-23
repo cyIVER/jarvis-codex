@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 07:33 EDT
+updated: 2026-06-23 07:41 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -83,7 +83,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only release artifact evidence reports size/SHA-256 for the committed icon and ignored Electron artifacts.
 - The HUD renders a non-writing Codex, Antigravity, and Codeburn provider status matrix.
 - Read-only mobile evidence brief committed and pushed as `467c4c6`; it packages iPhone validation evidence collection without launching, probing, browsing, writing state, or closing gates.
-- Current Codeburn snapshot: today `$13.24` across 114 calls; month `$723.81`, 7507 calls.
+- Read-only Gemini Live evidence brief committed and pushed as `4f3d540`; it packages credential, billing, redaction, network-test, fallback, and release-ledger requirements without OAuth, WebSockets, network probes, state writes, cloud-spend authority, or gate closure.
+- Current Codeburn snapshot: today `$16.55` across 154 calls; month `$727.12`, 7547 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -127,6 +128,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Mobile evidence brief is an operator collection aid only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or close the actual mobile validation gate.
+- Gemini Live evidence brief is an operator collection aid only; it does not start OAuth, open WebSockets, probe the network, launch adapters, approve cloud spend, write state, or close the networked Gemini validation gate.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
@@ -145,6 +147,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gates: real iPhone private-network validation using the operator evidence brief, approved Gemini Live network test, Electron signing/distribution flow, signed release packaging, external reviewer attestation, unattended/background scheduling policy, and safe runtime operator polish.
+1. Continue with remaining production gates: real iPhone private-network validation using the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, Electron signing/distribution flow, signed release packaging, external reviewer attestation, unattended/background scheduling policy, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

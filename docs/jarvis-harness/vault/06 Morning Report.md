@@ -243,10 +243,15 @@ This note backs the morning HTML dashboard.
 - Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, mobile evidence-brief proof, release checklist linkage PASS, and 315 tests passed.
 - Committed and pushed mobile validation evidence brief in `467c4c6`.
 - Refreshed Codeburn snapshot: today `$13.24` across 114 calls; month `$723.81`, 7507 calls.
+- Implemented and validated read-only `jarvis-codex gemini evidence-brief --json`; it packages credential mode, billing/quota review, redaction requirements, approval-gated network-test expectations, and release evidence recording command without starting OAuth, opening WebSockets, probing the network, approving cloud spend, writing state, or closing `networked_gemini_live_validation`.
+- Ran Antigravity challenge review on the Gemini evidence brief; no read-only boundary issue was found.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, Gemini evidence-brief proof, release checklist linkage PASS, and 319 tests passed.
+- Committed and pushed Gemini Live validation evidence brief in `4f3d540`.
+- Refreshed Codeburn snapshot: today `$16.55` across 154 calls; month `$727.12`, 7547 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with the operator evidence brief, approved Gemini Live network test, Electron signing/distribution flow, accepted unattended/background scheduling evidence, signed release packaging, and external security reviewer attestation.
+- Remaining production gaps: real iPhone private-network validation with the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, Electron signing/distribution flow, accepted unattended/background scheduling evidence, signed release packaging, and external security reviewer attestation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
