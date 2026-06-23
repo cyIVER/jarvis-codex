@@ -131,6 +131,14 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
             page.locator("#launch-approved-swarm").click()
             expect(page.locator("#swarm-launch-status")).to_contain_text("Swarm launched", timeout=5000)
 
+            page.locator("[data-page-target='overview']").click()
+            page.locator("#ag-challenge-brief").fill("Challenge the release plan for hidden safety gaps")
+            page.locator("#request-ag-challenge-approval").click()
+            expect(page.locator("#ag-challenge-status")).to_contain_text("No PTY was launched", timeout=5000)
+            page.locator("[data-page-target='voice']").click()
+            expect(page.locator("#approvals-list")).to_contain_text("Launch Antigravity challenge pane", timeout=5000)
+            expect(page.locator("#approvals-list")).to_contain_text("challenge_brief", timeout=5000)
+
             page.locator("[data-page-target='session']").click()
             page.locator("#refresh-session-history").click()
             expect(page.locator("#session-history")).to_contain_text("prompt.sent", timeout=5000)

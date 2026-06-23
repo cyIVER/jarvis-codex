@@ -35,6 +35,7 @@ Implemented and validated in the local FastAPI runtime:
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
 - Runtime-served screen-sized HUD shell with operator navigation pages for Codex, Antigravity, Codeburn, approvals, voice, sessions, loops, release gates, and PWA status.
 - Shell-style HUD operator command bar for recording planning intent into session history; it does not execute Codex, Antigravity, PTYs, Worktrunk, shell commands, or runtime workflows.
+- HUD Antigravity challenge approval requests that package a review brief for an approval-gated `agy` pane without launching AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows.
 - HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
 - HUD mobile access readiness panel backed by non-writing mobile host discovery.
 - Browser click-to-arm microphone flow with browser STT where available.
@@ -86,7 +87,6 @@ The following remain future or incomplete production gates:
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
 - Higher-level unattended or background loop operation beyond bounded foreground `loop schedule`, read-only policy reporting, and read-only evidence briefing.
-- AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
 - External security review.

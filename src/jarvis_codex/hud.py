@@ -606,9 +606,12 @@ HUD_HTML = """<!doctype html>
               <div class="panel-body pane-list">
                 <div class="agent-pane"><div><strong>Codex</strong><span>Implementation and verification lane</span></div><button data-pane="codex">Prepare</button></div>
                 <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
+                <div class="agent-pane"><div><strong>AG Challenge</strong><span>Approval-only adversarial review brief</span></div><button id="request-ag-challenge-approval" type="button">Challenge</button></div>
                 <div class="agent-pane"><div><strong>Codeburn</strong><span>Fixed no-shell usage telemetry lane</span></div><button id="refresh-codeburn" type="button">Status</button></div>
               </div>
               <div id="agent-provider-list" class="log">Agent provider readiness pending. Status checks do not launch providers.</div>
+              <textarea id="ag-challenge-brief" rows="3" placeholder="Antigravity challenge brief. Example: Review this plan for hidden release, safety, and architecture risks."></textarea>
+              <div id="ag-challenge-status" class="log">Antigravity challenge requests are approval-only. They do not launch AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows.</div>
               <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
             </div>
           </div>
@@ -779,6 +782,9 @@ HUD_JS = r"""(() => {
   const approvalCount = document.getElementById("approval-count");
   const agentProviderStatus = document.getElementById("agent-provider-status");
   const agentProviderList = document.getElementById("agent-provider-list");
+  const agChallengeBrief = document.getElementById("ag-challenge-brief");
+  const requestAgChallengeApproval = document.getElementById("request-ag-challenge-approval");
+  const agChallengeStatus = document.getElementById("ag-challenge-status");
   const approvalsList = document.getElementById("approvals-list");
   const approvedLaunches = document.getElementById("approved-launches");
   const activeSession = document.getElementById("active-session");
@@ -1272,6 +1278,30 @@ HUD_JS = r"""(() => {
       });
       log(`${launch.label} pane launch approval requested. No PTY was started.`);
     });
+  });
+
+  requestAgChallengeApproval.addEventListener("click", () => {
+    const brief = agChallengeBrief.value.trim() || "Review the current Jarvis plan for hidden release, safety, and architecture risks.";
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: `Launch Antigravity challenge pane: ${brief.slice(0, 96)}`,
+      operation: "agy",
+      risk: "high",
+      scope: {
+        source: "hud.pane.prepare",
+        pane: "antigravity",
+        mode: "challenge",
+        command: "agy",
+        profile: "observe",
+        challenge_brief: brief,
+        runtime_supervised: true,
+        execution_authority: false
+      },
+      source_client: "hud",
+      actor_id: "user"
+    });
+    agChallengeStatus.textContent = "Antigravity challenge approval requested. No PTY was launched; approved launch still requires the separate approved-launch control.";
+    log("Antigravity challenge approval requested. No AG process, PTY, shell command, Worktrunk, or workflow was launched.");
   });
 
   createSession.addEventListener("click", createHudSession);

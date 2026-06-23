@@ -27,6 +27,7 @@ The current release is a governed local operating substrate:
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
 - read-only release readiness checklist that aggregates open release gates and next actions without running them
 - screen-sized multi-page HUD navigation, shell-style state-only operator intent bar, release gate status, release evidence metadata recording, and release readiness checklist panels
+- approval-only Antigravity challenge requests surfaced in the HUD without launching AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows
 - approval-gated backend swarm role launch and HUD swarm launch controls
 - mobile operator evidence brief for private iPhone/PWA validation collection
 - Gemini Live operator evidence brief for redacted network-validation collection

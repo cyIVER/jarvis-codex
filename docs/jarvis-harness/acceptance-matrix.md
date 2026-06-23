@@ -19,7 +19,7 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 | Loop | Bounded run-once and foreground schedule execute fixed validators/readiness collectors and write local evidence; unattended policy is reportable. | Loop readiness, unattended policy, and autonomous-loop tests. | No daemon/background scheduling, arbitrary commands, agent fanout, or unattended mutation. |
 | Release review | Manifest, artifact evidence, gate status, readiness checklist, external security packet, and evidence ledger are available. | Release, CLI, runtime, HUD, and browser smoke tests. | Review-only; no signing, copying, publishing, gate closure, or external acceptance. |
 | Codeburn | Usage snapshots are captured at phase boundaries. | CLI smoke and readiness note checks. | Missing telemetry should be reported as a warning, not treated as release proof. |
-| AG review | High-risk phases receive read-only AG challenge review when useful. | Readiness note evidence and explicit challenge passes. | AG output is advisory; Codex remains responsible for edits and verification. |
+| AG review | High-risk phases receive read-only AG challenge review when useful. | HUD challenge approval request coverage and explicit challenge passes. | AG output is advisory; approved AG panes remain runtime-gated and do not become execution authority. |
 | Git flow | Coherent phase commits are pushed after validation. | Git log, status checks, and CI. | Commit/push may occur only after scoped validation; no destructive git commands. |
 | Safety | Destructive, secret, money, public exposure, and high-risk runtime actions are gated. | Hardline blocklist tests and release readiness checks. | Evidence and UI display never close gates automatically. |
 
@@ -47,4 +47,4 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 - Local TTS quality is below target.
 - Mobile HUD is functional but less cinematic than desktop.
 - Codeburn telemetry unavailable or incomplete.
-- AG challenge unavailable; replace with local adversary review.
+- AG challenge still requires explicit operator approval before any `agy` pane launch.

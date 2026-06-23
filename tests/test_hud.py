@@ -33,6 +33,10 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="request-proposal-approval"' in response.text
     assert 'id="agent-provider-status"' in response.text
     assert 'id="agent-provider-list"' in response.text
+    assert 'id="ag-challenge-brief"' in response.text
+    assert 'id="request-ag-challenge-approval"' in response.text
+    assert 'id="ag-challenge-status"' in response.text
+    assert "Antigravity challenge requests are approval-only" in response.text
     assert 'id="approvals-list"' in response.text
     assert 'id="approved-launches"' in response.text
     assert 'id="active-session"' in response.text
@@ -224,6 +228,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "semantic history" in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
     assert 'request("agent.provider_status")' in response.text
+    assert "requestAgChallengeApproval" in response.text
+    assert "Launch Antigravity challenge pane" in response.text
+    assert "challenge_brief" in response.text
+    assert "No AG process, PTY, shell command, Worktrunk, or workflow was launched" in response.text
     assert 'request("runtime.readiness")' in response.text
     assert 'request("release.gate_status")' in response.text
     assert 'request("release.readiness_checklist")' in response.text
