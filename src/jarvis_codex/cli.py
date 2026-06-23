@@ -6,7 +6,7 @@ from pathlib import Path
 
 import uvicorn
 
-from .autonomous_loop import run_autonomous_loop_once
+from .autonomous_loop import run_autonomous_loop_once, run_autonomous_loop_schedule
 from .gemini import build_gemini_feasibility, build_gemini_live_validation_plan
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
@@ -140,6 +140,16 @@ def main() -> int:
         action="store_true",
         help="Required confirmation to run fixed validators and write a loop-run record under --state",
     )
+    loop_schedule = loop_sub.add_parser("schedule", help="Run a bounded foreground schedule of fixed loop iterations")
+    loop_schedule.add_argument("--root", default=".", help="Repository root to inspect")
+    loop_schedule.add_argument("--json", action="store_true", help="Print loop schedule result as JSON")
+    loop_schedule.add_argument(
+        "--allow-validation",
+        action="store_true",
+        help="Required confirmation to run fixed validators and write schedule records under --state",
+    )
+    loop_schedule.add_argument("--max-iterations", type=int, default=2, help="Bounded iteration count, 1 through 12")
+    loop_schedule.add_argument("--interval-seconds", type=int, default=300, help="Sleep interval between iterations, 0 through 3600")
     doctor = sub.add_parser("doctor", help="Inspect state")
     doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
@@ -286,6 +296,18 @@ def main() -> int:
             if not args.allow_validation:
                 parser.error("loop run-once requires --allow-validation")
             result = run_autonomous_loop_once(Path(args.root), Path(args.state), allow_validation=True)
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+            return 0 if result.status == "PASS" else 1
+        if args.loop_command == "schedule":
+            if not args.allow_validation:
+                parser.error("loop schedule requires --allow-validation")
+            result = run_autonomous_loop_schedule(
+                Path(args.root),
+                Path(args.state),
+                allow_validation=True,
+                max_iterations=args.max_iterations,
+                interval_seconds=args.interval_seconds,
+            )
             print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
             return 0 if result.status == "PASS" else 1
     if args.command == "doctor":

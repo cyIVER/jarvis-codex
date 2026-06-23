@@ -73,8 +73,11 @@ pattern: product-readiness-triage
 - [x] PM-022 - HUD swarm launch controls
   Loop action: added HUD controls to request exact scoped `swarm.launch` approval and launch approved role-labeled PTY panes through runtime policy.
   Human decision: launches still require a recorded swarm lifecycle event, matching approval id, HUD runtime token, and hardline policy clearance.
-- [ ] PM-023 - Next product slice
-  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and unattended loop scheduling.
+- [x] PM-023 - Bounded foreground loop scheduler
+  Loop action: added `jarvis-codex loop schedule --allow-validation --json` for capped foreground scheduling of fixed `loop run-once` iterations with local schedule evidence.
+  Human decision: this is not a daemon or background scheduler; higher-level unattended scheduling remains a separate release gate.
+- [ ] PM-024 - Next product slice
+  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and background scheduling.
   Human decision: not selected yet.
 
 ## Watch List

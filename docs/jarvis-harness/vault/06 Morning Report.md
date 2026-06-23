@@ -203,10 +203,13 @@ This note backs the morning HTML dashboard.
 - Added browser smoke coverage for the full HUD swarm launch path: plan, lifecycle start approval, launch approval, approved PTY launch, and `swarm.launched` history.
 - Ran Antigravity challenge review on the HUD launch controls and hardened frozen role-scope launch submission, explicit non-execution lifecycle approval scopes, and approval-id clearing.
 - Committed and pushed HUD swarm launch controls in `c390992`.
+- Implemented bounded foreground `loop schedule` for capped fixed `loop run-once` iterations with local schedule evidence and no daemon/background behavior.
+- Ran Antigravity challenge review on the scheduler and kept the broader `unattended_loop_scheduling` release gate open for future background scheduling.
+- Ran scheduler validation: governance PASS, scheduler smoke PASS, and focused scheduler/CLI/release/loop-readiness tests passed.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, unattended loop scheduling, signed release packaging, and external security review.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, background/unattended loop scheduling, signed release packaging, and external security review.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

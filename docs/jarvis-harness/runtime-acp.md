@@ -55,6 +55,8 @@ Loop lifecycle methods record approved state only. They do not launch agents, st
 
 The CLI also exposes `jarvis-codex loop run-once --allow-validation --json` for one bounded loop iteration. It runs only fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records evidence under the selected `--state` directory. It is not a generic command runner and does not launch services, agents, PTYs, Worktrunk, Git mutation, network probes, or runtime workflows.
 
+`jarvis-codex loop schedule --allow-validation --max-iterations <n> --interval-seconds <seconds> --json` runs a bounded foreground schedule of those fixed loop iterations. It caps iterations at 12, caps the sleep interval at 3600 seconds, writes schedule evidence under `--state`, and does not start a daemon, background itself, accept arbitrary command strings, launch services, agents, PTYs, Worktrunk, Git mutation, network probes, or runtime workflows.
+
 The wire model should separate:
 
 - JSON-RPC request and response frames.

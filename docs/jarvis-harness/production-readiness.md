@@ -23,6 +23,7 @@ Implemented and validated in the local FastAPI runtime:
 - Approval-gated role-labeled swarm launch through `swarm.launch`; it requires exact scoped approval for role command/profile/cwd plus the HUD runtime token, starts PTY panes through runtime policy, preserves hardline blocks, and does not mutate Worktrunk or Git.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
+- Foreground bounded loop scheduling through `jarvis-codex loop schedule --allow-validation --json`; it runs only fixed `run-once` iterations, caps iterations and interval length, writes schedule evidence under the selected `--state`, and starts no daemon.
 - HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through the runtime policy gate.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
 - HUD session history panel backed by `message.list`.
@@ -70,7 +71,7 @@ The following remain future or incomplete production gates:
 - Electron desktop app signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- Higher-level unattended loop scheduling beyond bounded `loop run-once`.
+- Higher-level unattended or background loop scheduling beyond bounded foreground `loop schedule`.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
@@ -89,6 +90,7 @@ The following remain future or incomplete production gates:
 - Swarm role launch requires a matching `swarm.launch` approval that exactly names role IDs, commands, profiles, and cwd values, plus the HUD runtime token. Hardline blocks override approvals. The launch method starts only runtime-managed PTYs and must not mutate Worktrunk, mutate Git, or execute runtime workflows.
 - Loop lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as autonomous execution, agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
 - Bounded `loop run-once` does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
+- Bounded `loop schedule` does not start a daemon, background itself, accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.

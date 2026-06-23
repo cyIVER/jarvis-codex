@@ -68,6 +68,14 @@ It writes a loop-run JSON record under the selected `--state` directory and appe
 
 It does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or run runtime workflows.
 
+## Bounded Loop Scheduler
+
+`jarvis-codex loop schedule --allow-validation --max-iterations <n> --interval-seconds <seconds> --json` runs a bounded foreground schedule of fixed `loop run-once` iterations.
+
+The scheduler requires explicit `--allow-validation`, requires JSON output, caps iterations at 12, caps the sleep interval at 3600 seconds, sleeps only between fixed iterations, and writes schedule evidence under the selected `--state` directory.
+
+It does not start a daemon, background itself, accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or run runtime workflows.
+
 ## Risk-Scaled Spawning
 
 Risk factors:

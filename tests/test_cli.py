@@ -629,6 +629,77 @@ def test_loop_run_once_json_records_bounded_execution(tmp_path, monkeypatch, cap
     assert data["service_launch_performed"] is False
 
 
+def test_loop_schedule_requires_allow_validation(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "schedule", "--json"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_loop_schedule_json_records_bounded_foreground_execution(tmp_path, monkeypatch, capsys):
+    seen = {}
+
+    class FakeLoopSchedule:
+        status = "PASS"
+
+        def to_dict(self):
+            return {
+                "schedule_id": "schedule_fixture",
+                "status": "PASS",
+                "iterations_requested": 3,
+                "iterations_completed": 3,
+                "interval_seconds": 0,
+                "writes_state": True,
+                "execution_authority": False,
+                "arbitrary_command_execution": False,
+                "service_launch_performed": False,
+                "daemon_started": False,
+                "scheduler_backgrounded": False,
+            }
+
+    def fake_schedule(root, state_root, *, allow_validation, max_iterations, interval_seconds):
+        seen["root"] = root
+        seen["state_root"] = state_root
+        seen["allow_validation"] = allow_validation
+        seen["max_iterations"] = max_iterations
+        seen["interval_seconds"] = interval_seconds
+        return FakeLoopSchedule()
+
+    monkeypatch.setattr(cli, "run_autonomous_loop_schedule", fake_schedule)
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "loop",
+            "schedule",
+            "--root",
+            "/repo",
+            "--allow-validation",
+            "--max-iterations",
+            "3",
+            "--interval-seconds",
+            "0",
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert str(seen["state_root"]) == str(tmp_path / "state")
+    assert seen["allow_validation"] is True
+    assert seen["max_iterations"] == 3
+    assert seen["interval_seconds"] == 0
+    assert data["status"] == "PASS"
+    assert data["execution_authority"] is False
+    assert data["daemon_started"] is False
+    assert data["scheduler_backgrounded"] is False
+
+
 def test_loop_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "verify"])
 

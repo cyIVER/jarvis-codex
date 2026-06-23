@@ -135,8 +135,11 @@ CLI loop execution:
 
 - `jarvis-codex loop verify --json`
 - `jarvis-codex loop run-once --allow-validation --json`
+- `jarvis-codex loop schedule --allow-validation --max-iterations <n> --interval-seconds <seconds> --json`
 
 `loop run-once` runs only fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry. It writes a loop-run JSON record under the selected `--state` directory and appends `logs/loop-runs.jsonl`. It does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
+
+`loop schedule` runs a bounded foreground schedule of fixed `loop run-once` iterations. It caps iterations at 12, caps the sleep interval at 3600 seconds, writes `loop-schedules` evidence under the selected `--state` directory, and does not start a daemon, background itself, accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
 
 Telemetry:
 
