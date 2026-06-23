@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import wave
 from dataclasses import dataclass
 
 import pytest
@@ -35,6 +36,14 @@ class FakeGovernanceResult:
 def run_cli(monkeypatch, args):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", *args])
     return cli.main()
+
+
+def write_wav(path):
+    with wave.open(str(path), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(16000)
+        wav.writeframes(b"\x00\x00" * 160)
 
 
 def test_doctor_default_compact_output_has_no_governance(tmp_path, monkeypatch, capsys):
@@ -281,6 +290,41 @@ def test_voice_commands_require_json(tmp_path, monkeypatch):
         cli.main()
 
     assert exc_info.value.code == 2
+
+
+def test_voice_probe_checks_stt_readiness_without_runtime_or_state(tmp_path, monkeypatch, capsys):
+    audio = tmp_path / "sample.wav"
+    model = tmp_path / "ggml-base.en.bin"
+    write_wav(audio)
+    model.write_bytes(b"model")
+    state = tmp_path / "state"
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "voice",
+            "probe",
+            "--audio-file",
+            str(audio),
+            "--model",
+            str(model),
+            "--stt-command",
+            sys.executable,
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "PASS"
+    assert data["source"] == "voice-audio-probe"
+    assert data["runtime_started"] is False
+    assert data["audio_processed"] is False
+    assert data["writes_state"] is False
+    assert data["audio"]["whisper_cpp_compatible"] is True
+    assert not state.exists()
 
 
 def test_voice_ingest_audio_requires_approval_without_runtime(tmp_path, monkeypatch, capsys):

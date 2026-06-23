@@ -11,7 +11,7 @@ from .loop_readiness import validate_loop_readiness
 from .release import build_release_manifest
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
-from .voice import ingest_audio_file, ingest_transcript_file
+from .voice import ingest_audio_file, ingest_transcript_file, probe_audio_file
 
 
 def main() -> int:
@@ -49,6 +49,11 @@ def main() -> int:
     )
     voice = sub.add_parser("voice", help="Capture voice-origin input through transcript or approved local STT")
     voice_sub = voice.add_subparsers(dest="voice_command", required=True)
+    voice_probe = voice_sub.add_parser("probe", help="Check local STT inputs without processing audio")
+    voice_probe.add_argument("--audio-file", required=True, help="Path to a local audio file for STT")
+    voice_probe.add_argument("--model", required=True, help="Path to an explicit local STT model file")
+    voice_probe.add_argument("--stt-command", required=True, help="Local STT adapter command to inspect")
+    voice_probe.add_argument("--json", action="store_true", help="Print STT readiness as JSON")
     voice_ingest = voice_sub.add_parser("ingest", help="Capture a transcript file or approved local STT audio file")
     voice_source = voice_ingest.add_mutually_exclusive_group(required=True)
     voice_source.add_argument("--transcript-file", help="Path to a UTF-8 text transcript")
@@ -121,6 +126,10 @@ def main() -> int:
     if args.command == "voice":
         if not args.json:
             parser.error("voice commands are JSON-only; pass --json")
+        if args.voice_command == "probe":
+            result = probe_audio_file(Path(args.audio_file), Path(args.model), args.stt_command)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["status"] == "PASS" else 1
         if args.voice_command == "ingest":
             if args.transcript_file:
                 print(json.dumps(ingest_transcript_file(state, Path(args.transcript_file)), indent=2, sort_keys=True))
