@@ -83,8 +83,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed state-only session archive controls in `49f6fe9`.
 - Implemented and validated state-only session profile metadata updates and HUD profile controls.
 - Committed and pushed state-only session profile updates in `e08dbac`.
-- Ran final integrated validation: governance PASS, 174 tests passed.
-- Refreshed Codeburn snapshot: month `$564.64`, 6142 calls.
+- Implemented and validated semantic prompt history composer through `prompt.send`.
+- Committed and pushed semantic prompt history composer in `8b893ed`.
+- Ran final integrated validation: governance PASS, 176 tests passed.
+- Refreshed Codeburn snapshot: month `$566.69`, 6162 calls.
 
 ## Pending
 
