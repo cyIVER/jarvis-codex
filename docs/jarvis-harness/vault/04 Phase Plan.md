@@ -82,6 +82,7 @@ Completed:
 - Runtime `event.subscribe` replay framing.
 - Live WebSocket semantic event frames for approvals, sessions, voice transcripts, audio receipts, and voice intent classifications.
 - HUD approval list with approve/reject controls wired to `approval.respond`.
+- HUD approved-launch list that calls `pty.create` only with an already approved, command-matched approval id.
 
 ## Phase 4 Voice
 

@@ -16,6 +16,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="proposal-preview"' in response.text
     assert 'id="request-proposal-approval"' in response.text
     assert 'id="approvals-list"' in response.text
+    assert 'id="approved-launches"' in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -39,6 +40,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
+    assert 'request("approval.list", { status: "approved" })' in response.text
     assert "Voice intent proposal" in response.text
     assert "No execution authority" in response.text
     assert "lastVoiceProposal" in response.text
@@ -53,6 +55,11 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'data-approval-action="approved"' in response.text
     assert 'data-approval-action="rejected"' in response.text
     assert 'request("approval.respond"' in response.text
+    assert 'request("pty.create"' in response.text
+    assert "renderApprovedLaunches(frame.result.approvals)" in response.text
+    assert "approvedLaunchCommand" in response.text
+    assert "Launch Approved PTY" in response.text
+    assert "Runtime policy gate still applies" in response.text
     assert "escapeHtml" in response.text
     assert "Event: ${frame.event_type}" in response.text
     assert 'frame.event_type.startsWith("approval.")' in response.text

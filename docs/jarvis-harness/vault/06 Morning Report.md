@@ -50,11 +50,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated approval-matched PTY launch boundary for Codex/Antigravity pane commands.
 - Committed and pushed approval-matched PTY launch boundary in `6923200`.
 - Implemented and validated HUD approval list with approve/reject controls.
+- Committed and pushed HUD approval response controls in `4ce3839`.
+- Implemented approved PTY launch controls that keep launch separate from approval and call the runtime approval-matched `pty.create` path.
 
 ## Pending
 
-- Commit and push HUD approval response controls.
-- Continue approved pane launch UX and session resume controls.
+- Validate and commit approved pane launch UX.
+- Continue session resume controls.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

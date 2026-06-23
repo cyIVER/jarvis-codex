@@ -321,6 +321,7 @@ HUD_HTML = """<!doctype html>
           <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
           <button id="refresh-approvals" type="button">Refresh Approvals</button>
           <div id="approvals-list" class="log">No pending approvals loaded.</div>
+          <div id="approved-launches" class="log">Approved pane launches will appear here after approval.</div>
         </div>
       </div>
     </section>
@@ -341,8 +342,10 @@ HUD_JS = r"""(() => {
   const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
   const approvalsList = document.getElementById("approvals-list");
+  const approvedLaunches = document.getElementById("approved-launches");
   let socket;
   let requestSeq = 0;
+  const requestIndex = new Map();
   let micStream = null;
   let recognition = null;
   let mediaRecorder = null;
@@ -393,7 +396,9 @@ HUD_JS = r"""(() => {
       return;
     }
     requestSeq += 1;
-    socket.send(JSON.stringify({ type: "request", id: `hud_${requestSeq}`, method, params }));
+    const requestId = `hud_${requestSeq}`;
+    requestIndex.set(requestId, { method, params });
+    socket.send(JSON.stringify({ type: "request", id: requestId, method, params }));
   }
 
   function connect() {
@@ -404,6 +409,7 @@ HUD_JS = r"""(() => {
       log("Connected to Jarvis runtime.");
       request("initialize");
       request("approval.list", { status: "pending" });
+      request("approval.list", { status: "approved" });
       request("voice.provider_status");
     });
     socket.addEventListener("close", () => {
@@ -421,12 +427,24 @@ HUD_JS = r"""(() => {
         log(`Event: ${frame.event_type}`);
         if (frame.event_type && frame.event_type.startsWith("approval.")) {
           request("approval.list", { status: "pending" });
+          request("approval.list", { status: "approved" });
         }
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.approvals) {
-        approvalCount.textContent = String(frame.result.approvals.length);
-        renderApprovals(frame.result.approvals);
+        const indexed = requestIndex.get(frame.id);
+        const status = indexed && indexed.params ? indexed.params.status : "pending";
+        if (status === "approved") {
+          renderApprovedLaunches(frame.result.approvals);
+        } else {
+          approvalCount.textContent = String(frame.result.approvals.length);
+          renderApprovals(frame.result.approvals);
+        }
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.channel_id) {
+        log(`PTY channel launched: ${frame.result.channel_id}. Approval: ${frame.result.approval_id || "none"}.`);
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.proposal) {
@@ -472,6 +490,7 @@ HUD_JS = r"""(() => {
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {
     request("approval.list", { status: "pending" });
+    request("approval.list", { status: "approved" });
   });
 
   approvalsList.addEventListener("click", (event) => {
@@ -486,6 +505,21 @@ HUD_JS = r"""(() => {
       reason: `HUD ${action} click`
     });
     log(`Approval ${action} requested for ${approvalId}.`);
+  });
+
+  approvedLaunches.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const approvalId = target.dataset.approvalId;
+    const command = target.dataset.command;
+    const profile = target.dataset.profile || "observe";
+    if (!approvalId || !command) return;
+    request("pty.create", {
+      command,
+      profile,
+      approval_id: approvalId
+    });
+    log(`Approved launch requested for ${approvalId}. Runtime policy gate still applies.`);
   });
 
   requestProposalApproval.addEventListener("click", () => {
@@ -638,6 +672,36 @@ HUD_JS = r"""(() => {
         <button type="button" class="danger" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="rejected">Reject</button>
       </section>
     `).join("");
+  }
+
+  function approvedLaunchCommand(approval) {
+    if (!approval || approval.status !== "approved") return "";
+    const scope = approval.scope || {};
+    if (scope.source !== "hud.pane.prepare") return "";
+    const command = scope.command || approval.operation || "";
+    if (!command || command !== approval.operation) return "";
+    return command;
+  }
+
+  function renderApprovedLaunches(approvals) {
+    const launches = approvals
+      .map((approval) => ({ approval, command: approvedLaunchCommand(approval) }))
+      .filter((item) => item.command);
+    if (!launches.length) {
+      approvedLaunches.textContent = "No approved pane launches are ready.";
+      return;
+    }
+    approvedLaunches.innerHTML = launches.map(({ approval, command }) => {
+      const profile = approval.scope && approval.scope.profile ? approval.scope.profile : "observe";
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(approval.summary || approval.id)}</strong>
+          <div>Approved operation: ${escapeHtml(command)}</div>
+          <div>Execution remains runtime-gated and command-matched to this approval.</div>
+          <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-command="${escapeHtml(command)}" data-profile="${escapeHtml(profile)}">Launch Approved PTY</button>
+        </section>
+      `;
+    }).join("");
   }
 
   function startMediaRecorderFallback() {
