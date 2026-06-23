@@ -56,11 +56,12 @@ This note backs the morning HTML dashboard.
 - Implemented session continuity controls: runtime session list/get, HUD session selection, and explicit HUD session creation.
 - Committed and pushed session continuity controls in `2405333`.
 - Implemented live Codeburn telemetry via a fixed no-shell runtime adapter and HUD status metric.
+- Committed and pushed live Codeburn telemetry in `fa1d8b1`.
 
 ## Pending
 
-- Validate and commit live Codeburn status into the runtime HUD.
 - Add mobile/PWA shell affordances.
+- Add production readiness runbook updates.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
