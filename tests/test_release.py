@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.release import build_release_artifact_evidence, build_release_manifest
+from jarvis_codex.release import build_external_security_review_plan, build_release_artifact_evidence, build_release_manifest
 
 
 def write(path: Path, text: str = "ok") -> None:
@@ -34,6 +34,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "docs/jarvis-harness/mobile-access.md")
     write(tmp_path / "docs/jarvis-harness/voice-mode.md")
     write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
+    write(tmp_path / "docs/jarvis-harness/external-security-review.md")
     write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
     write(tmp_path / "src/jarvis_codex/runtime_app.py")
     write(tmp_path / "src/jarvis_codex/hud.py")
@@ -75,6 +76,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "docs/SAFE_HANDOFF_GATEWAY_PRD.md" in manifest["release_candidates_present"]
     assert "docs/jarvis-harness/production-readiness.md" in manifest["release_candidates_present"]
     assert "docs/jarvis-harness/gemini-live-feasibility.md" in manifest["release_candidates_present"]
+    assert "docs/jarvis-harness/external-security-review.md" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/runtime_app.py" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/mobile.py" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/gemini.py" in manifest["release_candidates_present"]
@@ -106,6 +108,7 @@ def test_release_manifest_reports_missing_required_review_surfaces(tmp_path):
     assert manifest["status"] == "needs-review"
     assert "docs/PRODUCT_READINESS.md" in manifest["missing_release_candidates"]
     assert "docs/jarvis-harness/production-readiness.md" in manifest["missing_release_candidates"]
+    assert "docs/jarvis-harness/external-security-review.md" in manifest["missing_release_candidates"]
     assert "tools/plan-viewer/index.html" in manifest["missing_release_candidates"]
 
 
@@ -133,6 +136,7 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "docs/jarvis-harness/mobile-access.md")
     write(tmp_path / "docs/jarvis-harness/voice-mode.md")
     write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
+    write(tmp_path / "docs/jarvis-harness/external-security-review.md")
     write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
     write(tmp_path / "src/jarvis_codex/runtime_app.py")
     write(tmp_path / "src/jarvis_codex/hud.py")
@@ -189,3 +193,31 @@ def test_release_artifact_evidence_reports_missing_icon_source(tmp_path):
     assert evidence["status"] == "needs-review"
     assert evidence["missing_required_source_artifacts"] == ["tools/electron-hud/assets/icon.png"]
     assert evidence["present_local_artifacts"] == []
+
+
+def test_external_security_review_plan_is_read_only_and_keeps_gate_open(tmp_path):
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    plan = build_external_security_review_plan(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    assert plan["status"] == "ready-for-external-review"
+    assert plan["writes_files"] is False
+    assert plan["services_started"] is False
+    assert plan["network_probe_performed"] is False
+    assert plan["scanner_run_performed"] is False
+    assert plan["package_build_performed"] is False
+    assert plan["signing_performed"] is False
+    assert plan["external_review_completed"] is False
+    assert plan["external_security_review_required"] is True
+    assert plan["external_reviewer_attestation_required"] is True
+    assert plan["tests_and_fixes_are_not_review_signoff"] is True
+    assert plan["not_a_penetration_test"] is True
+    assert any(item["name"] == "OWASP ASVS" and item["version"] == "5.0.0" for item in plan["standards"])
+    assert any(item["name"] == "OWASP Top 10 for LLM Applications" and item["version"] == "2025" for item in plan["standards"])
+    assert any(item["name"] == "MITRE ATLAS" for item in plan["standards"])
+    assert any(item["surface"] == "runtime_api" for item in plan["review_surfaces"])
+    assert "external reviewer must perform and sign off the review with a human attestation artifact" in plan["remaining_release_gates"]
+    assert "tests passing and fixes being implemented do not close the external_security_review gate" in plan["remaining_release_gates"]
+    assert any("non-server-starting" in item for item in plan["validation_boundaries"])
+    assert before == after

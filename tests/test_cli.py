@@ -247,6 +247,37 @@ def test_release_artifact_evidence_json_is_read_only_summary(monkeypatch, capsys
     assert data["publication_ready"] is False
 
 
+def test_release_security_review_plan_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_plan(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis Codex external security review plan",
+            "status": "ready-for-external-review",
+            "writes_files": False,
+            "services_started": False,
+            "network_probe_performed": False,
+            "scanner_run_performed": False,
+            "external_review_completed": False,
+            "external_security_review_required": True,
+        }
+
+    monkeypatch.setattr(cli, "build_external_security_review_plan", fake_plan)
+
+    code = run_cli(monkeypatch, ["release", "security-review-plan", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["writes_files"] is False
+    assert data["services_started"] is False
+    assert data["network_probe_performed"] is False
+    assert data["scanner_run_performed"] is False
+    assert data["external_review_completed"] is False
+    assert data["external_security_review_required"] is True
+
+
 def test_release_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
 

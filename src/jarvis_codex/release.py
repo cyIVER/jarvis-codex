@@ -145,6 +145,122 @@ def build_release_artifact_evidence(root: Path) -> dict[str, Any]:
     }
 
 
+def build_external_security_review_plan(root: Path) -> dict[str, Any]:
+    """Build a read-only external security review packet plan."""
+    root = root.resolve()
+    review_surfaces = [
+        {
+            "surface": "runtime_api",
+            "paths": ["src/jarvis_codex/runtime_app.py", "docs/jarvis-harness/api-contract.md"],
+            "focus": "JSON-RPC method authorization, runtime-token gates, approval consumption, and error handling.",
+        },
+        {
+            "surface": "hud_browser_client",
+            "paths": ["src/jarvis_codex/hud.py", "tests/test_hud.py", "tests/test_hud_browser.py"],
+            "focus": "Same-origin WebSocket use, CSP, displayed command boundaries, microphone/STT approval flows, and PTY launch controls.",
+        },
+        {
+            "surface": "pty_and_command_policy",
+            "paths": ["src/jarvis_codex/pty_supervisor.py", "src/jarvis_codex/policy.py", "tests/test_policy.py", "tests/test_pty_supervisor.py"],
+            "focus": "Command classification, hardline blocks, approval-matched execution, process cleanup, and PTY output handling.",
+        },
+        {
+            "surface": "voice_and_local_ml",
+            "paths": ["src/jarvis_codex/voice.py", "src/jarvis_codex/whisper_cpp.py", "docs/VOICE_INGRESS.md", "docs/LOCAL_ML_RUNTIME.md"],
+            "focus": "Audio-file boundaries, model path restrictions, local adapter execution gates, and transcript-to-action separation.",
+        },
+        {
+            "surface": "mobile_and_pwa",
+            "paths": ["src/jarvis_codex/mobile.py", "docs/jarvis-harness/mobile-access.md", "src/jarvis_codex/hud.py"],
+            "focus": "Private-network exposure, service worker cache boundaries, non-loopback operator approval, and iPhone validation evidence.",
+        },
+        {
+            "surface": "electron_and_release",
+            "paths": ["tools/electron-hud/main.js", "tools/electron-hud/preload.js", "src/jarvis_codex/packaging.py", "src/jarvis_codex/release.py"],
+            "focus": "Renderer isolation, denied navigation/window-open behavior, signing boundaries, ignored generated artifacts, and release evidence.",
+        },
+        {
+            "surface": "loop_and_swarm",
+            "paths": ["src/jarvis_codex/autonomous_loop.py", "docs/jarvis-harness/swarm-and-loops.md", "LOOP.md", "docs/safety.md"],
+            "focus": "No arbitrary command runners, no daemon/background scheduler at L1, bounded loop evidence, and swarm launch approval binding.",
+        },
+    ]
+    required_validation = [
+        "python3 scripts/validate-jarvis-codex-phase1.py",
+        "uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py tests/test_packaging.py tests/test_loop_readiness.py tests/test_autonomous_loop.py",
+        "uv run jarvis-codex release manifest --json",
+        "uv run jarvis-codex release artifact-evidence --json",
+        "uv run jarvis-codex runtime readiness --json",
+    ]
+    return {
+        "label": "Jarvis Codex external security review plan",
+        "status": "ready-for-external-review",
+        "root": str(root),
+        "writes_files": False,
+        "services_started": False,
+        "network_probe_performed": False,
+        "scanner_run_performed": False,
+        "package_build_performed": False,
+        "signing_performed": False,
+        "external_review_completed": False,
+        "external_security_review_required": True,
+        "external_reviewer_attestation_required": True,
+        "tests_and_fixes_are_not_review_signoff": True,
+        "not_a_penetration_test": True,
+        "standards": [
+            {
+                "name": "OWASP ASVS",
+                "version": "5.0.0",
+                "url": "https://owasp.org/www-project-application-security-verification-standard/",
+                "use": "Application security verification requirements baseline.",
+            },
+            {
+                "name": "OWASP Web Security Testing Guide",
+                "url": "https://owasp.org/www-project-web-security-testing-guide/",
+                "use": "Web application and web service testing methodology reference.",
+            },
+            {
+                "name": "OWASP Top 10",
+                "version": "2025",
+                "url": "https://owasp.org/www-project-top-ten/",
+                "use": "Broad application-risk awareness checklist.",
+            },
+            {
+                "name": "OWASP Top 10 for LLM Applications",
+                "version": "2025",
+                "url": "https://genai.owasp.org/llm-top-10/",
+                "use": "Agentic prompt, tool-use, excessive-agency, output-handling, and LLM application risk checklist.",
+            },
+            {
+                "name": "MITRE ATLAS",
+                "url": "https://atlas.mitre.org/",
+                "use": "AI-system adversary tactics and techniques reference for agentic and ML-adjacent review surfaces.",
+            },
+        ],
+        "review_surfaces": review_surfaces,
+        "required_validation": required_validation,
+        "validation_boundaries": [
+            "runtime readiness command is a non-server-starting static/readiness summary only",
+            "validation output must not be treated as external reviewer sign-off",
+            "fixes plus passing tests are not sufficient to set external_review_completed=true",
+            "closing the gate requires a human external reviewer artifact or explicit attestation accepted by the operator",
+        ],
+        "reviewer_deliverables": [
+            "threat model notes for runtime, HUD, PTY, voice, mobile, Electron, and loop surfaces",
+            "ASVS/WSTG-aligned findings with severity, affected path, reproduction notes, and remediation recommendation",
+            "LLM/agentic-risk findings mapped to OWASP LLM Top 10 or MITRE ATLAS where applicable",
+            "explicit sign-off or hold recommendation for release packaging and private-network/mobile exposure",
+            "list of tests or manual evidence reviewed",
+        ],
+        "remaining_release_gates": [
+            "external reviewer must perform and sign off the review with a human attestation artifact",
+            "approved fixes must be implemented and revalidated",
+            "tests passing and fixes being implemented do not close the external_security_review gate",
+            "security review is not a substitute for signing, mobile validation, or Gemini Live validation",
+        ],
+    }
+
+
 def build_release_manifest(root: Path) -> dict[str, Any]:
     """Build a read-only release artifact review manifest."""
     root = root.resolve()
@@ -332,6 +448,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             True,
             False,
             "Documents current Gemini Live auth, browser token, and network validation gates.",
+        ),
+        _artifact(
+            root,
+            "docs/jarvis-harness/external-security-review.md",
+            "external-security-review-plan",
+            True,
+            False,
+            "External reviewer packet and standards-aligned security review scope.",
         ),
         _artifact(
             root,

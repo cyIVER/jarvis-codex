@@ -63,6 +63,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only Gemini Live validation planning through `jarvis-codex gemini validation-plan --json`; it prepares cloud voice evidence steps without starting OAuth, opening WebSockets, launching adapters, probing the network, writing state, exposing secrets, or granting execution authority.
 - Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
 - Read-only release artifact evidence through `jarvis-codex release artifact-evidence --json`; it reports size/SHA-256 for the committed Electron icon and ignored local Electron artifacts without building, signing, copying, publishing, launching services, or writing files.
+- Read-only external security review packet through `jarvis-codex release security-review-plan --json`; it maps OWASP ASVS/WSTG review surfaces without running scanners, launching services, probing networks, building packages, signing artifacts, or writing files.
 
 ## Not Yet Production-Complete
 
@@ -119,6 +120,7 @@ The following remain future or incomplete production gates:
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 - Release artifact evidence must not build, sign, copy, publish, launch services, mutate Git, or write files. Hash evidence is not publication approval.
+- Security review planning must not run scanners, launch services, probe networks, build packages, sign artifacts, mutate Git, write files, or claim that review is complete.
 - Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 
 ## Required Local Validation

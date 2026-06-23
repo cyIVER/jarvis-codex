@@ -44,6 +44,7 @@ Build a local-first agent command center that can:
 - [test-strategy.md](test-strategy.md): test layers and phase gates.
 - [autonomous-loop-runbook.md](autonomous-loop-runbook.md): overnight/long-run operating loop.
 - [acceptance-matrix.md](acceptance-matrix.md): release readiness matrix.
+- [external-security-review.md](external-security-review.md): OWASP-aligned external review packet and non-execution boundaries.
 - [research-log.md](research-log.md): external and local research grounding.
 - [rezun-gap-map.md](rezun-gap-map.md): direct mapping to the "Chasing Jarvis" missing pieces.
 - [memory-architecture.md](memory-architecture.md): working, project, meta, and episodic memory layers.
