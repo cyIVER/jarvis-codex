@@ -36,6 +36,18 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="swarm-plan-status"' in response.text
     assert "This does not launch agents" in response.text
     assert "Swarm planning is semantic state only" in response.text
+    assert 'id="loop-objective"' in response.text
+    assert 'id="request-loop-start-approval"' in response.text
+    assert 'id="loop-lifecycle-approval-id"' in response.text
+    assert 'id="record-loop-start"' in response.text
+    assert 'id="request-loop-pause-approval"' in response.text
+    assert 'id="record-loop-pause"' in response.text
+    assert 'id="request-loop-resume-approval"' in response.text
+    assert 'id="record-loop-resume"' in response.text
+    assert 'id="request-loop-stop-approval"' in response.text
+    assert 'id="record-loop-stop"' in response.text
+    assert 'id="loop-lifecycle-status"' in response.text
+    assert "They do not start autonomous execution" in response.text
     assert 'id="command-proposal"' in response.text
     assert 'id="record-command-proposal"' in response.text
     assert 'id="command-proposal-status"' in response.text
@@ -100,6 +112,14 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("swarm.plan"' in response.text
     assert 'request("swarm.start"' in response.text
     assert 'request("swarm.stop"' in response.text
+    assert 'requestLoopApproval("loop.start")' in response.text
+    assert 'recordLoopLifecycle("loop.start")' in response.text
+    assert 'requestLoopApproval("loop.pause")' in response.text
+    assert 'recordLoopLifecycle("loop.pause")' in response.text
+    assert 'requestLoopApproval("loop.resume")' in response.text
+    assert 'recordLoopLifecycle("loop.resume")' in response.text
+    assert 'requestLoopApproval("loop.stop")' in response.text
+    assert 'recordLoopLifecycle("loop.stop")' in response.text
     assert "Swarm plan record requested" in response.text
     assert "Swarm plan recorded" in response.text
     assert "Swarm start approval requested" in response.text
@@ -113,6 +133,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No agents, PTYs, Worktrunk, commands, or workflows executed" in response.text
     assert "Approval does not launch agents or commands" in response.text
     assert "No agents, PTYs, Worktrunk, shell, or workflows launched" in response.text
+    assert "Loop lifecycle" in response.text
+    assert "lastLoopLifecycleEventId" in response.text
+    assert "Approval does not launch agents, PTYs, Worktrunk, shell, or workflows" in response.text
     assert 'request("command.propose"' in response.text
     assert "Command proposal record requested" in response.text
     assert "No approval was created and nothing executed" in response.text

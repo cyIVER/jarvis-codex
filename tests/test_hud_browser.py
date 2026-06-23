@@ -57,6 +57,17 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
             page.locator("#create-session").click()
             expect(page.locator("#active-session")).to_contain_text("Active session:", timeout=5000)
 
+            page.locator("#loop-objective").fill("Continue governed overnight loop")
+            page.locator("#request-loop-start-approval").click()
+            expect(page.locator("#loop-lifecycle-status")).to_contain_text("loop.start approval requested", timeout=5000)
+            loop_approval_id = page.locator("#approvals-list [data-approval-id]").first.get_attribute("data-approval-id")
+            assert loop_approval_id
+            page.locator("#approvals-list [data-approval-action='approved']").first.click()
+            expect(page.locator("#console")).to_contain_text("Approval approved requested", timeout=5000)
+            page.locator("#loop-lifecycle-approval-id").fill(loop_approval_id)
+            page.locator("#record-loop-start").click()
+            expect(page.locator("#loop-lifecycle-status")).to_contain_text("Loop lifecycle started recorded", timeout=5000)
+
             page.locator("#command-proposal").fill("git status --short")
             page.locator("#record-command-proposal").click()
             expect(page.locator("#command-proposal-status")).to_contain_text("No approval created", timeout=5000)
@@ -77,6 +88,7 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
 
             page.locator("#refresh-session-history").click()
             expect(page.locator("#session-history")).to_contain_text("command.proposed", timeout=5000)
+            expect(page.locator("#session-history")).to_contain_text("loop.started", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("swarm.started", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text('"approval_created": false', timeout=5000)
             expect(page.locator("#session-history")).to_contain_text('"execution_authority": false', timeout=5000)

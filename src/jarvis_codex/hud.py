@@ -420,6 +420,17 @@ HUD_HTML = """<!doctype html>
         <button id="request-swarm-stop-approval" type="button">Request Swarm Stop Approval</button>
         <button id="record-swarm-stop" type="button">Record Approved Swarm Stop</button>
         <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
+        <textarea id="loop-objective" class="log" rows="3" placeholder="Record a loop lifecycle objective. This does not launch agents, PTYs, Worktrunk, shell, or workflows."></textarea>
+        <button id="request-loop-start-approval" type="button">Request Loop Start Approval</button>
+        <input id="loop-lifecycle-approval-id" type="text" placeholder="Paste approved loop lifecycle approval id">
+        <button id="record-loop-start" type="button">Record Approved Loop Start</button>
+        <button id="request-loop-pause-approval" type="button">Request Loop Pause Approval</button>
+        <button id="record-loop-pause" type="button">Record Approved Loop Pause</button>
+        <button id="request-loop-resume-approval" type="button">Request Loop Resume Approval</button>
+        <button id="record-loop-resume" type="button">Record Approved Loop Resume</button>
+        <button id="request-loop-stop-approval" type="button">Request Loop Stop Approval</button>
+        <button id="record-loop-stop" type="button">Record Approved Loop Stop</button>
+        <div id="loop-lifecycle-status" class="log">Loop lifecycle controls record approved state only. They do not start autonomous execution.</div>
         <textarea id="command-proposal" class="log" rows="3" placeholder="Propose a command for policy review. This records a proposal only; it does not request approval or execute."></textarea>
         <button id="record-command-proposal" type="button">Record Command Proposal</button>
         <div id="command-proposal-status" class="log">Command proposals are classified and stored as planning state only.</div>
@@ -466,6 +477,17 @@ HUD_JS = r"""(() => {
   const requestSwarmStopApproval = document.getElementById("request-swarm-stop-approval");
   const recordSwarmStop = document.getElementById("record-swarm-stop");
   const swarmPlanStatus = document.getElementById("swarm-plan-status");
+  const loopObjective = document.getElementById("loop-objective");
+  const requestLoopStartApproval = document.getElementById("request-loop-start-approval");
+  const loopLifecycleApprovalId = document.getElementById("loop-lifecycle-approval-id");
+  const recordLoopStart = document.getElementById("record-loop-start");
+  const requestLoopPauseApproval = document.getElementById("request-loop-pause-approval");
+  const recordLoopPause = document.getElementById("record-loop-pause");
+  const requestLoopResumeApproval = document.getElementById("request-loop-resume-approval");
+  const recordLoopResume = document.getElementById("record-loop-resume");
+  const requestLoopStopApproval = document.getElementById("request-loop-stop-approval");
+  const recordLoopStop = document.getElementById("record-loop-stop");
+  const loopLifecycleStatus = document.getElementById("loop-lifecycle-status");
   const commandProposal = document.getElementById("command-proposal");
   const recordCommandProposal = document.getElementById("record-command-proposal");
   const commandProposalStatus = document.getElementById("command-proposal-status");
@@ -492,6 +514,7 @@ HUD_JS = r"""(() => {
   let lastReadiness = null;
   let lastSwarmPlanEventId = "";
   let lastSwarmLifecycleEventId = "";
+  let lastLoopLifecycleEventId = "";
   const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
     codex: {
@@ -640,6 +663,15 @@ HUD_JS = r"""(() => {
         lastSwarmLifecycleEventId = frame.result.swarm_lifecycle_event_id;
         log(`Swarm lifecycle ${frame.result.lifecycle_state} recorded for ${frame.result.session_id}. No agents, PTYs, Worktrunk, commands, or workflows executed.`);
         swarmPlanStatus.textContent = `Swarm lifecycle ${frame.result.lifecycle_state} recorded at sequence ${frame.result.sequence}. Event: ${lastSwarmLifecycleEventId}. State only.`;
+        refreshSessionHistory();
+        request("approval.list", { status: "approved" });
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.loop_lifecycle_event_id) {
+        lastLoopLifecycleEventId = frame.result.loop_lifecycle_event_id;
+        log(`Loop lifecycle ${frame.result.lifecycle_state} recorded for ${frame.result.session_id}. No agents, PTYs, Worktrunk, shell, or workflows executed.`);
+        loopLifecycleStatus.textContent = `Loop lifecycle ${frame.result.lifecycle_state} recorded at sequence ${frame.result.sequence}. Event: ${lastLoopLifecycleEventId}. State only.`;
         refreshSessionHistory();
         request("approval.list", { status: "approved" });
         requestIndex.delete(frame.id);
@@ -905,6 +937,64 @@ HUD_JS = r"""(() => {
     swarmPlanStatus.textContent = "Approved swarm stop record requested. This records lifecycle state only.";
     log("Approved swarm stop record requested. No agents, PTYs, Worktrunk, shell, or workflows stopped.");
   });
+
+  function requestLoopApproval(operation) {
+    const objective = loopObjective.value.trim() || "Record approved loop lifecycle state";
+    if (operation !== "loop.start" && !lastLoopLifecycleEventId) {
+      log("Record a loop start before requesting pause, resume, or stop approval.");
+      loopLifecycleStatus.textContent = "Loop pause/resume/stop approval requires a recorded loop lifecycle event id.";
+      return;
+    }
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: `Record approved ${operation} lifecycle state`,
+      operation,
+      risk: "medium",
+      scope: {
+        source: operation,
+        session_id: currentSessionId()
+      },
+      metadata: {
+        objective,
+        loop_event_id: lastLoopLifecycleEventId
+      },
+      source_client: "hud",
+      actor_id: "user"
+    });
+    loopLifecycleStatus.textContent = `${operation} approval requested. Approval does not launch agents, PTYs, Worktrunk, shell, or workflows.`;
+    log(`${operation} approval requested. No loop lifecycle state changed yet.`);
+  }
+
+  function recordLoopLifecycle(operation) {
+    const approvalId = loopLifecycleApprovalId.value.trim();
+    if (!approvalId) {
+      log("Loop lifecycle record requires an approved loop lifecycle approval id.");
+      return;
+    }
+    if (operation !== "loop.start" && !lastLoopLifecycleEventId) {
+      log("Loop pause/resume/stop requires an existing loop lifecycle event id.");
+      return;
+    }
+    request(operation, privilegedParams({
+      session_id: currentSessionId(),
+      objective: loopObjective.value.trim(),
+      loop_event_id: operation === "loop.start" ? "" : lastLoopLifecycleEventId,
+      approval_id: approvalId,
+      source_client: "hud",
+      actor_id: "user"
+    }));
+    loopLifecycleStatus.textContent = `Approved ${operation} record requested. This records lifecycle state only.`;
+    log(`Approved ${operation} record requested. No agents, PTYs, Worktrunk, shell, or workflows launched.`);
+  }
+
+  requestLoopStartApproval.addEventListener("click", () => requestLoopApproval("loop.start"));
+  recordLoopStart.addEventListener("click", () => recordLoopLifecycle("loop.start"));
+  requestLoopPauseApproval.addEventListener("click", () => requestLoopApproval("loop.pause"));
+  recordLoopPause.addEventListener("click", () => recordLoopLifecycle("loop.pause"));
+  requestLoopResumeApproval.addEventListener("click", () => requestLoopApproval("loop.resume"));
+  recordLoopResume.addEventListener("click", () => recordLoopLifecycle("loop.resume"));
+  requestLoopStopApproval.addEventListener("click", () => requestLoopApproval("loop.stop"));
+  recordLoopStop.addEventListener("click", () => recordLoopLifecycle("loop.stop"));
 
   recordCommandProposal.addEventListener("click", () => {
     const command = commandProposal.value.trim();

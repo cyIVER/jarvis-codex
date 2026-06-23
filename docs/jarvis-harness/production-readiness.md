@@ -21,6 +21,7 @@ Implemented and validated in the local FastAPI runtime:
 - Planning-only swarm lane proposal records through `swarm.plan` without agent launch, PTY launch, Worktrunk mutation, or command execution.
 - Approval-gated swarm lifecycle records through `swarm.start` and `swarm.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
+- HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.

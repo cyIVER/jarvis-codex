@@ -46,6 +46,8 @@ Current runtime support is intentionally state-first:
 
 These records do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
 
+The HUD exposes matching loop lifecycle controls. The controls can request approval and record approved lifecycle state, but they do not start autonomous loop execution.
+
 ## Risk-Scaled Spawning
 
 Risk factors:
