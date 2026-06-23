@@ -69,7 +69,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated AG-triggered boundary hardening: same-origin WebSocket checks, runtime-token-gated approval responses and approved action consumption, atomic approval consumption, visible approval scope, and runtime-owned STT paths.
 - Committed and pushed runtime boundary hardening in `7d3e0b5`.
 - Ran final integrated validation: governance PASS, 164 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
-- Refreshed Codeburn snapshot: month `$551.11`, 6002 calls.
+- Implemented and validated HUD runtime readiness status and remaining-gap summary.
+- Committed and pushed HUD readiness panel in `495e7a9`.
+- Refreshed Codeburn snapshot: month `$553.30`, 6022 calls.
 
 ## Pending
 
