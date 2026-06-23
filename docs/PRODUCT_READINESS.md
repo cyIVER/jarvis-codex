@@ -25,7 +25,7 @@ The current release is a governed local operating substrate:
 - notification pack hint routing
 - read-only lane scoring, JSON lane CLI review, and WorkerContract planning records
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
-- read-only release readiness checklist that aggregates open release gates and next actions without running them
+- read-only release readiness checklist and acceptance brief that aggregate open release gates, evidence-ready gates, and next actions without running them
 - screen-sized multi-page HUD navigation, shell-style state-only operator intent bar, release gate status, release evidence metadata recording, explicit gate acceptance recording, and release readiness checklist panels
 - approval-only Antigravity challenge requests surfaced in the HUD without launching AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows
 - approval-gated backend swarm role launch and HUD swarm launch controls
@@ -93,7 +93,7 @@ The current release is a governed local operating substrate:
 - `tests/test_cli.py` covers read-only JSON lane list and score commands.
 - `tests/test_lanes.py` covers read-only lane inventory across an isolated temporary git repo with multiple worktrees.
 - `tests/test_release.py` covers the expanded read-only release manifest, publication approval labels, and generated asset approval labels.
-- `tests/test_state.py`, `tests/test_cli.py`, and `tests/test_release.py` cover state-only release evidence recording, explicit gate acceptance records, open-gate status summaries, release readiness checklist aggregation, state-local artifact hashing, and no automatic gate closure.
+- `tests/test_state.py`, `tests/test_cli.py`, and `tests/test_release.py` cover state-only release evidence recording, explicit gate acceptance records, open-gate status summaries, read-only gate acceptance briefs, release readiness checklist aggregation, state-local artifact hashing, and no automatic gate closure.
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier, budget-policy markers, and runtime-authority marker checks.
 - `jarvis-codex loop unattended-policy --json` reports foreground schedule limits, stop controls, approval gates, and no daemon/background authority.

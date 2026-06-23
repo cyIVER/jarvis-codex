@@ -593,6 +593,42 @@ def test_release_gate_list_is_state_only_summary(tmp_path, monkeypatch, capsys):
     assert data["release_gate_acceptances"][0]["release_gate_closed"] is True
 
 
+def test_release_gate_acceptance_brief_is_read_only_summary(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "networked_gemini_live_validation",
+            "--summary",
+            "Operator captured approved Gemini Live validation notes.",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    evidence = json.loads(capsys.readouterr().out)["evidence"]
+
+    code = run_cli(monkeypatch, ["--state", str(state), "release", "gate", "acceptance-brief", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    gemini = next(item for item in data["acceptance_items"] if item["gate"] == "networked_gemini_live_validation")
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["evidence_closes_gates"] is False
+    assert data["acceptance_command_writes_state"] is True
+    assert "networked_gemini_live_validation" in data["ready_for_acceptance"]
+    assert gemini["status"] == "ready-for-human-acceptance"
+    assert f"--evidence-id {evidence['id']}" in gemini["acceptance_command"]
+    assert (state / "release" / "gate-acceptance.jsonl").exists() is False
+
+
 def test_release_evidence_add_rejects_external_artifact_path(tmp_path, monkeypatch):
     state = tmp_path / "state"
     artifact = tmp_path / "outside-state-release.txt"

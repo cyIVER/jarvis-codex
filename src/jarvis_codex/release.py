@@ -488,6 +488,83 @@ def build_release_gate_status(
     }
 
 
+def build_release_gate_acceptance_brief(
+    evidence_records: list[dict[str, Any]],
+    acceptance_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build a read-only operator brief for explicit release-gate acceptance."""
+    gate_status = build_release_gate_status(evidence_records, acceptance_records)
+    items: list[dict[str, Any]] = []
+    for gate in gate_status["gates"]:
+        latest_evidence_id = gate["latest_evidence_id"]
+        accepted = gate["release_gate_closed"]
+        evidence_ready = latest_evidence_id is not None and not accepted
+        if accepted:
+            status = "accepted"
+        elif evidence_ready:
+            status = "ready-for-human-acceptance"
+        else:
+            status = "needs-evidence"
+        acceptance_command = None
+        if evidence_ready:
+            acceptance_command = (
+                "jarvis-codex --state <state-dir> release gate accept "
+                f"--gate {gate['gate']} "
+                f"--evidence-id {latest_evidence_id} "
+                "--summary \"<human acceptance summary>\" --json"
+            )
+        items.append(
+            {
+                "gate": gate["gate"],
+                "status": status,
+                "evidence_count": gate["evidence_count"],
+                "acceptance_count": gate["acceptance_count"],
+                "latest_evidence_id": latest_evidence_id,
+                "latest_reviewer": gate["latest_reviewer"],
+                "latest_summary": gate["latest_summary"],
+                "latest_acceptance_id": gate["latest_acceptance_id"],
+                "accepted_evidence_id": gate["accepted_evidence_id"],
+                "release_gate_closed": accepted,
+                "requires_human_acceptance": not accepted,
+                "acceptance_command": acceptance_command,
+                "required_human_review": [
+                    "review the referenced evidence record",
+                    "confirm the evidence belongs to the same release gate",
+                    "write a non-empty human acceptance summary",
+                    "confirm acceptance is state-only and grants no execution authority",
+                ],
+            }
+        )
+    ready_gates = [item["gate"] for item in items if item["status"] == "ready-for-human-acceptance"]
+    needs_evidence = [item["gate"] for item in items if item["status"] == "needs-evidence"]
+    return {
+        "label": "Jarvis release gate acceptance brief",
+        "status": "accepted" if not ready_gates and not needs_evidence else "needs-human-review",
+        "writes_files": False,
+        "writes_state": False,
+        "execution_authority": False,
+        "evidence_closes_gates": False,
+        "acceptance_command_writes_state": True,
+        "acceptance_command_grants_execution_authority": False,
+        "publication_ready": gate_status["publication_ready"],
+        "ready_for_acceptance": ready_gates,
+        "needs_evidence": needs_evidence,
+        "accepted_gate_count": gate_status["accepted_gate_count"],
+        "open_gate_count": gate_status["open_gate_count"],
+        "acceptance_items": items,
+        "unsafe_actions_not_authorized": [
+            "run validations",
+            "launch runtime services",
+            "open network probes or Gemini WebSockets",
+            "run mobile browser validation",
+            "build, sign, copy, upload, or publish artifacts",
+            "start background schedulers or daemons",
+            "mutate Git or Worktrunk state",
+            "close gates without explicit human acceptance",
+        ],
+    }
+
+
 def build_release_readiness_checklist(
     root: Path,
     evidence_records: list[dict[str, Any]],

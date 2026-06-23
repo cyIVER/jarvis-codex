@@ -69,6 +69,14 @@ jarvis-codex --state <state-dir> release gate-status --json
 
 Evidence records are state-only review metadata. They do not close release gates, approve publication, launch tests, run mobile or Gemini validation, sign artifacts, copy artifacts, mutate Git, or grant execution authority.
 
+Before accepting any gate, inspect which gates have evidence ready for human acceptance with:
+
+```bash
+jarvis-codex --state <state-dir> release gate acceptance-brief --json
+```
+
+The acceptance brief is read-only. It shows gates that still need evidence, gates that already have accepted evidence, and proposed future `release gate accept` commands for evidence-ready gates. It does not accept gates, write state, run validations, approve publication, or grant execution authority.
+
 After a human has reviewed and accepted a specific evidence record, record that gate decision separately:
 
 ```bash

@@ -7,6 +7,7 @@ from jarvis_codex.release import (
     build_external_security_review_plan,
     build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
+    build_release_gate_acceptance_brief,
     build_release_gate_status,
     build_release_manifest,
     build_release_readiness_checklist,
@@ -382,6 +383,65 @@ def test_release_gate_status_closes_only_with_explicit_acceptance():
     assert external["release_gate_closed"] is True
     assert external["accepted_evidence_id"] == "evidence_external"
     assert external["latest_acceptance_id"] == "gate_acceptance_external"
+
+
+def test_release_gate_acceptance_brief_is_read_only_and_separates_ready_gates():
+    brief = build_release_gate_acceptance_brief(
+        [
+            {
+                "id": "evidence_mobile",
+                "created_at": 1,
+                "gate": "actual_mobile_device_validation",
+                "reviewer": "operator",
+                "summary": "iPhone validation evidence",
+                "release_gate_closed": False,
+            },
+            {
+                "id": "evidence_external",
+                "created_at": 2,
+                "gate": "external_security_review",
+                "reviewer": "external-reviewer",
+                "summary": "external review attestation",
+                "release_gate_closed": False,
+            },
+        ],
+        [
+            {
+                "id": "gate_acceptance_external",
+                "created_at": 3,
+                "gate": "external_security_review",
+                "evidence_id": "evidence_external",
+                "reviewer": "operator",
+                "summary": "accepted external review attestation",
+                "release_gate_closed": True,
+            },
+        ],
+    )
+
+    mobile = next(item for item in brief["acceptance_items"] if item["gate"] == "actual_mobile_device_validation")
+    external = next(item for item in brief["acceptance_items"] if item["gate"] == "external_security_review")
+    gemini = next(item for item in brief["acceptance_items"] if item["gate"] == "networked_gemini_live_validation")
+    assert brief["label"] == "Jarvis release gate acceptance brief"
+    assert brief["status"] == "needs-human-review"
+    assert brief["writes_files"] is False
+    assert brief["writes_state"] is False
+    assert brief["execution_authority"] is False
+    assert brief["evidence_closes_gates"] is False
+    assert brief["acceptance_command_writes_state"] is True
+    assert brief["acceptance_command_grants_execution_authority"] is False
+    assert brief["publication_ready"] is False
+    assert brief["ready_for_acceptance"] == ["actual_mobile_device_validation"]
+    assert "networked_gemini_live_validation" in brief["needs_evidence"]
+    assert mobile["status"] == "ready-for-human-acceptance"
+    assert mobile["acceptance_command"]
+    assert "--gate actual_mobile_device_validation" in mobile["acceptance_command"]
+    assert "--evidence-id evidence_mobile" in mobile["acceptance_command"]
+    assert external["status"] == "accepted"
+    assert external["acceptance_command"] is None
+    assert external["release_gate_closed"] is True
+    assert gemini["status"] == "needs-evidence"
+    assert gemini["acceptance_command"] is None
+    assert any("run validations" in action for action in brief["unsafe_actions_not_authorized"])
 
 
 def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp_path):

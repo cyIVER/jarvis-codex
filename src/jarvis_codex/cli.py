@@ -24,6 +24,7 @@ from .release import (
     build_external_security_review_plan,
     build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
+    build_release_gate_acceptance_brief,
     build_release_gate_status,
     build_release_manifest,
     build_release_readiness_checklist,
@@ -135,6 +136,11 @@ def main() -> int:
     release_gate_accept.add_argument("--json", action="store_true", help="Print gate acceptance as JSON")
     release_gate_list = release_gate_sub.add_parser("list", help="List release-gate acceptance records")
     release_gate_list.add_argument("--json", action="store_true", help="Print gate acceptance records as JSON")
+    release_gate_acceptance_brief = release_gate_sub.add_parser(
+        "acceptance-brief",
+        help="Print a read-only gate acceptance brief without accepting gates",
+    )
+    release_gate_acceptance_brief.add_argument("--json", action="store_true", help="Print gate acceptance brief as JSON")
     release_gate_status = release_sub.add_parser("gate-status", help="Summarize release gates and recorded evidence without closing gates")
     release_gate_status.add_argument("--json", action="store_true", help="Print gate status as JSON")
     release_checklist = release_sub.add_parser("readiness-checklist", help="Print a read-only release readiness checklist")
@@ -353,6 +359,15 @@ def main() -> int:
                 print(
                     json.dumps(
                         {"release_gate_acceptances": state.release_gate_acceptances(), "execution_authority": False},
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return 0
+            if args.release_gate_command == "acceptance-brief":
+                print(
+                    json.dumps(
+                        build_release_gate_acceptance_brief(state.release_evidence(), state.release_gate_acceptances()),
                         indent=2,
                         sort_keys=True,
                     )
