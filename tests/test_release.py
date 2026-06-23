@@ -84,7 +84,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "tools/electron-hud/package-lock.json" in manifest["release_candidates_present"]
     assert "tools/electron-hud/electron-builder.json" in manifest["release_candidates_present"]
     assert "electron_packaging_and_signing" in manifest["remaining_release_gates"]
-    assert "hud_swarm_launch_controls" in manifest["remaining_release_gates"]
+    assert "hud_swarm_launch_controls" not in manifest["remaining_release_gates"]
     assert "unattended_loop_scheduling" in manifest["remaining_release_gates"]
     assert "npm run typecheck" not in manifest["required_validation"]
     assert "tests/test_electron_hud_scaffold.py" in manifest["required_validation"][1]

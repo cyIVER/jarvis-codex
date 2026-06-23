@@ -69,9 +69,12 @@ pattern: product-readiness-triage
   Human decision: the runner does not accept arbitrary commands, launch services, probe the network, mutate Git/Worktrunk, start agents, start PTYs, or execute runtime workflows.
 - [x] PM-021 - Backend swarm role launch
   Loop action: added backend `swarm.launch` for approval-gated role-labeled PTY pane launch with exact role command/profile/cwd scope, HUD runtime-token enforcement, and hardline policy preservation.
-  Human decision: HUD swarm launch controls, mobile validation, Gemini Live validation, release signing, and unattended scheduling remain separate gates.
-- [ ] PM-022 - Next product slice
-  Loop action: pending prioritization between HUD swarm launch controls, real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and unattended loop scheduling.
+  Human decision: mobile validation, Gemini Live validation, release signing, and unattended scheduling remain separate gates.
+- [x] PM-022 - HUD swarm launch controls
+  Loop action: added HUD controls to request exact scoped `swarm.launch` approval and launch approved role-labeled PTY panes through runtime policy.
+  Human decision: launches still require a recorded swarm lifecycle event, matching approval id, HUD runtime token, and hardline policy clearance.
+- [ ] PM-023 - Next product slice
+  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and unattended loop scheduling.
   Human decision: not selected yet.
 
 ## Watch List

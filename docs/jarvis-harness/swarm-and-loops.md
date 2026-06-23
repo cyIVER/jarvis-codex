@@ -49,6 +49,8 @@ Plan and lifecycle records do not launch agents, start PTYs, mutate Worktrunk, r
 
 `swarm.launch` is explicitly different: it launches role-labeled PTY panes only after a matching `swarm.launch` approval and the HUD runtime token. The approval scope must list the exact role IDs, commands, profiles, and cwd values. Hardline policy blocks still override approvals. The launch method does not mutate Git, mutate Worktrunk, or execute runtime workflows.
 
+The HUD exposes matching swarm role launch controls. Operators must first record a swarm plan and approved lifecycle start, then request a separate `swarm.launch` approval for the exact role command/profile/cwd scope before launching the approved role-labeled PTY pane. Displayed commands remain proposals until that explicit launch approval is consumed.
+
 The HUD exposes matching loop lifecycle controls. The controls can request approval and record approved lifecycle state, but they do not start autonomous loop execution.
 
 ## Bounded Loop Runner

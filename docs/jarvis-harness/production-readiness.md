@@ -23,6 +23,7 @@ Implemented and validated in the local FastAPI runtime:
 - Approval-gated role-labeled swarm launch through `swarm.launch`; it requires exact scoped approval for role command/profile/cwd plus the HUD runtime token, starts PTY panes through runtime policy, preserves hardline blocks, and does not mutate Worktrunk or Git.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
+- HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through the runtime policy gate.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
@@ -69,7 +70,6 @@ The following remain future or incomplete production gates:
 - Electron desktop app signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- HUD controls for approved swarm role launch.
 - Higher-level unattended loop scheduling beyond bounded `loop run-once`.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.

@@ -86,10 +86,22 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
             page.locator("#record-swarm-start").click()
             expect(page.locator("#swarm-plan-status")).to_contain_text("Swarm lifecycle started recorded", timeout=5000)
 
+            page.locator("#swarm-launch-command").fill("pwd")
+            page.locator("#request-swarm-launch-approval").click()
+            expect(page.locator("#swarm-launch-status")).to_contain_text("swarm.launch approval requested", timeout=5000)
+            launch_approval_id = page.locator("#approvals-list [data-approval-id]").first.get_attribute("data-approval-id")
+            assert launch_approval_id
+            page.locator("#approvals-list [data-approval-action='approved']").first.click()
+            expect(page.locator("#console")).to_contain_text("Approval approved requested", timeout=5000)
+            page.locator("#swarm-launch-approval-id").fill(launch_approval_id)
+            page.locator("#launch-approved-swarm").click()
+            expect(page.locator("#swarm-launch-status")).to_contain_text("Swarm launched", timeout=5000)
+
             page.locator("#refresh-session-history").click()
             expect(page.locator("#session-history")).to_contain_text("command.proposed", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("loop.started", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text("swarm.started", timeout=5000)
+            expect(page.locator("#session-history")).to_contain_text("swarm.launched", timeout=5000)
             expect(page.locator("#session-history")).to_contain_text('"approval_created": false', timeout=5000)
             expect(page.locator("#session-history")).to_contain_text('"execution_authority": false', timeout=5000)
 

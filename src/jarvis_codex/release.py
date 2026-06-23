@@ -516,7 +516,6 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             "electron_packaging_and_signing",
             "actual_mobile_device_validation",
             "networked_gemini_live_validation",
-            "hud_swarm_launch_controls",
             "unattended_loop_scheduling",
             "release_packaging_and_signing",
             "external_security_review",

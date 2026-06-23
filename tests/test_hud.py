@@ -38,6 +38,16 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="swarm-plan-status"' in response.text
     assert "This does not launch agents" in response.text
     assert "Swarm planning is semantic state only" in response.text
+    assert 'id="swarm-launch-role-id"' in response.text
+    assert 'id="swarm-launch-profile"' in response.text
+    assert 'id="swarm-launch-cwd"' in response.text
+    assert 'id="swarm-launch-command"' in response.text
+    assert 'id="request-swarm-launch-approval"' in response.text
+    assert 'id="swarm-launch-approval-id"' in response.text
+    assert 'id="launch-approved-swarm"' in response.text
+    assert 'id="swarm-launch-status"' in response.text
+    assert "Approval-gated role-labeled PTY launch" in response.text
+    assert "Displayed commands are not execution authority" in response.text
     assert 'id="loop-objective"' in response.text
     assert 'id="request-loop-start-approval"' in response.text
     assert 'id="loop-lifecycle-approval-id"' in response.text
@@ -122,6 +132,11 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("swarm.plan"' in response.text
     assert 'request("swarm.start"' in response.text
     assert 'request("swarm.stop"' in response.text
+    assert 'request("swarm.launch"' in response.text
+    assert 'operation: "swarm.launch"' in response.text
+    assert "swarmLaunchRoles()" in response.text
+    assert "lastSwarmLaunchRoles = roles" in response.text
+    assert "lastSwarmLaunchRoles.length ? lastSwarmLaunchRoles : swarmLaunchRoles()" in response.text
     assert 'requestLoopApproval("loop.start")' in response.text
     assert 'recordLoopLifecycle("loop.start")' in response.text
     assert 'requestLoopApproval("loop.pause")' in response.text
@@ -143,6 +158,15 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No agents, PTYs, Worktrunk, commands, or workflows executed" in response.text
     assert "Approval does not launch agents or commands" in response.text
     assert "No agents, PTYs, Worktrunk, shell, or workflows launched" in response.text
+    assert "swarm.launch approval requested" in response.text
+    assert "Launch approval does not start PTYs" in response.text
+    assert "Approved swarm launch requested" in response.text
+    assert "role-labeled PTY" in response.text
+    assert "Runtime policy gate still applies" in response.text
+    assert "execution_authority: false" in response.text
+    assert "swarmLaunchApprovalId.value = \"\"" in response.text
+    assert "swarmLifecycleApprovalId.value = \"\"" in response.text
+    assert "loopLifecycleApprovalId.value = \"\"" in response.text
     assert "Loop lifecycle" in response.text
     assert "lastLoopLifecycleEventId" in response.text
     assert "Approval does not launch agents, PTYs, Worktrunk, shell, or workflows" in response.text

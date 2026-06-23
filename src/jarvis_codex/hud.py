@@ -428,6 +428,19 @@ HUD_HTML = """<!doctype html>
         <button id="request-swarm-stop-approval" type="button">Request Swarm Stop Approval</button>
         <button id="record-swarm-stop" type="button">Record Approved Swarm Stop</button>
         <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
+        <div class="agent-pane">
+          <div><strong>Swarm Role Launch</strong><span>Approval-gated role-labeled PTY launch. Runtime policy still applies.</span></div>
+          <div>
+            <input id="swarm-launch-role-id" type="text" value="codex-executor" aria-label="Swarm launch role id">
+            <input id="swarm-launch-profile" type="text" value="swarm" aria-label="Swarm launch policy profile">
+          </div>
+        </div>
+        <input id="swarm-launch-cwd" type="text" placeholder="Optional cwd; leave blank for runtime default">
+        <textarea id="swarm-launch-command" class="log" rows="2" placeholder="Exact role command to launch after matching approval. Example: pwd"></textarea>
+        <button id="request-swarm-launch-approval" type="button">Request Swarm Launch Approval</button>
+        <input id="swarm-launch-approval-id" type="text" placeholder="Paste approved swarm.launch approval id">
+        <button id="launch-approved-swarm" type="button">Launch Approved Swarm Role</button>
+        <div id="swarm-launch-status" class="log">Swarm role launch is disabled until a swarm lifecycle start is recorded and a matching approval is consumed. Displayed commands are not execution authority.</div>
         <textarea id="loop-objective" class="log" rows="3" placeholder="Record a loop lifecycle objective. This does not launch agents, PTYs, Worktrunk, shell, or workflows."></textarea>
         <button id="request-loop-start-approval" type="button">Request Loop Start Approval</button>
         <input id="loop-lifecycle-approval-id" type="text" placeholder="Paste approved loop lifecycle approval id">
@@ -491,6 +504,14 @@ HUD_JS = r"""(() => {
   const requestSwarmStopApproval = document.getElementById("request-swarm-stop-approval");
   const recordSwarmStop = document.getElementById("record-swarm-stop");
   const swarmPlanStatus = document.getElementById("swarm-plan-status");
+  const swarmLaunchRoleId = document.getElementById("swarm-launch-role-id");
+  const swarmLaunchProfile = document.getElementById("swarm-launch-profile");
+  const swarmLaunchCwd = document.getElementById("swarm-launch-cwd");
+  const swarmLaunchCommand = document.getElementById("swarm-launch-command");
+  const requestSwarmLaunchApproval = document.getElementById("request-swarm-launch-approval");
+  const swarmLaunchApprovalId = document.getElementById("swarm-launch-approval-id");
+  const launchApprovedSwarm = document.getElementById("launch-approved-swarm");
+  const swarmLaunchStatus = document.getElementById("swarm-launch-status");
   const loopObjective = document.getElementById("loop-objective");
   const requestLoopStartApproval = document.getElementById("request-loop-start-approval");
   const loopLifecycleApprovalId = document.getElementById("loop-lifecycle-approval-id");
@@ -532,6 +553,7 @@ HUD_JS = r"""(() => {
   let lastReadiness = null;
   let lastSwarmPlanEventId = "";
   let lastSwarmLifecycleEventId = "";
+  let lastSwarmLaunchRoles = [];
   let lastLoopLifecycleEventId = "";
   const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
@@ -586,6 +608,21 @@ HUD_JS = r"""(() => {
 
   function selectedProfileId() {
     return sessionProfile.value || "observe";
+  }
+
+  function swarmLaunchRoles() {
+    const command = swarmLaunchCommand.value.trim();
+    if (!command) {
+      return [];
+    }
+    return [
+      {
+        role_id: (swarmLaunchRoleId.value.trim() || "codex-executor"),
+        command,
+        profile: (swarmLaunchProfile.value.trim() || "swarm"),
+        cwd: swarmLaunchCwd.value.trim()
+      }
+    ];
   }
 
   function connect() {
@@ -682,6 +719,16 @@ HUD_JS = r"""(() => {
         lastSwarmLifecycleEventId = frame.result.swarm_lifecycle_event_id;
         log(`Swarm lifecycle ${frame.result.lifecycle_state} recorded for ${frame.result.session_id}. No agents, PTYs, Worktrunk, commands, or workflows executed.`);
         swarmPlanStatus.textContent = `Swarm lifecycle ${frame.result.lifecycle_state} recorded at sequence ${frame.result.sequence}. Event: ${lastSwarmLifecycleEventId}. State only.`;
+        refreshSessionHistory();
+        request("approval.list", { status: "approved" });
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.swarm_launch_event_id) {
+        const roles = Array.isArray(frame.result.roles) ? frame.result.roles : [];
+        const channels = roles.map((role) => role.channel_id).filter(Boolean).join(", ");
+        log(`Swarm launched ${frame.result.role_count || roles.length} approved role-labeled PTY pane(s). Channels: ${channels || "none"}.`);
+        swarmLaunchStatus.textContent = `Swarm launched ${frame.result.role_count || roles.length} approved role-labeled PTY pane(s). Event: ${frame.result.swarm_launch_event_id}. Runtime policy gate still applies.`;
         refreshSessionHistory();
         request("approval.list", { status: "approved" });
         requestIndex.delete(frame.id);
@@ -915,7 +962,8 @@ HUD_JS = r"""(() => {
       scope: {
         source: "swarm.start",
         session_id: currentSessionId(),
-        plan_event_id: lastSwarmPlanEventId
+        plan_event_id: lastSwarmPlanEventId,
+        execution_authority: false
       },
       source_client: "hud",
       actor_id: "user"
@@ -937,6 +985,7 @@ HUD_JS = r"""(() => {
       source_client: "hud",
       actor_id: "user"
     }));
+    swarmLifecycleApprovalId.value = "";
     swarmPlanStatus.textContent = "Approved swarm start record requested. This records lifecycle state only.";
     log("Approved swarm start record requested. No agents, PTYs, Worktrunk, shell, or workflows launched.");
   });
@@ -955,7 +1004,8 @@ HUD_JS = r"""(() => {
       scope: {
         source: "swarm.stop",
         session_id: currentSessionId(),
-        swarm_event_id: lastSwarmLifecycleEventId
+        swarm_event_id: lastSwarmLifecycleEventId,
+        execution_authority: false
       },
       source_client: "hud",
       actor_id: "user"
@@ -977,8 +1027,61 @@ HUD_JS = r"""(() => {
       source_client: "hud",
       actor_id: "user"
     }));
+    swarmLifecycleApprovalId.value = "";
     swarmPlanStatus.textContent = "Approved swarm stop record requested. This records lifecycle state only.";
     log("Approved swarm stop record requested. No agents, PTYs, Worktrunk, shell, or workflows stopped.");
+  });
+
+  requestSwarmLaunchApproval.addEventListener("click", () => {
+    if (!lastSwarmLifecycleEventId) {
+      log("Record an approved swarm start before requesting swarm role launch approval.");
+      swarmLaunchStatus.textContent = "Swarm launch approval requires a recorded swarm lifecycle start event id.";
+      return;
+    }
+    const roles = swarmLaunchRoles();
+    if (roles.length === 0) {
+      log("Swarm launch command is empty; no approval requested.");
+      swarmLaunchStatus.textContent = "Enter an exact role command before requesting swarm.launch approval.";
+      return;
+    }
+    lastSwarmLaunchRoles = roles;
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: "Launch approved swarm role-labeled PTY pane",
+      operation: "swarm.launch",
+      risk: "high",
+      scope: {
+        source: "swarm.launch",
+        session_id: currentSessionId(),
+        swarm_event_id: lastSwarmLifecycleEventId,
+        roles
+      },
+      source_client: "hud",
+      actor_id: "user"
+    });
+    swarmLaunchStatus.textContent = "swarm.launch approval requested. Launch approval does not start PTYs until the approved id is submitted.";
+    log("swarm.launch approval requested for exact role scope. No PTY was started.");
+  });
+
+  launchApprovedSwarm.addEventListener("click", () => {
+    const approvalId = swarmLaunchApprovalId.value.trim();
+    const roles = lastSwarmLaunchRoles.length ? lastSwarmLaunchRoles : swarmLaunchRoles();
+    if (!lastSwarmLifecycleEventId || !approvalId || roles.length === 0) {
+      log("Swarm role launch requires a started swarm event, an exact role command, and an approved swarm.launch approval id.");
+      swarmLaunchStatus.textContent = "Approved swarm launch requires started swarm event, role command, and approval id.";
+      return;
+    }
+    request("swarm.launch", privilegedParams({
+      session_id: currentSessionId(),
+      swarm_event_id: lastSwarmLifecycleEventId,
+      roles,
+      approval_id: approvalId,
+      source_client: "hud",
+      actor_id: "user"
+    }));
+    swarmLaunchApprovalId.value = "";
+    swarmLaunchStatus.textContent = "Approved swarm launch requested. Runtime policy gate still applies.";
+    log("Approved swarm.launch requested. This can start role-labeled PTYs only for the exact approved role scope.");
   });
 
   function requestLoopApproval(operation) {
@@ -995,7 +1098,8 @@ HUD_JS = r"""(() => {
       risk: "medium",
       scope: {
         source: operation,
-        session_id: currentSessionId()
+        session_id: currentSessionId(),
+        execution_authority: false
       },
       metadata: {
         objective,
@@ -1026,6 +1130,7 @@ HUD_JS = r"""(() => {
       source_client: "hud",
       actor_id: "user"
     }));
+    loopLifecycleApprovalId.value = "";
     loopLifecycleStatus.textContent = `Approved ${operation} record requested. This records lifecycle state only.`;
     log(`Approved ${operation} record requested. No agents, PTYs, Worktrunk, shell, or workflows launched.`);
   }

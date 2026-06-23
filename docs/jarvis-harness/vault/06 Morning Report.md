@@ -199,10 +199,13 @@ This note backs the morning HTML dashboard.
 - Committed and pushed approval-gated swarm role launch in `752e3ac`.
 - Added `swarm.launch` tests for approved role pane launch, token and scope mismatches, cwd binding, role limit validation, and hardline policy blocks.
 - Ran final targeted validation after swarm launch: governance PASS, loop readiness PASS, runtime readiness foundation-ready, and 286 tests passed.
+- Implemented HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through runtime policy.
+- Added browser smoke coverage for the full HUD swarm launch path: plan, lifecycle start approval, launch approval, approved PTY launch, and `swarm.launched` history.
+- Ran Antigravity challenge review on the HUD launch controls and hardened frozen role-scope launch submission, explicit non-execution lifecycle approval scopes, and approval-id clearing.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, HUD swarm launch controls, unattended loop scheduling, signed release packaging, and external security review.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, unattended loop scheduling, signed release packaging, and external security review.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
