@@ -21,6 +21,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="active-session"' in response.text
     assert 'id="create-session"' in response.text
     assert 'id="sessions-list"' in response.text
+    assert 'id="refresh-session-history"' in response.text
+    assert 'id="session-history"' in response.text
+    assert "This is not an execution queue" in response.text
     assert 'id="codeburn-status"' in response.text
     assert 'id="refresh-codeburn"' in response.text
     assert 'id="pwa-status"' in response.text
@@ -59,6 +62,11 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("initialize")' in response.text
     assert 'request("session.list", { status: "active", limit: 25 })' in response.text
     assert 'request("session.create"' in response.text
+    assert 'request("message.list", { session_id: currentSessionId(), limit: 25 })' in response.text
+    assert "renderSessionHistory(frame.result.messages" in response.text
+    assert "Session history refresh requested" in response.text
+    assert "No semantic history" in response.text
+    assert "semantic history" in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
     assert 'request("runtime.readiness")' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text

@@ -11,6 +11,7 @@ Implemented and validated in the local FastAPI runtime:
 - Runtime policy classification and hardline command blocking.
 - Non-writing policy profile catalog through `profile.list`.
 - Session-scoped semantic history through `message.list`.
+- HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.

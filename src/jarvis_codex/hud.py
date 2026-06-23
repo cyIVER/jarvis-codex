@@ -406,6 +406,8 @@ HUD_HTML = """<!doctype html>
           <button id="create-session" type="button">Create HUD Session</button>
         </div>
         <div id="sessions-list" class="log">Active sessions will appear here.</div>
+        <button id="refresh-session-history" type="button">Refresh Session History</button>
+        <div id="session-history" class="log">Semantic session history will appear here. This is not an execution queue.</div>
       </div>
     </section>
   </main>
@@ -429,6 +431,8 @@ HUD_JS = r"""(() => {
   const approvedLaunches = document.getElementById("approved-launches");
   const activeSession = document.getElementById("active-session");
   const sessionsList = document.getElementById("sessions-list");
+  const sessionHistory = document.getElementById("session-history");
+  const refreshSessionHistoryButton = document.getElementById("refresh-session-history");
   const createSession = document.getElementById("create-session");
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
@@ -507,6 +511,7 @@ HUD_JS = r"""(() => {
       log("Connected to Jarvis runtime.");
       request("initialize");
       request("session.list", { status: "active", limit: 25 });
+      refreshSessionHistory();
       request("approval.list", { status: "pending" });
       request("approval.list", { status: "approved" });
       request("voice.provider_status");
@@ -533,6 +538,14 @@ HUD_JS = r"""(() => {
         if (frame.event_type && frame.event_type.startsWith("session.")) {
           request("session.list", { status: "active", limit: 25 });
         }
+        if (frame.session_id === currentSessionId()) {
+          refreshSessionHistory();
+        }
+        return;
+      }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.messages)) {
+        renderSessionHistory(frame.result.messages, frame.result.current_sequence);
+        requestIndex.delete(frame.id);
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.sessions) {
@@ -545,6 +558,7 @@ HUD_JS = r"""(() => {
         activeSession.textContent = `Active session: ${activeSessionId}`;
         log(`HUD session active: ${activeSessionId}.`);
         request("session.list", { status: "active", limit: 25 });
+        refreshSessionHistory();
         requestIndex.delete(frame.id);
         return;
       }
@@ -650,6 +664,11 @@ HUD_JS = r"""(() => {
     log("Runtime readiness refresh requested.");
   });
 
+  refreshSessionHistoryButton.addEventListener("click", () => {
+    refreshSessionHistory();
+    log("Session history refresh requested.");
+  });
+
   speakStatus.addEventListener("click", () => {
     speakRuntimeStatus();
   });
@@ -662,6 +681,7 @@ HUD_JS = r"""(() => {
     activeSessionId = sessionId;
     activeSession.textContent = `Active session: ${sessionId}`;
     log(`Selected session ${sessionId}.`);
+    refreshSessionHistory();
   });
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {
@@ -867,6 +887,27 @@ HUD_JS = r"""(() => {
         <button type="button" data-session-id="${escapeHtml(session.id)}">Use Session</button>
       </section>
     `).join("");
+  }
+
+  function refreshSessionHistory() {
+    request("message.list", { session_id: currentSessionId(), limit: 25 });
+  }
+
+  function renderSessionHistory(messages, currentSequence) {
+    if (!messages.length) {
+      sessionHistory.textContent = `No semantic history for ${currentSessionId()} yet. Current sequence: ${currentSequence || 0}.`;
+      return;
+    }
+    sessionHistory.innerHTML = messages.map((message) => {
+      const payload = JSON.stringify(message.payload || {}, null, 2);
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(message.event_type || "event")}</strong>
+          <div>Sequence: ${escapeHtml(message.sequence || "")} | Session: ${escapeHtml(message.session_id || "")}</div>
+          <pre>${escapeHtml(payload)}</pre>
+        </section>
+      `;
+    }).join("");
   }
 
   function renderCodeburnStatus(status) {
