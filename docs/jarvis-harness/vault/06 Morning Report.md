@@ -116,7 +116,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed release manifest alignment in `b5fda5e`.
 - Ran final integrated validation: governance PASS, 204 tests passed.
 - Ran AG release-boundary review; no release authority issue was found.
-- Refreshed Codeburn snapshot: month `$590.07`, 6365 calls.
+- Implemented and validated approval-gated `swarm.start` and `swarm.stop` lifecycle records. They consume scoped approvals and require the HUD runtime token, but do not launch agents, PTYs, Worktrunk, shell commands, or runtime workflows.
+- Committed and pushed approval-gated swarm lifecycle records in `3e9d9d0`.
+- Ran final integrated validation: governance PASS, 207 tests passed.
+- Ran AG safety review for swarm lifecycle records; no execution authority issue was found.
+- Refreshed Codeburn snapshot: month `$592.63`, 6387 calls.
 
 ## Pending
 
