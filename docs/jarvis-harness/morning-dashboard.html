@@ -221,7 +221,7 @@
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 18</strong>Browser Smoke</div>
+        <div class="ring-text"><strong>PHASE 19</strong>Local TTS</div>
       </div>
     </header>
 
@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$581.81</div>
-          <div class="note">Latest Codeburn month snapshot: 6294 calls. Daily counter reset after midnight.</div>
+          <div class="value">$585.50</div>
+          <div class="note">Latest Codeburn month snapshot: 6323 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">Runtime, PTY supervision, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, state-only command proposals, automated HUD browser smoke, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
+          <div class="note">Runtime, PTY supervision, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, state-only command proposals, automated HUD browser smoke, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, approval-gated local TTS, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
         </div>
       </div>
     </section>
@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>; message history <code>efe573e</code>; HUD history <code>3e46529</code>; session archive <code>49f6fe9</code>; profile set <code>e08dbac</code>; prompt composer <code>8b893ed</code>; session fork <code>59b30f8</code>; session resume <code>9d581a4</code>; history search <code>e8ca6e4</code>; swarm plan <code>f315583</code>; command proposals <code>ed9e22e</code>; HUD browser smoke <code>79897e0</code>.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>; message history <code>efe573e</code>; HUD history <code>3e46529</code>; session archive <code>49f6fe9</code>; profile set <code>e08dbac</code>; prompt composer <code>8b893ed</code>; session fork <code>59b30f8</code>; session resume <code>9d581a4</code>; history search <code>e8ca6e4</code>; swarm plan <code>f315583</code>; command proposals <code>ed9e22e</code>; HUD browser smoke <code>79897e0</code>; local TTS <code>4c747cb</code>.</li>
         </ul>
       </div>
       <div>
@@ -285,7 +285,7 @@
           <li>Plan-viewer harness routes and durable queues remain planning state only, not command authority.</li>
           <li>Voice intent proposals classify transcripts but must not execute commands.</li>
           <li>AG challenge review found STT, approval replay, command policy, WebSocket origin, token, and API-contract issues; fixes are committed in <code>89b09fc</code>, <code>c176976</code>, and <code>7d3e0b5</code>.</li>
-          <li>Final integrated validation passed: governance PASS, 190 tests, AG challenge review, HUD browser smoke, swarm-plan smoke, and command-proposal smoke.</li>
+          <li>Final integrated validation passed: governance PASS, 198 tests, AG challenge review, HUD browser smoke, local TTS adapter tests, swarm-plan smoke, and command-proposal smoke.</li>
           <li>Windows AC sleep and hibernate were set to never for the overnight run.</li>
         </ul>
       </div>
@@ -313,6 +313,7 @@
         <div class="step"><strong>Phase 16</strong><span>Planning-only swarm plans record proposed lane assignments into semantic history without launching agents, Worktrunk, PTYs, shell commands, or workflows.</span></div>
         <div class="step"><strong>Phase 17</strong><span>State-only command proposals classify and record proposed operations without creating approvals, launching PTYs, mutating Worktrunk, or executing commands.</span></div>
         <div class="step"><strong>Phase 18</strong><span>Automated HUD browser smoke starts the runtime on temporary state, verifies WebSocket/PWA/readiness, creates a session, and records a command proposal.</span></div>
+        <div class="step"><strong>Phase 19</strong><span>Approval-gated local TTS adapter synthesizes speech through a server-configured command with text-hash approval binding and runtime-owned output paths.</span></div>
       </div>
     </section>
 

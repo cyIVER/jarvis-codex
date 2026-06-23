@@ -104,11 +104,15 @@ This note backs the morning HTML dashboard.
 - Added automated HUD browser smoke coverage that starts runtime on temporary state, verifies WebSocket/PWA/readiness, creates a session, and records a command proposal.
 - Committed and pushed HUD browser smoke coverage in `79897e0`.
 - Ran final integrated validation: governance PASS, 190 tests passed.
-- Refreshed Codeburn snapshot: month `$581.81`, 6294 calls.
+- Implemented and validated approval-gated local TTS adapter execution with server-configured command, text-hash approval binding, runtime token, and runtime-owned output paths.
+- Committed and pushed approval-gated local TTS adapter in `4c747cb`.
+- Ran final integrated validation: governance PASS, 198 tests passed.
+- Ran AG security review for `voice.synthesize_audio`; no TTS boundary issue was found.
+- Refreshed Codeburn snapshot: month `$585.50`, 6323 calls.
 
 ## Pending
 
-- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, safe swarm start/stop design, and release packaging.
+- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, safe swarm start/stop design, and release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

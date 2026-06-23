@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:37 EDT
+updated: 2026-06-23 02:44 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -57,7 +57,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Planning-only swarm plan recording committed and pushed as `f315583`.
 - State-only command proposal recording committed and pushed as `ed9e22e`.
 - Automated HUD browser smoke coverage committed and pushed as `79897e0`.
-- Current Codeburn snapshot: month `$581.81`, 6294 calls.
+- Approval-gated local TTS adapter committed and pushed as `4c747cb`.
+- Current Codeburn snapshot: month `$585.50`, 6323 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -89,6 +90,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, safe swarm start/stop design, and release packaging.
+1. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, safe swarm start/stop design, and release packaging.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
