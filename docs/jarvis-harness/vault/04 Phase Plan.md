@@ -42,10 +42,11 @@ Completed:
 - Runtime-served Jarvis HUD shell with Codex, Antigravity, Codeburn panes, WebSocket client, approval refresh, and microphone permission button.
 - Browser `SpeechRecognition` STT integration when available, with final transcripts submitted through runtime `voice.submit`.
 - Server-side `MediaRecorder` audio chunk ingestion with local state storage and no automatic transcription execution.
+- Plan-viewer harness route surface for Codex/Antigravity planning handoffs, with display-only command text and no agent invocation.
 
 In progress:
 
-- Local STT transcription job wiring.
+- Transcript-to-command approval boundaries.
 
 ## Phase 2 Managed PTYs
 

@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT pending commit.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route pending commit.</li>
         </ul>
       </div>
       <div>
@@ -282,7 +282,7 @@
           <li>Gemini realtime OAuth feasibility is unproven.</li>
           <li>Electron renderer must not own command execution.</li>
           <li>Mobile endpoint must remain private-network only.</li>
-          <li>Existing held-out <code>plan_viewer.py</code> changes must not be mixed into spec commits.</li>
+          <li>Plan-viewer harness routes and durable queues remain planning state only, not command authority.</li>
           <li>Windows AC sleep and hibernate were set to never for the overnight run.</li>
         </ul>
       </div>
@@ -295,7 +295,7 @@
         <div class="step"><strong>Phase 1</strong><span>SQLite event store, ACP protocol, policy classifier, and FastAPI runtime RPC skeleton.</span></div>
         <div class="step"><strong>Phase 2</strong><span>Managed PTY supervisor, runtime RPC wiring, and WebSocket PTY streams are validated.</span></div>
         <div class="step"><strong>Phase 3</strong><span>Approval lifecycle and event replay are validated; live approval push remains next.</span></div>
-        <div class="step"><strong>Phase 4</strong><span>HUD microphone permission, browser STT, local audio chunk ingestion, and approval-gated local STT job wiring are validated.</span></div>
+        <div class="step"><strong>Phase 4</strong><span>HUD microphone permission, browser STT, local audio chunk ingestion, approval-gated local STT, and plan-viewer harness routing are validated.</span></div>
         <div class="step"><strong>Phase 5</strong><span>Dynamic swarm, delivery loop, AG adversaries, Codeburn telemetry.</span></div>
         <div class="step"><strong>Phase 6</strong><span>Private-network iPhone PWA.</span></div>
         <div class="step"><strong>Phase 7</strong><span>Production readiness validation and release report.</span></div>

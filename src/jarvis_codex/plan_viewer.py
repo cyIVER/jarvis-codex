@@ -22,6 +22,10 @@ def next_steps_queue_path(state_dir: Path) -> Path:
     return state_dir / "next-steps" / "queue.json"
 
 
+def harness_route_path(state_dir: Path) -> Path:
+    return state_dir / "harness" / "route.json"
+
+
 def load_next_steps_selection(state_dir: Path) -> dict[str, object]:
     path = next_steps_state_path(state_dir)
     try:
@@ -101,6 +105,60 @@ def approve_next_steps_queue(state_dir: Path) -> dict[str, object]:
     return queue_data
 
 
+def load_harness_route(state_dir: Path) -> dict[str, object] | None:
+    path = harness_route_path(state_dir)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    target = raw.get("target")
+    if target not in {"codex", "antigravity"}:
+        return None
+    objective = raw.get("objective", "")
+    context = raw.get("context", "")
+    return {
+        "id": raw.get("id") if isinstance(raw.get("id"), str) else "",
+        "target": target,
+        "objective": objective if isinstance(objective, str) else "",
+        "context": context if isinstance(context, str) else "",
+        "created_at": raw.get("created_at") if isinstance(raw.get("created_at"), int) else None,
+        "source": "plan_viewer",
+        "execution_authority": False,
+        "agent_invoked": False,
+        "runtime_started": False,
+        "microphone_required": bool(raw.get("microphone_required")),
+        "purpose": "harness-routing",
+    }
+
+
+def save_harness_route(state_dir: Path, target: object, objective: object, context: object = "", microphone_required: object = False) -> dict[str, object]:
+    if target not in {"codex", "antigravity"}:
+        raise ValueError("target must be codex or antigravity")
+    objective_text = objective.strip() if isinstance(objective, str) else ""
+    if not objective_text:
+        raise ValueError("objective is required")
+    context_text = context if isinstance(context, str) else ""
+    data = {
+        "id": f"harness_{int(time.time())}",
+        "target": target,
+        "objective": objective_text[:4000],
+        "context": context_text[:12000],
+        "created_at": int(time.time()),
+        "source": "plan_viewer",
+        "execution_authority": False,
+        "agent_invoked": False,
+        "runtime_started": False,
+        "microphone_required": bool(microphone_required),
+        "purpose": "harness-routing",
+    }
+    path = harness_route_path(state_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return data
+
+
 def document_sources(repo_dir: Path, plan_dir: Path) -> list[dict[str, str]]:
     docs = [{"id": path.name, "label": path.name, "path": str(path)} for path in sorted(plan_dir.glob("*.mdx"))]
     white_paper = repo_dir / "docs" / "JARVIS_WHITE_PAPER.md"
@@ -133,6 +191,7 @@ def build_current_state(repo_dir: Path, state_dir: Path) -> dict[str, object]:
     handoffs = jarvis_state.recent_handoffs(limit=1)
     
     queue = load_approved_queue(state_dir)
+    harness = load_harness_route(state_dir)
     
     return {
         "branch": status.splitlines()[0] if status else "",
@@ -154,6 +213,7 @@ def build_current_state(repo_dir: Path, state_dir: Path) -> dict[str, object]:
             "unresolved_approvals": approvals,
             "last_handoff": handoffs[0] if handoffs else None,
             "queued_state": queue,
+            "harness_route": harness,
         }
     }
 
@@ -474,6 +534,45 @@ INDEX_HTML = """<!doctype html>
       font-size: 21px;
     }
     .proceed-panel p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .harness-shell { display: grid; gap: 24px; padding-bottom: 48px; }
+    .harness-panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .harness-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+    .harness-target {
+      border: 1px solid var(--line);
+      background: #111720;
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+    }
+    .harness-target.active { border-color: var(--accent); background: #122126; }
+    .harness-target h3 { margin: 0 0 8px; color: var(--accent-2); }
+    .harness-target p { margin: 0; font-size: 13px; color: #c5cedb; }
+    .harness-feature-detail { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .harness-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0a0d12;
+      color: var(--text);
+      padding: 12px;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .harness-input.objective { min-height: 80px; }
+    .harness-input.context { min-height: 180px; resize: vertical; }
+    .mic-status { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .mic-status.ready { color: var(--accent); }
+    .mic-status.risk { color: var(--danger); }
     .brief {
       width: 100%;
       min-height: 230px;
@@ -500,6 +599,7 @@ INDEX_HTML = """<!doctype html>
       .state-grid { grid-template-columns: 1fr; }
       .goal-grid { grid-template-columns: 1fr; }
       .step-grid { grid-template-columns: 1fr; }
+      .harness-grid { grid-template-columns: 1fr; }
       .proceed-panel { position: static; }
       .step-row { grid-template-columns: 28px minmax(0, 1fr); }
       .priority { grid-column: 2; }
@@ -528,9 +628,17 @@ INDEX_HTML = """<!doctype html>
     const doc = document.getElementById('doc');
     const status = document.getElementById('status');
     const STORAGE_KEY = 'jarvis-next-step-selection';
+    const HARNESS_TARGET_KEY = 'jarvis-harness-target';
     let serverSelected = new Set();
     let currentState = null;
     let documents = [];
+    let harnessTarget = localStorage.getItem(HARNESS_TARGET_KEY) || 'codex';
+    let microphoneState = {
+      permission: 'unknown',
+      enabledByClick: false,
+      streamActive: false,
+      error: '',
+    };
     const DESIRED_END_STATE = [
       {
         title: 'Stable local review surface',
@@ -618,6 +726,88 @@ INDEX_HTML = """<!doctype html>
         summary: 'Review bridge scope before adding execution adapters so tool use remains approval-aware.',
         owner: 'codex bridge lane',
         command: 'uv run jarvis-codex handoff --objective "Review Codex bridge contract"'
+      }
+    ];
+    const HARNESS_FEATURES = [
+      {
+        name: 'Prompt and session input',
+        claude: 'Interactive prompt, slash commands, history, resume, branch, and background sessions.',
+        jarvis: 'Harness objective/context fields, durable route queue, local state, handoff, and run log.',
+        codex: 'Main thread handles implementation, validation, commits, and operator reports.',
+        antigravity: 'Read-only second-model prompt for architecture review and planning challenge.',
+        status: 'ready'
+      },
+      {
+        name: 'Microphone and voice input',
+        claude: 'Voice input exists in interactive surfaces; browser permission is user mediated.',
+        jarvis: 'Enable Microphone button requests browser permission only from a click. It does not record, upload, transcribe, or write state.',
+        codex: 'Transcript or approved file-based STT can be captured through guarded CLI paths.',
+        antigravity: 'Voice-origin text can be routed to Antigravity only after transcription exists as explicit text.',
+        status: 'gated'
+      },
+      {
+        name: 'Plan mode and task list',
+        claude: 'Plan mode, task list, /batch, /fork, /background, and /tasks coordinate multi-step work.',
+        jarvis: 'Next-step selector, proceed brief, durable planning queue, loop state, and route target.',
+        codex: 'Executes bounded slices after approval and validation.',
+        antigravity: 'Reviews the plan or challenges assumptions before implementation.',
+        status: 'ready'
+      },
+      {
+        name: 'Tools and permissions',
+        claude: 'Built-in tools include file read/write/edit, Bash, search, web, and permission controls.',
+        jarvis: 'Displayed commands are proposals only; route records keep execution_authority false.',
+        codex: 'May run repo tools only through the active approval and validation policy.',
+        antigravity: 'Read-only analysis only through the local bridge.',
+        status: 'gated'
+      },
+      {
+        name: 'Subagents and agent teams',
+        claude: 'Subagents use isolated contexts; agent teams coordinate independent sessions.',
+        jarvis: 'Project-local Jarvis agents and skills are represented as routing choices and planning state.',
+        codex: 'Primary integrator and checker for local implementation.',
+        antigravity: 'Challenge lane for independent read-only review.',
+        status: 'ready'
+      },
+      {
+        name: 'Hooks and lifecycle automation',
+        claude: 'Hooks can fire on session, prompt, stop, and tool lifecycle events.',
+        jarvis: 'Harness records proposed hook/runtime work but does not activate hooks from the UI.',
+        codex: 'Can implement hook changes only as a reviewed code slice.',
+        antigravity: 'Can review hook safety before activation.',
+        status: 'gated'
+      },
+      {
+        name: 'MCP, plugins, and external connectors',
+        claude: 'MCP and plugins extend tools and resources with configured scopes.',
+        jarvis: 'Harness documents connector intent without enabling MCP, plugins, or external services.',
+        codex: 'Uses project governance before changing MCP/plugin state.',
+        antigravity: 'Can inspect connector plans for risk.',
+        status: 'gated'
+      },
+      {
+        name: 'Memory and context',
+        claude: 'CLAUDE.md, auto memory, /memory, /context, and /compact manage session continuity.',
+        jarvis: 'State continuity card, episodes, memory log, handoffs, loop log, and Codex governance docs.',
+        codex: 'Reads local state and updates durable files through approved slices.',
+        antigravity: 'Receives scoped context in prompt form, not mutable memory access.',
+        status: 'ready'
+      },
+      {
+        name: 'Diff, checkpoint, review, and rewind',
+        claude: 'Diff viewers, code review, security review, checkpoints, and rewind support recovery.',
+        jarvis: 'Harness keeps routes non-mutating; Git, tests, release manifest, and CI are the recovery boundary.',
+        codex: 'Runs tests and commits scoped changes; no destructive git unless approved.',
+        antigravity: 'Can perform read-only review of diffs or architecture.',
+        status: 'ready'
+      },
+      {
+        name: 'Settings and diagnostics',
+        claude: '/config, /permissions, /status, /doctor, and scoped settings expose control state.',
+        jarvis: 'Doctor governance, loop verify, release manifest, runtime gates, and current-state API expose readiness.',
+        codex: 'Responsible for validation and reporting.',
+        antigravity: 'Can challenge readiness reports.',
+        status: 'ready'
       }
     ];
 
@@ -1093,6 +1283,170 @@ INDEX_HTML = """<!doctype html>
       });
     }
 
+    function renderHarnessRouteSummary() {
+      const route = currentState && currentState.continuity ? currentState.continuity.harness_route : null;
+      if (!route) return '<p>No queued harness route.</p>';
+      return `
+        <p><strong>Queued target:</strong> ${escapeHtml(route.target)}</p>
+        <p><strong>Objective:</strong> ${escapeHtml(route.objective || 'not recorded')}</p>
+        <p><strong>Execution authority:</strong> ${route.execution_authority ? 'true' : 'false'}</p>
+        <p><strong>Agent invoked:</strong> ${route.agent_invoked ? 'true' : 'false'}</p>
+      `;
+    }
+
+    function renderHarnessFeatureMatrix() {
+      return `
+        <div class="step-list">
+          ${HARNESS_FEATURES.map((feature) => `
+            <section class="step-row">
+              <span class="badge ${escapeHtml(feature.status)}">${escapeHtml(feature.status)}</span>
+              <span class="step-body">
+                <span class="step-title"><strong>${escapeHtml(feature.name)}</strong></span>
+                <p><strong>Claude Code baseline:</strong> ${escapeHtml(feature.claude)}</p>
+                <p><strong>Jarvis harness:</strong> ${escapeHtml(feature.jarvis)}</p>
+                <p class="harness-feature-detail"><strong>Codex:</strong> ${escapeHtml(feature.codex)}</p>
+                <p class="harness-feature-detail"><strong>Antigravity:</strong> ${escapeHtml(feature.antigravity)}</p>
+              </span>
+            </section>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function microphoneStatusText() {
+      if (microphoneState.error) return microphoneState.error;
+      if (microphoneState.enabledByClick) return 'Microphone permission was granted from this browser click. No audio was uploaded, transcribed, or written to state.';
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return 'This browser does not expose navigator.mediaDevices.getUserMedia.';
+      return 'Microphone is disabled. Click Enable Microphone to request browser permission for this session.';
+    }
+
+    async function enableMicrophoneFromClick() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        microphoneState = { permission: 'unsupported', enabledByClick: false, streamActive: false, error: 'Microphone APIs are unavailable in this browser.' };
+        renderHarness();
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        microphoneState = { permission: 'granted', enabledByClick: true, streamActive: false, error: '' };
+        for (const track of stream.getTracks()) track.stop();
+        status.textContent = 'Microphone permission enabled for this browser session; no recording started';
+      } catch (err) {
+        microphoneState = { permission: 'denied', enabledByClick: false, streamActive: false, error: 'Microphone permission was not granted.' };
+        status.textContent = 'Microphone permission was not granted';
+      }
+      renderHarness();
+    }
+
+    async function saveHarnessRouteFromUi() {
+      const objective = doc.querySelector('#harnessObjective').value.trim();
+      const context = doc.querySelector('#harnessContext').value.trim();
+      const microphoneRequired = doc.querySelector('#harnessNeedsMic').checked;
+      if (!objective) {
+        status.textContent = 'Harness objective is required';
+        return;
+      }
+      try {
+        const res = await fetch('/api/harness-route', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target: harnessTarget, objective, context, microphone_required: microphoneRequired }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        status.textContent = `Harness route queued for ${harnessTarget}`;
+        await loadCurrentState();
+        renderHarness();
+      } catch {
+        status.textContent = 'Error saving harness route';
+      }
+    }
+
+    function renderHarness() {
+      for (const item of tabs.querySelectorAll('button')) item.classList.remove('active');
+      const harnessButton = tabs.querySelector('[data-view="harness"]');
+      if (harnessButton) harnessButton.classList.add('active');
+      const micClass = microphoneState.error ? 'risk' : (microphoneState.enabledByClick ? 'ready' : '');
+      doc.innerHTML = `
+        <section class="harness-shell">
+          <div class="next-header">
+            <h1>Jarvis Harness</h1>
+            <p>Queue planning handoffs for Codex or Antigravity while keeping microphone use, agent invocation, and command execution explicitly gated.</p>
+          </div>
+          <section class="harness-panel">
+            <div class="band-header">
+              <h2>Microphone Control</h2>
+              <p>Browser permission only. This does not start transcription or write audio.</p>
+            </div>
+            <p class="mic-status ${micClass}">${escapeHtml(microphoneStatusText())}</p>
+            <div class="toolbar">
+              <button class="primary" id="enableMic">Enable Microphone</button>
+              <span class="badge ${microphoneState.enabledByClick ? 'ready' : 'gated'}">${microphoneState.enabledByClick ? 'permission granted' : 'click required'}</span>
+              <span class="badge">no upload</span>
+              <span class="badge">no transcription</span>
+              <span class="badge">no state write</span>
+            </div>
+          </section>
+          <section class="harness-panel">
+            <div class="band-header">
+              <h2>Claude Code Feature Parity Map</h2>
+              <p>Jarvis mirrors the control-plane concepts while keeping execution explicit and local.</p>
+            </div>
+            ${renderHarnessFeatureMatrix()}
+          </section>
+          <section class="harness-panel">
+            <div class="band-header">
+              <h2>Agent Harness Route</h2>
+              <p>Choose who should receive the next planning handoff. Saving a route does not invoke either agent.</p>
+            </div>
+            <div class="harness-grid">
+              <button class="harness-target ${harnessTarget === 'codex' ? 'active' : ''}" data-harness-target="codex">
+                <h3>Codex</h3>
+                <p>Main implementation, integration, validation, commits, and final operator reports.</p>
+              </button>
+              <button class="harness-target ${harnessTarget === 'antigravity' ? 'active' : ''}" data-harness-target="antigravity">
+                <h3>Antigravity</h3>
+                <p>Read-only second-model review, architecture challenge, planning critique, and large-context synthesis.</p>
+              </button>
+            </div>
+            <label>
+              <span class="badge">Objective</span>
+              <textarea id="harnessObjective" class="harness-input objective" placeholder="Describe the handoff objective."></textarea>
+            </label>
+            <label>
+              <span class="badge">Context</span>
+              <textarea id="harnessContext" class="harness-input context" placeholder="Optional context, links, constraints, and acceptance criteria."></textarea>
+            </label>
+            <label style="display:flex; gap:10px; align-items:center; color:#d6dde8;">
+              <input id="harnessNeedsMic" type="checkbox" />
+              This route expects microphone-origin input, but still requires explicit capture/transcription approval.
+            </label>
+            <div class="toolbar">
+              <button class="primary" id="saveHarnessRoute">Queue Harness Route</button>
+              <span class="badge gated">execution_authority false</span>
+              <span class="badge gated">agent_invoked false</span>
+            </div>
+          </section>
+          <section class="harness-panel">
+            <div class="band-header">
+              <h2>Queued Route</h2>
+              <p>Latest local planning state from <code>state/harness/route.json</code>.</p>
+            </div>
+            <div class="state-card">${renderHarnessRouteSummary()}</div>
+          </section>
+        </section>
+      `;
+      status.textContent = 'Harness ready';
+      doc.querySelector('#enableMic').addEventListener('click', enableMicrophoneFromClick);
+      doc.querySelector('#saveHarnessRoute').addEventListener('click', saveHarnessRouteFromUi);
+      for (const button of doc.querySelectorAll('[data-harness-target]')) {
+        button.addEventListener('click', () => {
+          harnessTarget = button.dataset.harnessTarget || 'codex';
+          localStorage.setItem(HARNESS_TARGET_KEY, harnessTarget);
+          renderHarness();
+        });
+      }
+    }
+
     async function loadFile(file, button) {
       for (const item of tabs.querySelectorAll('button')) item.classList.remove('active');
       button.classList.add('active');
@@ -1114,6 +1468,11 @@ INDEX_HTML = """<!doctype html>
       nextSteps.dataset.view = 'next-steps';
       nextSteps.addEventListener('click', () => renderNextSteps());
       tabs.appendChild(nextSteps);
+      const harness = document.createElement('button');
+      harness.textContent = 'Harness';
+      harness.dataset.view = 'harness';
+      harness.addEventListener('click', () => renderHarness());
+      tabs.appendChild(harness);
       for (const file of documents) {
         const button = document.createElement('button');
         button.textContent = file.label;
@@ -1171,6 +1530,38 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/harness-route":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            if length > 20000:
+                self._send(413, b"payload too large", "text/plain")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except json.JSONDecodeError:
+                self._send(400, b"invalid json", "text/plain")
+                return
+            if not isinstance(payload, dict):
+                self._send(400, b"invalid payload", "text/plain")
+                return
+            try:
+                route = save_harness_route(
+                    self.state_dir,
+                    payload.get("target"),
+                    payload.get("objective"),
+                    payload.get("context", ""),
+                    payload.get("microphone_required", False),
+                )
+            except ValueError as exc:
+                self._send(400, str(exc).encode("utf-8"), "text/plain")
+                return
+            except OSError:
+                self._send(500, b"could not save harness route", "text/plain")
+                return
+            self._send(200, json.dumps(route).encode("utf-8"), "application/json")
+            return
         if parsed.path == "/api/approve-queue":
             try:
                 queue_data = approve_next_steps_queue(self.state_dir)

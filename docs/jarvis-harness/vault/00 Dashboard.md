@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:15 EDT
+updated: 2026-06-23 03:33 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -26,7 +26,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime-served HUD shell committed and pushed as `7cbc5c5`.
 - Browser STT transcript submission committed and pushed as `11aa08b`.
 - Server-side MediaRecorder audio chunk ingestion committed and pushed as `162b9b6`.
-- Approval-gated local STT transcription job wiring is validated and awaiting commit.
+- Approval-gated local STT transcription job wiring committed and pushed as `b8be669`.
+- Plan-viewer harness route and queue-safety package is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -40,13 +41,13 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Watchpoints
 
-- Existing held-out repo changes in `src/jarvis_codex/plan_viewer.py` and `tests/test_plan_viewer.py`.
+- Plan-viewer package must stay display-only and planning-only; commands and harness routes must not gain execution authority.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
 
 ## Next
 
-1. Commit and push approval-gated local STT transcription job wiring.
+1. Commit and push plan-viewer harness route and queue-safety package.
 2. Continue into voice intent routing and transcript-to-command approval boundaries.
-3. Keep voice/STT feasibility and HUD design tied to the runtime API contract.
+3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

@@ -38,10 +38,12 @@ This note backs the morning HTML dashboard.
 - Implemented and validated MediaRecorder audio chunk ingestion into runtime state without automatic transcription execution.
 - Committed and pushed MediaRecorder audio chunk ingestion in `162b9b6`.
 - Implemented and validated approval-gated local STT adapter execution for saved audio files.
+- Committed and pushed approval-gated local STT transcription in `b8be669`.
+- Implemented and validated plan-viewer harness routing for Codex/Antigravity planning handoffs with queue safety tests.
 
 ## Pending
 
-- Commit and push approval-gated local STT transcription job wiring.
+- Commit and push plan-viewer harness route and queue-safety package.
 - Continue voice intent routing and transcript-to-command approval boundaries.
 - Keep dashboard current as phases progress.
 
