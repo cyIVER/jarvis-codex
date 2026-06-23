@@ -59,7 +59,6 @@ PLANNED_METHODS = {
     "loop.resume",
     "loop.start",
     "loop.stop",
-    "message.list",
     "profile.set",
     "prompt.cancel",
     "prompt.send",
@@ -336,6 +335,7 @@ def _dispatch_request(
                     "approval.request",
                     "approval.respond",
                     "event.subscribe",
+                    "message.list",
                     "session.create",
                     "session.get",
                     "session.list",
@@ -461,6 +461,35 @@ def _dispatch_request(
         if session is None:
             return make_error_response(request_id, code="unknown_session", message="session does not exist")
         return make_response(request_id, {"session": session})
+
+    if method == "message.list":
+        session_id = params.get("session_id")
+        if session_id is not None and not isinstance(session_id, str):
+            return make_error_response(request_id, code="invalid_session_id", message="session_id must be a string")
+        since_sequence = max(0, int(params.get("since_sequence") or 0))
+        limit = max(1, min(int(params.get("limit") or 50), 200))
+        if not store.db_path.exists():
+            return make_response(
+                request_id,
+                {
+                    "messages": [],
+                    "current_sequence": 0,
+                    "writes_state": False,
+                },
+            )
+        events = [
+            _stored_event_to_dict(event)
+            for event in store.iter_events(session_id=session_id)
+            if event.sequence > since_sequence
+        ][:limit]
+        return make_response(
+            request_id,
+            {
+                "messages": events,
+                "current_sequence": store.current_sequence(),
+                "writes_state": False,
+            },
+        )
 
     if method == "command.classify":
         command = str(params.get("command") or "")

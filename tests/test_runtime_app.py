@@ -67,6 +67,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
+    assert "message.list" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -145,6 +146,56 @@ def test_runtime_session_get_reports_unknown_session(tmp_path):
 
     assert response.json()["error"]["code"] == "unknown_session"
     assert (state / "runtime" / "jarvis.db").exists()
+
+
+def test_runtime_message_list_reports_empty_history_without_writing_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "missing"}, request_id="req_1"),
+    )
+
+    data = response.json()["result"]
+    assert data["messages"] == []
+    assert data["current_sequence"] == 0
+    assert data["writes_state"] is False
+    assert not state.exists()
+
+
+def test_runtime_message_list_returns_session_events(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request(
+            "session.create",
+            {"session_id": "session-1", "title": "History", "source_client": "pytest"},
+            request_id="req_1",
+        ),
+    )
+    client.post(
+        "/rpc",
+        json=make_request(
+            "voice.submit",
+            {"session_id": "session-1", "transcript": "summarize current readiness"},
+            request_id="req_2",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-1", "limit": 20}, request_id="req_3"),
+    )
+
+    data = response.json()["result"]
+    event_types = [message["event_type"] for message in data["messages"]]
+    assert event_types == ["session.created", "voice.transcript_final"]
+    assert data["messages"][1]["payload"]["text"] == "summarize current readiness"
+    assert data["current_sequence"] == 2
+    assert data["writes_state"] is False
 
 
 def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):

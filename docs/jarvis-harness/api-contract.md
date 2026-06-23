@@ -54,6 +54,8 @@ Messaging:
 - `message.list`
 - `event.subscribe`
 
+`message.list` is implemented as a semantic event/history view. If runtime state has not been initialized yet, it returns an empty list without creating state.
+
 PTY:
 
 - `pty.create`
