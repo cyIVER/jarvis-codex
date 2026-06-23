@@ -11,6 +11,7 @@ def test_ci_runs_project_validation_without_release_rendering():
 
     assert "uv run pytest" in workflow
     assert "python3 scripts/validate-jarvis-codex-phase1.py" in workflow
+    assert "uv run jarvis-codex loop verify --json" in workflow
     assert "npm run typecheck" in workflow
     assert "npm audit --audit-level=high" in workflow
     assert "permissions:\n  contents: read" in workflow

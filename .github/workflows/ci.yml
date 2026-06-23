@@ -37,6 +37,9 @@ jobs:
       - name: Validate project-local Codex governance
         run: python3 scripts/validate-jarvis-codex-phase1.py
 
+      - name: Verify loop readiness
+        run: uv run jarvis-codex loop verify --json
+
   remotion:
     name: Remotion static validation
     runs-on: ubuntu-latest
