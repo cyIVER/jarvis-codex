@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:01 EDT
+updated: 2026-06-23 02:06 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -49,7 +49,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime semantic message history committed and pushed as `efe573e`.
 - HUD semantic session history panel committed and pushed as `3e46529`.
 - State-only session archive controls committed and pushed as `49f6fe9`.
-- Current Codeburn snapshot: month `$562.04`, 6114 calls.
+- State-only session profile updates committed and pushed as `e08dbac`.
+- Current Codeburn snapshot: month `$564.64`, 6142 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -68,6 +69,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime message history is a semantic event/history view; it is not an execution queue.
 - HUD session history renders event history only; it does not authorize command execution.
 - Session archive is state lifecycle only; it does not execute shell, PTY, Worktrunk, or runtime workflows.
+- Session profile changes are metadata only; they do not grant execution or approval authority.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
