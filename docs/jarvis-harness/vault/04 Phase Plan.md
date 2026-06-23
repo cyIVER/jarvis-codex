@@ -39,10 +39,11 @@ Completed:
 - Policy-gated PTY supervisor with create, input, resize, kill, cleanup, and runtime RPC wiring.
 - Approval lifecycle service with persistent request/respond events, approval projections, runtime RPC methods, and `event.subscribe` replay framing.
 - Live WebSocket PTY stream frames multiplexed with request/response traffic.
+- Runtime-served Jarvis HUD shell with Codex, Antigravity, Codeburn panes, WebSocket client, approval refresh, and microphone permission button.
 
 In progress:
 
-- HUD shell and client runtime adapter.
+- STT provider adapter and browser audio pipeline.
 
 ## Phase 2 Managed PTYs
 
@@ -78,11 +79,18 @@ Completed:
 
 ## Phase 4 Voice
 
+Status: implementation started.
+
 Deliver:
 
 - Gemini OAuth feasibility.
 - Local faster-whisper fallback.
 - Cinematic TTS adapter boundary.
+
+Completed:
+
+- Browser microphone permission button in HUD.
+- Local-only capture framing until STT streaming is connected.
 
 ## Phase 5 Swarm And Loops
 

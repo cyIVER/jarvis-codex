@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 01:34 EDT
+updated: 2026-06-23 01:56 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -22,7 +22,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime FastAPI app slice committed and pushed as `6a9d518`.
 - Managed PTY supervision committed and pushed as `21ef4ab`.
 - Approval lifecycle committed and pushed as `1332552`.
-- Live WebSocket PTY stream multiplexing is validated and awaiting commit.
+- Live WebSocket PTY stream multiplexing committed and pushed as `276b5ab`.
+- Runtime-served HUD shell with microphone permission button is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -43,6 +44,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Commit and push live WebSocket PTY stream multiplexing.
-2. Continue into HUD shell and client runtime adapter.
+1. Commit and push runtime HUD shell.
+2. Continue into STT provider adapter and browser audio pipeline.
 3. Keep voice/STT feasibility and HUD design tied to the runtime API contract.

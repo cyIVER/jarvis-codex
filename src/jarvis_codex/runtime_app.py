@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, Response
 
 from .approval import ApprovalError, ApprovalService
 from .event_store import JarvisEventStore
+from .hud import HUD_CSP, HUD_HTML, HUD_JS
 from .policy import classify_command
 from .protocol import (
     ProtocolError,
@@ -34,6 +36,14 @@ def create_app(state_dir: Path) -> FastAPI:
     app.state.pty_supervisor = pty_supervisor
     app.state.approval_service = approval_service
     app.router.add_event_handler("shutdown", pty_supervisor.close_all)
+
+    @app.get("/", response_class=HTMLResponse)
+    def hud() -> HTMLResponse:
+        return HTMLResponse(HUD_HTML, headers={"Content-Security-Policy": HUD_CSP})
+
+    @app.get("/assets/hud.js")
+    def hud_js() -> Response:
+        return Response(HUD_JS, media_type="application/javascript")
 
     @app.get("/health")
     def health() -> dict[str, object]:

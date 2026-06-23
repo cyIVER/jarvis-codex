@@ -30,11 +30,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated approval lifecycle and `event.subscribe` replay framing.
 - Committed and pushed approval lifecycle in `1332552`.
 - Implemented and validated live WebSocket PTY stream multiplexing.
+- Committed and pushed live WebSocket PTY stream multiplexing in `276b5ab`.
+- Implemented and validated runtime-served HUD shell with Codex, Antigravity, Codeburn panes, approval refresh, WebSocket connection, and microphone permission button.
 
 ## Pending
 
-- Commit and push live WebSocket PTY stream multiplexing.
-- Continue HUD shell and client runtime adapter implementation.
+- Commit and push runtime HUD shell.
+- Continue STT provider adapter and browser audio pipeline.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
