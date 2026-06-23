@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 04:43 EDT
+updated: 2026-06-23 06:23 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -82,7 +82,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Electron Builder uses committed `tools/electron-hud/assets/icon.png`; local make validation no longer reports the default Electron icon warning.
 - Read-only release artifact evidence reports size/SHA-256 for the committed icon and ignored Electron artifacts.
 - The HUD renders a non-writing Codex, Antigravity, and Codeburn provider status matrix.
-- Current Codeburn snapshot: month `$644.73`, 6828 calls.
+- Current Codeburn snapshot: today `$2.09` across 10 calls; month `$712.66`, 7403 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -133,6 +133,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Release readiness checklist is read-only; it aggregates release gates and proposed follow-up commands without running them, writing state, or closing gates.
 - HUD release plan panel is read-only; it displays release readiness checklist commands without running validations or closing gates.
 - Loop readiness now verifies the loop-budget policy markers, not just file presence.
+- Product readiness artifacts now reflect the current validated release checklist, HUD release checklist, loop budget checks, approval-gated swarm launch, and open external release gates.
 - Runtime readiness CLI is non-writing and does not start the server.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
 - Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.
@@ -141,6 +142,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, external reviewer attestation, and safe runtime operator polish.
+1. Continue with remaining production gates: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron signing/distribution flow, signed release packaging, external reviewer attestation, unattended/background scheduling policy, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
