@@ -54,11 +54,12 @@ This note backs the morning HTML dashboard.
 - Implemented approved PTY launch controls that keep launch separate from approval and call the runtime approval-matched `pty.create` path.
 - Committed and pushed approved PTY launch controls in `b6f5fbf`.
 - Implemented session continuity controls: runtime session list/get, HUD session selection, and explicit HUD session creation.
+- Committed and pushed session continuity controls in `2405333`.
 
 ## Pending
 
-- Validate and commit session continuity controls.
 - Add mobile/PWA shell affordances.
+- Add live Codeburn status into the runtime HUD.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
