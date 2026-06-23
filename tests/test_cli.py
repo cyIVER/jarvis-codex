@@ -378,6 +378,41 @@ def test_release_evidence_add_rejects_external_artifact_path(tmp_path, monkeypat
     assert "selected state release directory" in str(exc_info.value)
 
 
+def test_release_gate_status_reports_open_gates_from_state_evidence(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "networked_gemini_live_validation",
+            "--summary",
+            "Operator has not run the network test yet.",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    capsys.readouterr()
+
+    code = run_cli(monkeypatch, ["--state", str(state), "release", "gate-status", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    gemini = next(item for item in data["gates"] if item["gate"] == "networked_gemini_live_validation")
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["publication_ready"] is False
+    assert data["evidence_closes_gates"] is False
+    assert data["human_acceptance_required"] is True
+    assert gemini["status"] == "open"
+    assert gemini["evidence_count"] == 1
+    assert gemini["release_gate_closed"] is False
+
+
 def test_release_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
 

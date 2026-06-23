@@ -14,7 +14,12 @@ from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
 from .mobile import build_mobile_preflight, build_mobile_validation_plan, discover_mobile_hosts
 from .packaging import build_packaging_preflight
-from .release import build_external_security_review_plan, build_release_artifact_evidence, build_release_manifest
+from .release import (
+    build_external_security_review_plan,
+    build_release_artifact_evidence,
+    build_release_gate_status,
+    build_release_manifest,
+)
 from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import RELEASE_EVIDENCE_GATES, JarvisState
@@ -106,6 +111,8 @@ def main() -> int:
     release_evidence_add.add_argument("--json", action="store_true", help="Print evidence record as JSON")
     release_evidence_list = release_evidence_sub.add_parser("list", help="List release-gate evidence records")
     release_evidence_list.add_argument("--json", action="store_true", help="Print evidence records as JSON")
+    release_gate_status = release_sub.add_parser("gate-status", help="Summarize release gates and recorded evidence without closing gates")
+    release_gate_status.add_argument("--json", action="store_true", help="Print gate status as JSON")
     runtime = sub.add_parser("runtime", help="Run the local Jarvis runtime")
     runtime_sub = runtime.add_subparsers(dest="runtime_command", required=True)
     runtime_serve = runtime_sub.add_parser("serve", help="Serve the runtime HUD on loopback by default")
@@ -278,6 +285,9 @@ def main() -> int:
             if args.release_evidence_command == "list":
                 print(json.dumps({"release_evidence": state.release_evidence(), "execution_authority": False}, indent=2, sort_keys=True))
                 return 0
+        if args.release_command == "gate-status":
+            print(json.dumps(build_release_gate_status(state.release_evidence()), indent=2, sort_keys=True))
+            return 0
     if args.command == "runtime":
         if args.runtime_command == "readiness":
             if not args.json:

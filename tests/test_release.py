@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.release import build_external_security_review_plan, build_release_artifact_evidence, build_release_manifest
+from jarvis_codex.release import (
+    build_external_security_review_plan,
+    build_release_artifact_evidence,
+    build_release_gate_status,
+    build_release_manifest,
+)
 
 
 def write(path: Path, text: str = "ok") -> None:
@@ -221,3 +226,40 @@ def test_external_security_review_plan_is_read_only_and_keeps_gate_open(tmp_path
     assert "tests passing and fixes being implemented do not close the external_security_review gate" in plan["remaining_release_gates"]
     assert any("non-server-starting" in item for item in plan["validation_boundaries"])
     assert before == after
+
+
+def test_release_gate_status_summarizes_evidence_without_closing_gates():
+    status = build_release_gate_status(
+        [
+            {
+                "id": "evidence_old",
+                "created_at": 1,
+                "gate": "external_security_review",
+                "reviewer": "reviewer-a",
+                "summary": "older evidence",
+                "release_gate_closed": False,
+            },
+            {
+                "id": "evidence_new",
+                "created_at": 2,
+                "gate": "external_security_review",
+                "reviewer": "reviewer-b",
+                "summary": "newer evidence",
+                "release_gate_closed": False,
+            },
+        ]
+    )
+
+    external = next(item for item in status["gates"] if item["gate"] == "external_security_review")
+    assert status["status"] == "open-gates"
+    assert status["writes_state"] is False
+    assert status["execution_authority"] is False
+    assert status["publication_ready"] is False
+    assert status["evidence_closes_gates"] is False
+    assert status["human_acceptance_required"] is True
+    assert external["status"] == "open"
+    assert external["evidence_count"] == 2
+    assert external["latest_evidence_id"] == "evidence_new"
+    assert external["latest_reviewer"] == "reviewer-b"
+    assert external["release_gate_closed"] is False
+    assert all(item["release_gate_closed"] is False for item in status["gates"])

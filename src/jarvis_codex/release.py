@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from .state import RELEASE_EVIDENCE_GATES
+
 
 @dataclass(frozen=True)
 class ReleaseArtifact:
@@ -258,6 +260,44 @@ def build_external_security_review_plan(root: Path) -> dict[str, Any]:
             "tests passing and fixes being implemented do not close the external_security_review gate",
             "security review is not a substitute for signing, mobile validation, or Gemini Live validation",
         ],
+    }
+
+
+def build_release_gate_status(evidence_records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize release-gate evidence without closing gates."""
+    records_by_gate: dict[str, list[dict[str, Any]]] = {gate: [] for gate in sorted(RELEASE_EVIDENCE_GATES)}
+    for record in evidence_records:
+        gate = record.get("gate")
+        if isinstance(gate, str) and gate in records_by_gate:
+            records_by_gate[gate].append(record)
+
+    gates: list[dict[str, Any]] = []
+    for gate in sorted(RELEASE_EVIDENCE_GATES):
+        records = sorted(records_by_gate[gate], key=lambda item: item.get("created_at", 0), reverse=True)
+        latest = records[0] if records else None
+        gates.append(
+            {
+                "gate": gate,
+                "status": "open",
+                "evidence_count": len(records),
+                "latest_evidence_id": latest.get("id") if latest else None,
+                "latest_reviewer": latest.get("reviewer") if latest else None,
+                "latest_summary": latest.get("summary") if latest else None,
+                "release_gate_closed": False,
+                "requires_human_acceptance": True,
+            }
+        )
+
+    return {
+        "label": "Jarvis Codex release gate status",
+        "status": "open-gates",
+        "writes_state": False,
+        "execution_authority": False,
+        "publication_ready": False,
+        "evidence_closes_gates": False,
+        "human_acceptance_required": True,
+        "open_gate_count": len(gates),
+        "gates": gates,
     }
 
 

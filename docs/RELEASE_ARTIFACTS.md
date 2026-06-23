@@ -61,6 +61,12 @@ List recorded evidence with:
 jarvis-codex --state <state-dir> release evidence list --json
 ```
 
+Summarize open gates and evidence counts with:
+
+```bash
+jarvis-codex --state <state-dir> release gate-status --json
+```
+
 Evidence records are state-only review metadata. They do not close release gates, approve publication, launch tests, run mobile or Gemini validation, sign artifacts, copy artifacts, mutate Git, or grant execution authority.
 
 ## Generated Assets
