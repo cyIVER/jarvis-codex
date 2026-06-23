@@ -320,6 +320,7 @@ HUD_HTML = """<!doctype html>
           <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
           <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
           <button id="refresh-approvals" type="button">Refresh Approvals</button>
+          <div id="approvals-list" class="log">No pending approvals loaded.</div>
         </div>
       </div>
     </section>
@@ -339,6 +340,7 @@ HUD_JS = r"""(() => {
   const micToggle = document.getElementById("mic-toggle");
   const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
+  const approvalsList = document.getElementById("approvals-list");
   let socket;
   let requestSeq = 0;
   let micStream = null;
@@ -373,6 +375,16 @@ HUD_JS = r"""(() => {
     const stamp = new Date().toLocaleTimeString();
     consoleEl.textContent += `\n[${stamp}] ${line}`;
     consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[ch]));
   }
 
   function request(method, params = {}) {
@@ -414,6 +426,8 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.approvals) {
         approvalCount.textContent = String(frame.result.approvals.length);
+        renderApprovals(frame.result.approvals);
+        return;
       }
       if (frame.type === "response" && frame.result && frame.result.proposal) {
         const proposal = frame.result.proposal;
@@ -458,6 +472,20 @@ HUD_JS = r"""(() => {
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {
     request("approval.list", { status: "pending" });
+  });
+
+  approvalsList.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const approvalId = target.dataset.approvalId;
+    const action = target.dataset.approvalAction;
+    if (!approvalId || !action) return;
+    request("approval.respond", {
+      approval_id: approvalId,
+      status: action,
+      reason: `HUD ${action} click`
+    });
+    log(`Approval ${action} requested for ${approvalId}.`);
   });
 
   requestProposalApproval.addEventListener("click", () => {
@@ -594,6 +622,22 @@ HUD_JS = r"""(() => {
       command.trim(),
       policy.trim()
     ].filter(Boolean).join("\n");
+  }
+
+  function renderApprovals(approvals) {
+    if (!approvals.length) {
+      approvalsList.textContent = "No pending approvals.";
+      return;
+    }
+    approvalsList.innerHTML = approvals.map((approval) => `
+      <section class="approval-item">
+        <strong>${escapeHtml(approval.summary || approval.id)}</strong>
+        <div>Risk: ${escapeHtml(approval.risk || "medium")}</div>
+        <div>Operation: ${escapeHtml(approval.operation || "")}</div>
+        <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="approved">Approve</button>
+        <button type="button" class="danger" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="rejected">Reject</button>
+      </section>
+    `).join("");
   }
 
   function startMediaRecorderFallback() {

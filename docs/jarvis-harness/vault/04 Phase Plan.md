@@ -81,6 +81,7 @@ Completed:
 - Runtime `approval.request`, `approval.list`, and `approval.respond`.
 - Runtime `event.subscribe` replay framing.
 - Live WebSocket semantic event frames for approvals, sessions, voice transcripts, audio receipts, and voice intent classifications.
+- HUD approval list with approve/reject controls wired to `approval.respond`.
 
 ## Phase 4 Voice
 

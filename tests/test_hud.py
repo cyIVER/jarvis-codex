@@ -15,6 +15,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="mic-toggle"' in response.text
     assert 'id="proposal-preview"' in response.text
     assert 'id="request-proposal-approval"' in response.text
+    assert 'id="approvals-list"' in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -48,5 +49,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "PANE_LAUNCHES" in response.text
     assert 'source: "hud.pane.prepare"' in response.text
     assert "pane launch approval requested. No PTY was started." in response.text
+    assert "renderApprovals(frame.result.approvals)" in response.text
+    assert 'data-approval-action="approved"' in response.text
+    assert 'data-approval-action="rejected"' in response.text
+    assert 'request("approval.respond"' in response.text
+    assert "escapeHtml" in response.text
     assert "Event: ${frame.event_type}" in response.text
     assert 'frame.event_type.startsWith("approval.")' in response.text

@@ -48,11 +48,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated HUD proposal preview and approval-request action for voice intent proposals.
 - Committed and pushed voice proposal approval UI in `29c3c65`.
 - Implemented and validated approval-matched PTY launch boundary for Codex/Antigravity pane commands.
+- Committed and pushed approval-matched PTY launch boundary in `6923200`.
+- Implemented and validated HUD approval list with approve/reject controls.
 
 ## Pending
 
-- Commit and push approval-matched PTY launch boundary.
-- Continue Codex/Antigravity pane launch UX and approval response controls.
+- Commit and push HUD approval response controls.
+- Continue approved pane launch UX and session resume controls.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
