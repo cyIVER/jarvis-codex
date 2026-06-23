@@ -1352,6 +1352,7 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["mobile_validation_plan"] is True
     assert data["checks"]["gemini_feasibility"] is True
     assert data["checks"]["gemini_validation_plan"] is True
+    assert data["checks"]["gemini_nango_plan"] is True
     assert data["checks"]["loop_lifecycle_records"] is True
     assert data["checks"]["bounded_loop_run_once"] is True
     assert data["checks"]["packaging_preflight"] is True

@@ -17,6 +17,15 @@ GEMINI_LIVE_SOURCES = [
     "https://ai.google.dev/gemini-api/docs/api-key",
 ]
 
+NANGO_GEMINI_SOURCES = [
+    *GEMINI_LIVE_SOURCES,
+    "https://nango.dev/docs/getting-started/intro-to-nango",
+    "https://nango.dev/docs/guides/auth/auth-guide",
+    "https://nango.dev/docs/guides/platform/proxy-requests",
+    "https://nango.dev/docs/guides/functions/tool-calling",
+    "https://nango.dev/docs/api-integrations/google",
+]
+
 
 @dataclass(frozen=True)
 class GeminiFeasibility:
@@ -104,6 +113,37 @@ class GeminiLiveEvidenceBrief:
     cloud_spend_authority: bool
     release_gate_closed: bool
     requires_human_acceptance: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class NangoGeminiLiveIntegrationPlan:
+    label: str
+    status: str
+    recommended_architecture: str
+    nango_role: str
+    jarvis_backend_role: str
+    hud_role: str
+    direct_nango_audio_proxy_recommended: bool
+    browser_direct_requires_ephemeral_tokens: bool
+    network_probe_performed: bool
+    oauth_flow_started: bool
+    websocket_opened: bool
+    nango_api_called: bool
+    service_launch_performed: bool
+    writes_state: bool
+    execution_authority: bool
+    secret_values_exposed: bool
+    cloud_spend_authority: bool
+    approval_required_before_live_work: list[str]
+    implementation_phases: list[str]
+    tests_required: list[str]
+    risks: list[str]
+    unsafe_actions: list[str]
+    sources: list[str]
+    agy_challenge_summary: str
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -313,4 +353,91 @@ def build_gemini_live_evidence_brief(
         cloud_spend_authority=False,
         release_gate_closed=False,
         requires_human_acceptance=True,
+    )
+
+
+def build_nango_gemini_live_integration_plan() -> NangoGeminiLiveIntegrationPlan:
+    """Build a read-only architecture plan for a future Nango-governed Gemini Live path."""
+    return NangoGeminiLiveIntegrationPlan(
+        label="Nango-governed Gemini Live integration plan",
+        status="PLANNING_ONLY",
+        recommended_architecture=(
+            "Use Nango for governed Google credential, tool, action, and audit surfaces; "
+            "use a Jarvis backend endpoint to mint short-lived Gemini Live ephemeral tokens; "
+            "let the HUD connect directly to Gemini Live with ephemeral tokens when browser-direct "
+            "latency is required."
+        ),
+        nango_role=(
+            "Credential governance, Google connection metadata, optional action functions/tool surfaces, "
+            "rate-limit/log visibility, and future MCP/tool-calling integration. Nango should not be the "
+            "raw realtime audio WebSocket relay by default."
+        ),
+        jarvis_backend_role=(
+            "Own runtime policy, HUD token checks, operator approvals, token-mint request validation, "
+            "redacted audit events, local fallback selection, and future Gemini Live tool-call approval routing."
+        ),
+        hud_role=(
+            "Request a narrowly scoped token from Jarvis after operator approval, show a cloud voice indicator, "
+            "open the Gemini Live WebSocket with only the ephemeral token, and forward any model tool-call intents "
+            "back through Jarvis approval gates."
+        ),
+        direct_nango_audio_proxy_recommended=False,
+        browser_direct_requires_ephemeral_tokens=True,
+        network_probe_performed=False,
+        oauth_flow_started=False,
+        websocket_opened=False,
+        nango_api_called=False,
+        service_launch_performed=False,
+        writes_state=False,
+        execution_authority=False,
+        secret_values_exposed=False,
+        cloud_spend_authority=False,
+        approval_required_before_live_work=[
+            "choose hosted or self-hosted Nango environment",
+            "create or select a Google/Nango integration id",
+            "approve credential storage and scope policy",
+            "approve Nango secret-key storage path outside repo",
+            "approve a token-minting endpoint design",
+            "approve the exact Gemini Live network-test command",
+            "approve billing/quota limits and cloud-spend boundary",
+        ],
+        implementation_phases=[
+            "Phase A: documentation and JSON plan only; no credentials, network, or services",
+            "Phase B: local config discovery that reports Nango/Gemini signals without exposing values",
+            "Phase C: mocked token-mint endpoint with policy checks and no live Nango calls",
+            "Phase D: approved Nango sandbox call to mint or retrieve a provider-scoped token",
+            "Phase E: approved HUD Gemini Live WebSocket test with ephemeral token and cloud indicator",
+            "Phase F: governed Gemini Live tool-call routing through Jarvis approval gates",
+        ],
+        tests_required=[
+            "plan output is read-only and contains no secret values",
+            "config discovery detects Nango/Gemini signals without printing values",
+            "token endpoint rejects missing HUD runtime token or missing operator approval",
+            "mocked Nango client cannot write state or call network in unit tests",
+            "HUD never receives long-lived API keys or Nango secret keys",
+            "Gemini Live tool-call intents become Jarvis approval requests before any execution",
+            "local STT/TTS fallback remains available when cloud Gemini path is disabled or fails",
+        ],
+        risks=[
+            "proxying raw realtime audio through Nango may add latency, jitter, timeout, and privacy risk",
+            "ephemeral token leakage is still a short-lived credential exposure risk",
+            "a compromised browser could forge tool-call intents unless the backend treats HUD input as untrusted",
+            "cloud voice can create billing/quota exposure if launch controls are too broad",
+            "Nango connection ids, secret keys, refresh tokens, and tenant ids must not enter logs, docs, state, or memory",
+        ],
+        unsafe_actions=[
+            "do not create Nango accounts or integrations from this plan",
+            "do not store Nango or Gemini secrets in the repository",
+            "do not call Nango APIs from this plan",
+            "do not start OAuth from this plan",
+            "do not open Gemini WebSockets from this plan",
+            "do not launch services or browser microphone capture from this plan",
+            "do not treat the plan as approval for cloud spend or network calls",
+        ],
+        sources=NANGO_GEMINI_SOURCES,
+        agy_challenge_summary=(
+            "Antigravity challenge agreed that Nango should govern credentials/tool surfaces, "
+            "while Jarvis should mint short-lived tokens and keep realtime audio direct to Gemini Live "
+            "when browser-direct latency is required."
+        ),
     )

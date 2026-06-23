@@ -118,6 +118,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "mobile_validation_plan": True,
             "gemini_feasibility": True,
             "gemini_validation_plan": True,
+            "gemini_nango_plan": True,
             "packaging_preflight": True,
             "electron_package_artifact": electron_package_artifact,
             "electron_installer_artifact": electron_installer_artifact,

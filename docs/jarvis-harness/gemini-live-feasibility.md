@@ -70,6 +70,26 @@ The validation plan is also read-only. It turns the current Live API constraints
 
 The plan requires separate approval before any networked test. Browser-direct Live API remains blocked until ephemeral-token minting is designed and reviewed. Server-mediated validation remains the preferred first path.
 
+## Nango Integration Planning
+
+Run:
+
+```bash
+jarvis-codex gemini nango-plan --json
+```
+
+This plan records a future Nango-governed Gemini Live architecture without creating Nango accounts, configuring OAuth apps, calling Nango APIs, opening Gemini WebSockets, launching services, writing state, exposing secrets, or granting cloud-spend authority.
+
+Current decision:
+
+- Do not proxy raw realtime Gemini Live audio through Nango by default.
+- Use Nango for governed Google credential, connection, tool/action, rate-limit, and audit surfaces.
+- Use Jarvis runtime policy and HUD-token checks to guard a future token-mint endpoint.
+- Use short-lived Gemini Live ephemeral tokens before any browser-direct HUD or PWA WebSocket path.
+- Route any Gemini Live tool-call intent back through Jarvis approval gates before execution.
+
+This decision is grounded in the official Gemini Live WebSocket and ephemeral-token guidance plus Nango's documented auth, proxy, and tool-calling role. An Antigravity read-only challenge agreed with this boundary: Nango should govern credentials and tool surfaces, while latency-sensitive Gemini Live audio should use a direct Live API connection with short-lived tokens when browser-direct streaming is required.
+
 ## Recommended Integration Shape
 
 Use this order:
@@ -85,6 +105,7 @@ Use this order:
 - Choose the approved credential mode.
 - Confirm billing, quota, and key restriction policy.
 - Design ephemeral-token minting before any browser-direct Live API path.
+- Approve the Nango environment, provider integration id, credential storage model, token-mint endpoint design, and secret-redaction policy before live Nango work.
 - Implement the Gemini Live adapter behind an explicit approval gate.
 - Run a networked Gemini Live connection test only after separate operator approval.
 - Preserve local STT/TTS fallback.

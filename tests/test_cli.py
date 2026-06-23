@@ -868,6 +868,46 @@ def test_gemini_evidence_brief_json_is_read_only_summary(monkeypatch, capsys):
     assert "networked_gemini_live_validation" in data["release_evidence_command"]
 
 
+def test_gemini_nango_plan_json_is_read_only_summary(monkeypatch, capsys):
+    class FakeNangoGeminiPlan:
+        def to_dict(self):
+            return {
+                "label": "Nango-governed Gemini Live integration plan",
+                "status": "PLANNING_ONLY",
+                "direct_nango_audio_proxy_recommended": False,
+                "browser_direct_requires_ephemeral_tokens": True,
+                "network_probe_performed": False,
+                "oauth_flow_started": False,
+                "websocket_opened": False,
+                "nango_api_called": False,
+                "service_launch_performed": False,
+                "writes_state": False,
+                "execution_authority": False,
+                "secret_values_exposed": False,
+                "cloud_spend_authority": False,
+            }
+
+    monkeypatch.setattr(cli, "build_nango_gemini_live_integration_plan", lambda: FakeNangoGeminiPlan())
+
+    code = run_cli(monkeypatch, ["gemini", "nango-plan", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["label"] == "Nango-governed Gemini Live integration plan"
+    assert data["status"] == "PLANNING_ONLY"
+    assert data["direct_nango_audio_proxy_recommended"] is False
+    assert data["browser_direct_requires_ephemeral_tokens"] is True
+    assert data["network_probe_performed"] is False
+    assert data["oauth_flow_started"] is False
+    assert data["websocket_opened"] is False
+    assert data["nango_api_called"] is False
+    assert data["service_launch_performed"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["secret_values_exposed"] is False
+    assert data["cloud_spend_authority"] is False
+
+
 def test_gemini_validation_plan_requires_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "validation-plan"])
 
@@ -879,6 +919,15 @@ def test_gemini_validation_plan_requires_json(monkeypatch):
 
 def test_gemini_evidence_brief_requires_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "evidence-brief"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_gemini_nango_plan_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "nango-plan"])
 
     with pytest.raises(SystemExit) as exc_info:
         cli.main()

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.gemini import build_gemini_feasibility, build_gemini_live_evidence_brief, build_gemini_live_validation_plan
+from jarvis_codex.gemini import (
+    build_gemini_feasibility,
+    build_gemini_live_evidence_brief,
+    build_gemini_live_validation_plan,
+    build_nango_gemini_live_integration_plan,
+)
 
 
 def test_gemini_feasibility_without_credentials_is_read_only(tmp_path: Path) -> None:
@@ -131,3 +136,28 @@ def test_gemini_evidence_brief_without_credentials_is_not_ready(tmp_path: Path) 
     assert brief.auth_modes_present == []
     assert brief.release_gate_closed is False
     assert "No Gemini credential signal" in brief.warnings[0]
+
+
+def test_nango_gemini_live_integration_plan_is_planning_only() -> None:
+    plan = build_nango_gemini_live_integration_plan()
+
+    assert plan.label == "Nango-governed Gemini Live integration plan"
+    assert plan.status == "PLANNING_ONLY"
+    assert plan.direct_nango_audio_proxy_recommended is False
+    assert plan.browser_direct_requires_ephemeral_tokens is True
+    assert plan.network_probe_performed is False
+    assert plan.oauth_flow_started is False
+    assert plan.websocket_opened is False
+    assert plan.nango_api_called is False
+    assert plan.service_launch_performed is False
+    assert plan.writes_state is False
+    assert plan.execution_authority is False
+    assert plan.secret_values_exposed is False
+    assert plan.cloud_spend_authority is False
+    assert any("token-minting endpoint" in gate for gate in plan.approval_required_before_live_work)
+    assert any("mocked token-mint endpoint" in phase for phase in plan.implementation_phases)
+    assert any("HUD never receives long-lived API keys" in test for test in plan.tests_required)
+    assert any("do not call Nango APIs" in action for action in plan.unsafe_actions)
+    assert "https://nango.dev/docs/guides/auth/auth-guide" in plan.sources
+    assert "https://ai.google.dev/gemini-api/docs/live-api/get-started-websocket" in plan.sources
+    assert "Antigravity challenge agreed" in plan.agy_challenge_summary
