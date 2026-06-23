@@ -28,8 +28,11 @@ pattern: product-readiness-triage
 - [x] PM-007 - Read-only Worktrunk lane CLI implementation
   Loop action: added JSON-only `lane list` and `lane score`; no mutation verbs.
   Human decision: mutation commands remain out of scope.
-- [ ] PM-008 - Next product slice
-  Loop action: pending prioritization between voice ingress discovery, release artifact packaging, and broader real-worktree lane review coverage.
+- [x] PM-008 - Broader real-worktree lane review coverage
+  Loop action: added an isolated real git-worktree pytest fixture for read-only lane inventory and scoring.
+  Human decision: still no lane mutation commands.
+- [ ] PM-009 - Next product slice
+  Loop action: pending prioritization between release artifact packaging, voice ingress discovery, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List
@@ -45,4 +48,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: Worktrunk lane CLI needed read-only implementation | actions: added JSON-only list and score commands | escalations: 0
+Run log: 2026-06-23 | findings: lane CLI needed real-worktree coverage | actions: added isolated git worktree fixture test | escalations: 0

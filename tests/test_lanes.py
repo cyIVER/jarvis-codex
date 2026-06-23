@@ -1,5 +1,8 @@
 import json
+import shutil
 import subprocess
+
+import pytest
 
 from jarvis_codex.lanes import list_lanes, log_lane_decision, score_lane
 from jarvis_codex.state import JarvisState
@@ -80,3 +83,39 @@ def test_log_lane_decision_writes_planning_record(monkeypatch, tmp_path):
     assert rows[0]["lane"] == "lane/test"
     assert rows[0]["mutation_performed"] is False
     assert rows[0]["execution_authority"] is False
+
+
+def test_list_lanes_reads_real_git_worktrees_without_mutating_project(tmp_path):
+    if shutil.which("git") is None:
+        pytest.skip("git is required for real worktree coverage")
+
+    repo = tmp_path / "repo"
+    lane = tmp_path / "repo-lane"
+
+    def git(*args, cwd=repo):
+        return subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+    repo.mkdir()
+    git("init", "-b", "main")
+    git("config", "user.email", "test@example.invalid")
+    git("config", "user.name", "Jarvis Test")
+    (repo / "README.md").write_text("# test repo\n", encoding="utf-8")
+    git("add", "README.md")
+    git("commit", "-m", "initial")
+    git("worktree", "add", "-b", "lane/example", str(lane), "HEAD")
+    (lane / "scratch.txt").write_text("needs review\n", encoding="utf-8")
+
+    lanes = list_lanes(repo)
+
+    by_branch = {item["branch"]: item for item in lanes}
+    assert set(by_branch) == {"main", "lane/example"}
+    assert by_branch["main"]["decision"] == "ready"
+    assert by_branch["main"]["evidence"] == "clean working tree"
+    assert by_branch["lane/example"]["decision"] == "needs-review"
+    assert by_branch["lane/example"]["evidence"] == "untracked files present"
