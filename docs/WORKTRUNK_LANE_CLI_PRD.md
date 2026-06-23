@@ -14,10 +14,13 @@ The first implementation must be read-only by default. It must not run `wt`, cre
 
 ## Current Evidence
 
-- `git worktree list` currently reports only `/home/iveri/repos/jarvis-codex  3d1a1e6 [main]`.
+- At PRD design time, `git worktree list` reported only the main worktree at `/home/iveri/repos/jarvis-codex`; current execution truth must be rechecked with `git worktree list`.
 - `src/jarvis_codex/lanes.py` provides read-only `score_lane()` and `list_lanes()` helpers.
+- `jarvis-codex lane list --json` exposes read-only lane inventory.
+- `jarvis-codex lane score --repo <path> --branch <branch> --json` exposes read-only single-lane scoring.
 - `log_lane_decision()` writes planning records to `state/logs/lane_decisions.jsonl`; those records set `mutation_performed: false` and `execution_authority: false`.
 - `tests/test_lanes.py` covers read-only status scoring, worktree listing, and planning-record flags.
+- `tests/test_cli.py` covers the JSON-only lane CLI surface.
 - `docs/WORKTRUNK_LANES.md` treats `git worktree list` as execution truth and lists mutation commands as approval-gated.
 
 ## Users
@@ -125,7 +128,7 @@ Minimum tests before implementation:
 
 ## First Implementation Slice Recommendation
 
-Implement only:
+Implemented:
 
 ```bash
 jarvis-codex lane list --json

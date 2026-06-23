@@ -25,8 +25,11 @@ pattern: product-readiness-triage
 - [x] PM-006 - Worktrunk lane CLI design
   Loop action: added read-only-first PRD and guardrail test; lane mutation remains approval-gated.
   Human decision: implementation may only start with read-only `lane list` and `lane score`.
-- [ ] PM-007 - Next product slice
-  Loop action: pending prioritization between read-only lane CLI implementation, voice ingress discovery, and release artifact packaging.
+- [x] PM-007 - Read-only Worktrunk lane CLI implementation
+  Loop action: added JSON-only `lane list` and `lane score`; no mutation verbs.
+  Human decision: mutation commands remain out of scope.
+- [ ] PM-008 - Next product slice
+  Loop action: pending prioritization between voice ingress discovery, release artifact packaging, and broader real-worktree lane review coverage.
   Human decision: not selected yet.
 
 ## Watch List
@@ -42,4 +45,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: Worktrunk lane CLI lacked decision-ready PRD | actions: added read-only-first PRD and guardrail test | escalations: 0
+Run log: 2026-06-23 | findings: Worktrunk lane CLI needed read-only implementation | actions: added JSON-only list and score commands | escalations: 0

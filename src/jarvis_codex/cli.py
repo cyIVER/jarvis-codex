@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
+from .lanes import list_lanes, score_lane
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
 
@@ -43,6 +44,15 @@ def main() -> int:
         default="general",
         help="Workload to recommend a backend for",
     )
+    lane = sub.add_parser("lane", help="Review Worktrunk lane state without mutation")
+    lane_sub = lane.add_subparsers(dest="lane_command", required=True)
+    lane_list = lane_sub.add_parser("list", help="List lane readiness from git worktree metadata")
+    lane_list.add_argument("--repo", default=".", help="Repository path to inspect")
+    lane_list.add_argument("--json", action="store_true", help="Print lane list as JSON")
+    lane_score = lane_sub.add_parser("score", help="Score one lane using read-only git status")
+    lane_score.add_argument("--repo", required=True, help="Lane repository path to inspect")
+    lane_score.add_argument("--branch", required=True, help="Lane branch name")
+    lane_score.add_argument("--json", action="store_true", help="Print lane score as JSON")
     doctor = sub.add_parser("doctor", help="Inspect state")
     doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
@@ -84,6 +94,26 @@ def main() -> int:
         data["selected_backend"] = recommend_backend(profile, args.workload)
         print(json.dumps(data, indent=2, sort_keys=True))
         return 0
+    if args.command == "lane":
+        if not args.json:
+            parser.error("lane commands are JSON-only in this read-only first implementation; pass --json")
+        repo = Path(args.repo)
+        if args.lane_command == "list":
+            print(json.dumps({"lanes": list_lanes(repo), "execution_authority": False}, indent=2, sort_keys=True))
+            return 0
+        if args.lane_command == "score":
+            score = score_lane(repo, args.branch)
+            payload = {
+                "branch": args.branch,
+                "repo": str(repo),
+                "decision": score["decision"],
+                "evidence": score["evidence"],
+                "merge_recommendation": score["merge_recommendation"],
+                "mutation_performed": False,
+                "execution_authority": False,
+            }
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return 0
     if args.command == "doctor":
         data = state.doctor()
         if args.governance:

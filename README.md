@@ -30,6 +30,8 @@ jarvis-codex approve request "summary"    # create an approval request
 jarvis-codex handoff                      # generate a Codex handoff brief
 jarvis-codex handoff --queue-summary      # print a read-only safe planning-queue handoff
 jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilities
+jarvis-codex lane list --json             # inspect Worktrunk lane readiness without mutation
+jarvis-codex lane score --repo . --branch main --json
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector

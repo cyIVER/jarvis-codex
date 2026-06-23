@@ -4,6 +4,8 @@ import json
 import sys
 from dataclasses import dataclass
 
+import pytest
+
 from jarvis_codex import cli
 
 
@@ -90,3 +92,63 @@ def test_doctor_governance_failure_returns_nonzero_and_visible_failure(tmp_path,
     assert governance["failures"] == 1
     assert governance["failure_details"] == ["fixture governance failure"]
     assert not state.exists()
+
+
+def test_lane_list_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_list_lanes(repo):
+        seen["repo"] = repo
+        return [
+            {
+                "path": "/repo",
+                "branch": "main",
+                "decision": "ready",
+                "evidence": "clean working tree",
+                "merge_recommendation": "ready to merge or refresh",
+            }
+        ]
+
+    monkeypatch.setattr(cli, "list_lanes", fake_list_lanes)
+
+    code = run_cli(monkeypatch, ["lane", "list", "--repo", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["repo"]) == "/repo"
+    assert data["execution_authority"] is False
+    assert data["lanes"][0]["branch"] == "main"
+
+
+def test_lane_score_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_score_lane(repo, branch):
+        seen["repo"] = repo
+        seen["branch"] = branch
+        return {
+            "decision": "needs-review",
+            "evidence": "untracked files present",
+            "merge_recommendation": "review untracked files before merge",
+        }
+
+    monkeypatch.setattr(cli, "score_lane", fake_score_lane)
+
+    code = run_cli(monkeypatch, ["lane", "score", "--repo", "/repo.lane", "--branch", "lane/test", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["repo"]) == "/repo.lane"
+    assert seen["branch"] == "lane/test"
+    assert data["mutation_performed"] is False
+    assert data["execution_authority"] is False
+    assert data["decision"] == "needs-review"
+
+
+def test_lane_commands_require_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "lane", "list"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
