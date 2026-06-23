@@ -79,6 +79,7 @@ Completed:
 - One-shot approval response guard.
 - Runtime `approval.request`, `approval.list`, and `approval.respond`.
 - Runtime `event.subscribe` replay framing.
+- Live WebSocket semantic event frames for approvals, sessions, voice transcripts, audio receipts, and voice intent classifications.
 
 ## Phase 4 Voice
 

@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:52 EDT
+updated: 2026-06-23 04:13 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -28,7 +28,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Server-side MediaRecorder audio chunk ingestion committed and pushed as `162b9b6`.
 - Approval-gated local STT transcription job wiring committed and pushed as `b8be669`.
 - Plan-viewer harness route and queue-safety package committed and pushed as `13f2b06`.
-- Voice intent proposal layer is validated and awaiting commit.
+- Voice intent proposal layer committed and pushed as `dc9eb7f`.
+- Live semantic runtime event push is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -50,6 +51,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Commit and push voice intent proposal layer.
-2. Continue into transcript proposal approval UI and command preview boundaries.
+1. Commit and push live semantic runtime event push.
+2. Continue into live approval/event push and transcript proposal approval UI.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

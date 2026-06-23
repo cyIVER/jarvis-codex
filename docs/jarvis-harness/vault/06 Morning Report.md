@@ -42,10 +42,12 @@ This note backs the morning HTML dashboard.
 - Implemented and validated plan-viewer harness routing for Codex/Antigravity planning handoffs with queue safety tests.
 - Committed and pushed plan-viewer harness route package in `13f2b06`.
 - Implemented and validated voice intent proposals with transcript-to-command safety boundaries.
+- Committed and pushed voice intent proposal layer in `dc9eb7f`.
+- Implemented and validated live semantic runtime event push over WebSocket.
 
 ## Pending
 
-- Commit and push voice intent proposal layer.
+- Commit and push live semantic runtime event push.
 - Continue transcript proposal approval UI and command preview boundaries.
 - Keep dashboard current as phases progress.
 

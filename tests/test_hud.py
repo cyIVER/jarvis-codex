@@ -38,4 +38,6 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert "Voice intent proposal" in response.text
     assert "No execution authority" in response.text
+    assert "Event: ${frame.event_type}" in response.text
+    assert 'frame.event_type.startsWith("approval.")' in response.text
     assert "Execution requires an explicit runtime command and policy decision" in response.text

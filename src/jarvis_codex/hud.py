@@ -380,6 +380,13 @@ HUD_JS = r"""(() => {
         log(`PTY ${frame.channel_id}: ${frame.chunk.trimEnd()}`);
         return;
       }
+      if (frame.type === "event") {
+        log(`Event: ${frame.event_type}`);
+        if (frame.event_type && frame.event_type.startsWith("approval.")) {
+          request("approval.list", { status: "pending" });
+        }
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.approvals) {
         approvalCount.textContent = String(frame.result.approvals.length);
       }

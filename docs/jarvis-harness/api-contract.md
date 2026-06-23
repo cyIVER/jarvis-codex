@@ -80,6 +80,9 @@ Voice:
 - `voice.stop`
 - `voice.submit`
 - `voice.provider_status`
+- `voice.audio_chunk`
+- `voice.transcribe_audio`
+- `voice.intent_propose`
 
 Loop and swarm:
 
@@ -124,4 +127,4 @@ Policy blocks are not runtime crashes. They are successful safety outcomes and s
 - A client can reconnect and resume a session event stream.
 - Policy-blocked commands produce structured errors.
 - PTY chunks cannot be confused with approval decisions.
-
+- Semantic `event` frames carry persisted runtime events and must not be treated as PTY bytes or command execution.

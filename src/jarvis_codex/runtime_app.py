@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import queue
 import uuid
 from pathlib import Path
 from typing import Any
@@ -9,11 +10,13 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, Response
 
 from .approval import ApprovalError, ApprovalService
-from .event_store import JarvisEventStore
+from .event_store import JarvisEventStore, StoredEvent
+from .event_stream import RuntimeEventBroadcaster
 from .hud import HUD_CSP, HUD_HTML, HUD_JS
 from .policy import classify_command
 from .protocol import (
     ProtocolError,
+    make_event,
     make_error_response,
     make_response,
     make_stream,
@@ -33,10 +36,12 @@ def create_app(state_dir: Path) -> FastAPI:
     app = FastAPI(title="Jarvis Runtime", version="0.1.0")
     store = JarvisEventStore(state_dir / "runtime" / "jarvis.db")
     pty_supervisor = PtySupervisor()
+    event_broadcaster = RuntimeEventBroadcaster()
     approval_service = ApprovalService(store)
     voice_audio = VoiceAudioBuffer(state_dir)
     app.state.event_store = store
     app.state.pty_supervisor = pty_supervisor
+    app.state.event_broadcaster = event_broadcaster
     app.state.approval_service = approval_service
     app.state.voice_audio = voice_audio
     app.router.add_event_handler("shutdown", pty_supervisor.close_all)
@@ -59,7 +64,7 @@ def create_app(state_dir: Path) -> FastAPI:
 
     @app.post("/rpc")
     def rpc(frame: dict[str, Any]) -> dict[str, Any]:
-        return _handle_frame(store, pty_supervisor, approval_service, voice_audio, frame)
+        return _handle_frame(store, pty_supervisor, event_broadcaster, approval_service, voice_audio, frame)
 
     @app.websocket("/ws")
     async def websocket_rpc(websocket: WebSocket) -> None:
@@ -67,10 +72,19 @@ def create_app(state_dir: Path) -> FastAPI:
         send_lock = asyncio.Lock()
         stop_streaming = asyncio.Event()
         stream_task = asyncio.create_task(_send_pty_streams(websocket, pty_supervisor, send_lock, stop_streaming))
+        event_task = asyncio.create_task(_send_runtime_events(websocket, event_broadcaster, send_lock, stop_streaming))
         try:
             while True:
                 raw = await websocket.receive_text()
-                response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, approval_service, voice_audio, raw)
+                response = await asyncio.to_thread(
+                    _handle_frame,
+                    store,
+                    pty_supervisor,
+                    event_broadcaster,
+                    approval_service,
+                    voice_audio,
+                    raw,
+                )
                 async with send_lock:
                     await websocket.send_json(response)
         except WebSocketDisconnect:
@@ -78,6 +92,7 @@ def create_app(state_dir: Path) -> FastAPI:
         finally:
             stop_streaming.set()
             stream_task.cancel()
+            event_task.cancel()
 
     return app
 
@@ -102,9 +117,40 @@ async def _send_pty_streams(
             await websocket.send_json(frame)
 
 
+async def _send_runtime_events(
+    websocket: WebSocket,
+    event_broadcaster: RuntimeEventBroadcaster,
+    send_lock: asyncio.Lock,
+    stop_streaming: asyncio.Event,
+) -> None:
+    subscriber = event_broadcaster.subscribe()
+    try:
+        while not stop_streaming.is_set():
+            event = await asyncio.to_thread(_next_runtime_event, subscriber, 0.1)
+            if event is None:
+                continue
+            frame = make_event(
+                event.event_type,
+                event.session_id,
+                {"event": _stored_event_to_dict(event)},
+            )
+            async with send_lock:
+                await websocket.send_json(frame)
+    finally:
+        event_broadcaster.unsubscribe(subscriber)
+
+
+def _next_runtime_event(subscriber, timeout: float) -> StoredEvent | None:
+    try:
+        return subscriber.get(timeout=timeout)
+    except queue.Empty:
+        return None
+
+
 def _handle_frame(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
+    event_broadcaster: RuntimeEventBroadcaster,
     approval_service: ApprovalService,
     voice_audio: VoiceAudioBuffer,
     raw: str | bytes | dict[str, Any],
@@ -135,7 +181,16 @@ def _handle_frame(
         return make_error_response(request_id, code="invalid_params", message="params must be an object")
 
     try:
-        return _dispatch_request(store, pty_supervisor, approval_service, voice_audio, request_id, method, params)
+        return _dispatch_request(
+            store,
+            pty_supervisor,
+            event_broadcaster,
+            approval_service,
+            voice_audio,
+            request_id,
+            method,
+            params,
+        )
     except PtyPolicyError as exc:
         decision = exc.decision
         return make_error_response(
@@ -181,6 +236,7 @@ def _handle_frame(
 def _dispatch_request(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
+    event_broadcaster: RuntimeEventBroadcaster,
     approval_service: ApprovalService,
     voice_audio: VoiceAudioBuffer,
     request_id: str,
@@ -233,7 +289,9 @@ def _dispatch_request(
         profile_id = str(params.get("profile_id") or "observe")
         if profile_id not in POLICY_PROFILES:
             return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=session_id,
             actor_id=str(params.get("actor_id") or "runtime"),
             source_client=str(params.get("source_client") or "rpc"),
@@ -298,6 +356,7 @@ def _dispatch_request(
             actor_id=str(params.get("actor_id") or "runtime"),
             source_client=str(params.get("source_client") or "rpc"),
         )
+        event_broadcaster.publish(result.event)
         return make_response(
             request_id,
             {
@@ -323,6 +382,7 @@ def _dispatch_request(
             source_client=str(params.get("source_client") or "rpc"),
             reason=str(params.get("reason") or ""),
         )
+        event_broadcaster.publish(result.event)
         return make_response(
             request_id,
             {
@@ -385,7 +445,9 @@ def _dispatch_request(
         )
 
     if method == "voice.start":
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=str(params.get("session_id") or "hud"),
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "hud"),
@@ -398,7 +460,9 @@ def _dispatch_request(
         return make_response(request_id, {"event": _stored_event_to_dict(event), "execution_authority": False})
 
     if method == "voice.stop":
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=str(params.get("session_id") or "hud"),
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "hud"),
@@ -414,7 +478,9 @@ def _dispatch_request(
         transcript = str(params.get("transcript") or "").strip()
         if not transcript:
             return make_error_response(request_id, code="invalid_transcript", message="voice transcript is required")
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=str(params.get("session_id") or "hud"),
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "hud"),
@@ -444,7 +510,9 @@ def _dispatch_request(
         if profile not in POLICY_PROFILES:
             return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
         proposal = propose_voice_intent(transcript, profile=profile)  # type: ignore[arg-type]
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=str(params.get("session_id") or "hud"),
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "hud"),
@@ -471,7 +539,9 @@ def _dispatch_request(
             chunk_b64=str(params.get("chunk_b64") or ""),
             final=bool(params.get("final") or False),
         )
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=session_id,
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "hud"),
@@ -512,7 +582,9 @@ def _dispatch_request(
             timeout_seconds=int(params.get("timeout_seconds") or 120),
         )
         session_id = str(params.get("session_id") or "hud")
-        event = store.append_event(
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
             session_id=session_id,
             actor_id=str(params.get("actor_id") or "user"),
             source_client=str(params.get("source_client") or "rpc"),
@@ -570,3 +642,13 @@ def _stored_event_to_dict(event) -> dict[str, Any]:
         "parent_event_id": event.parent_event_id,
         "created_at": event.created_at,
     }
+
+
+def _append_and_publish(
+    store: JarvisEventStore,
+    event_broadcaster: RuntimeEventBroadcaster,
+    **kwargs: Any,
+) -> StoredEvent:
+    event = store.append_event(**kwargs)
+    event_broadcaster.publish(event)
+    return event

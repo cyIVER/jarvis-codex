@@ -37,6 +37,9 @@ Required v1 capabilities:
 - `voice.start`
 - `voice.stop`
 - `voice.submit`
+- `voice.audio_chunk`
+- `voice.transcribe_audio`
+- `voice.intent_propose`
 - `swarm.start`
 - `loop.start`
 - `loop.pause`
@@ -48,8 +51,13 @@ The wire model should separate:
 - JSON-RPC request and response frames.
 - Streaming event frames.
 - PTY byte streams.
-- Voice transcript and audio status events.
+- Voice transcript, intent, and audio status events.
 - Approval prompts and decisions.
+
+Implemented WebSocket runtime streams currently include:
+
+- `stream` frames for PTY output.
+- `event` frames for semantic persisted events such as approvals, sessions, voice transcripts, audio receipts, and voice intent classifications.
 
 ## Session Model
 
@@ -100,4 +108,4 @@ Each process must have:
 - A PTY pane can stream output without blocking the runtime.
 - A high-risk action creates an approval request instead of executing silently.
 - Session replay can reconstruct pane, approval, voice, and job history from persisted events.
-
+- Semantic runtime events are delivered separately from PTY byte streams.

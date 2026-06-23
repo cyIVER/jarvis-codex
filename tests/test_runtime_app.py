@@ -592,6 +592,36 @@ def test_runtime_websocket_streams_pty_output(tmp_path):
     assert "streamed pty" in "".join(frame["chunk"] for frame in stream_frames)
 
 
+def test_runtime_websocket_pushes_semantic_events(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json(
+            make_request(
+                "approval.request",
+                {
+                    "session_id": "session-1",
+                    "summary": "Run targeted tests",
+                    "operation": "uv run pytest tests/test_runtime_app.py",
+                    "risk": "medium",
+                },
+                request_id="req_1",
+            )
+        )
+        frames = [websocket.receive_json(), websocket.receive_json()]
+
+    frame_types = {frame["type"] for frame in frames}
+    event_frames = [frame for frame in frames if frame["type"] == "event"]
+    response_frames = [frame for frame in frames if frame["type"] == "response"]
+
+    assert frame_types == {"response", "event"}
+    assert response_frames[0]["result"]["approval"]["status"] == "pending"
+    assert event_frames[0]["event_type"] == "approval.requested"
+    assert event_frames[0]["session_id"] == "session-1"
+    assert event_frames[0]["payload"]["event"]["event_type"] == "approval.requested"
+
+
 def test_runtime_websocket_returns_structured_errors(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
