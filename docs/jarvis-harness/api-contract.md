@@ -62,13 +62,15 @@ PTY:
 - `pty.kill`
 - `pty.restart`
 
-`pty.create` accepts an optional `approval_id`. The approval must already be approved and must exactly match the requested command through its operation or scoped command. Matching approvals are consumed on use and cannot be replayed. This does not bypass hardline policy blocks.
+`pty.create` accepts an optional `approval_id`. The approval must already be approved and must exactly match the requested command through its operation or scoped command. Matching approvals are consumed atomically on use and cannot be replayed. Approved launch consumption requires the runtime HUD token. This does not bypass hardline policy blocks.
 
 Approval:
 
 - `approval.list`
 - `approval.request`
 - `approval.respond`
+
+`approval.respond` is a privileged HUD action. It requires the per-runtime HUD token served from the same-origin HUD document and must not be accepted from untrusted clients.
 
 Policy:
 
@@ -85,6 +87,8 @@ Voice:
 - `voice.audio_chunk`
 - `voice.transcribe_audio`
 - `voice.intent_propose`
+
+`voice.transcribe_audio` requires a matching approved audio-processing approval id, the runtime HUD token, a server-configured STT adapter command, an audio file under the runtime audio directory, and a model path under the runtime model directory.
 
 Loop and swarm:
 
@@ -130,3 +134,5 @@ Policy blocks are not runtime crashes. They are successful safety outcomes and s
 - Policy-blocked commands produce structured errors.
 - PTY chunks cannot be confused with approval decisions.
 - Semantic `event` frames carry persisted runtime events and must not be treated as PTY bytes or command execution.
+- Browser WebSocket clients must pass same-origin validation before the runtime accepts the connection.
+- Approval response and approval-consuming execution paths must require the per-runtime HUD token.

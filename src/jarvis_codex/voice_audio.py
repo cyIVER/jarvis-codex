@@ -65,6 +65,7 @@ class LocalSttResult:
 class VoiceAudioBuffer:
     def __init__(self, state_dir: Path) -> None:
         self.root = state_dir / "runtime" / "audio"
+        self.model_root = state_dir / "runtime" / "models"
 
     def append_chunk(
         self,

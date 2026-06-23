@@ -25,6 +25,8 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="pwa-status"' in response.text
     assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
     assert 'rel="icon" href="/assets/icon.svg"' in response.text
+    assert 'name="jarvis-runtime-token"' in response.text
+    assert "__JARVIS_RUNTIME_TOKEN__" not in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -67,6 +69,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'data-approval-action="approved"' in response.text
     assert 'data-approval-action="rejected"' in response.text
     assert 'request("approval.respond"' in response.text
+    assert "privilegedParams" in response.text
+    assert "runtime_token: runtimeToken" in response.text
+    assert "<pre>Scope:" in response.text
     assert 'request("pty.create"' in response.text
     assert "renderApprovedLaunches(frame.result.approvals)" in response.text
     assert "approvedLaunchCommand" in response.text

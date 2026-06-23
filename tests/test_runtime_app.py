@@ -3,12 +3,18 @@ import base64
 import sys
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 import jarvis_codex.runtime_app as runtime_app
 from jarvis_codex.codeburn import CodeburnStatus
 from jarvis_codex.protocol import make_request
 from jarvis_codex.runtime_app import create_app
+
+
+def _runtime_token(client: TestClient) -> str:
+    return str(client.app.state.runtime_token)
 
 
 def test_runtime_health_does_not_initialize_state(tmp_path):
@@ -182,6 +188,9 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["production_complete"] is False
     assert data["writes_state"] is False
     assert data["checks"]["approval_replay_protection"] is True
+    assert data["checks"]["approval_runtime_token"] is True
+    assert data["checks"]["websocket_origin_validation"] is True
+    assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
     assert "electron_packaging" in data["remaining_gaps"]
     assert not state.exists()
@@ -329,7 +338,12 @@ def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
         "/rpc",
         json=make_request(
             "approval.respond",
-            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_2",
         ),
     )
@@ -337,7 +351,12 @@ def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
         "/rpc",
         json=make_request(
             "pty.create",
-            {"command": command, "profile": "observe", "approval_id": approval["id"]},
+            {
+                "command": command,
+                "profile": "observe",
+                "approval_id": approval["id"],
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_3",
         ),
     )
@@ -345,7 +364,12 @@ def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
         "/rpc",
         json=make_request(
             "pty.create",
-            {"command": command, "profile": "observe", "approval_id": approval["id"]},
+            {
+                "command": command,
+                "profile": "observe",
+                "approval_id": approval["id"],
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_4",
         ),
     )
@@ -394,7 +418,12 @@ def test_runtime_pty_create_rejects_mismatched_or_blocked_approval(tmp_path):
         "/rpc",
         json=make_request(
             "approval.respond",
-            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_2",
         ),
     )
@@ -403,7 +432,12 @@ def test_runtime_pty_create_rejects_mismatched_or_blocked_approval(tmp_path):
         "/rpc",
         json=make_request(
             "pty.create",
-            {"command": "python3 -c \"print('different')\"", "profile": "observe", "approval_id": approval["id"]},
+            {
+                "command": "python3 -c \"print('different')\"",
+                "profile": "observe",
+                "approval_id": approval["id"],
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_3",
         ),
     )
@@ -411,13 +445,65 @@ def test_runtime_pty_create_rejects_mismatched_or_blocked_approval(tmp_path):
         "/rpc",
         json=make_request(
             "pty.create",
-            {"command": "git reset --hard HEAD", "profile": "dev-loop", "approval_id": approval["id"]},
+            {
+                "command": "git reset --hard HEAD",
+                "profile": "dev-loop",
+                "approval_id": approval["id"],
+                "runtime_token": _runtime_token(client),
+            },
             request_id="req_4",
         ),
     )
 
     assert mismatch.json()["error"]["code"] == "approval_required"
     assert blocked.json()["error"]["code"] == "policy_blocked"
+
+
+def test_runtime_pty_create_requires_runtime_token_to_consume_approval(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    command = "python3 -c \"print('approved')\""
+
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-1",
+                "summary": "Launch approved PTY",
+                "operation": command,
+                "risk": "medium",
+                "scope": {"command": command},
+            },
+            request_id="req_1",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": _runtime_token(client),
+            },
+            request_id="req_2",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": command, "profile": "observe", "approval_id": approval["id"]},
+            request_id="req_3",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "unauthorized"
+    assert app.state.event_store.approval(approval["id"])["status"] == "approved"
 
 
 def test_runtime_pty_input_resize_and_kill(tmp_path):
@@ -482,7 +568,7 @@ def test_runtime_approval_lifecycle_and_event_subscription(tmp_path):
         "/rpc",
         json=make_request("approval.list", {"status": "pending"}, request_id="req_2"),
     )
-    respond_response = client.post(
+    unauthorized_response = client.post(
         "/rpc",
         json=make_request(
             "approval.respond",
@@ -490,17 +576,31 @@ def test_runtime_approval_lifecycle_and_event_subscription(tmp_path):
             request_id="req_3",
         ),
     )
+    respond_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "targeted",
+                "runtime_token": _runtime_token(client),
+            },
+            request_id="req_4",
+        ),
+    )
     subscribe_response = client.post(
         "/rpc",
         json=make_request(
             "event.subscribe",
             {"session_id": "session-1", "since_sequence": 0, "limit": 10},
-            request_id="req_4",
+            request_id="req_5",
         ),
     )
 
     assert approval["status"] == "pending"
     assert list_response.json()["result"]["approvals"][0]["id"] == approval["id"]
+    assert unauthorized_response.json()["error"]["code"] == "unauthorized"
     assert respond_response.json()["result"]["approval"]["status"] == "approved"
     replay_types = [event["event_type"] for event in subscribe_response.json()["result"]["replay"]]
     assert replay_types == ["approval.requested", "approval.responded"]
@@ -699,7 +799,12 @@ def _approve_voice_transcription(client: TestClient, audio: Path, model: Path) -
         "/rpc",
         json=make_request(
             "approval.respond",
-            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": _runtime_token(client),
+            },
             request_id="approval_resp",
         ),
     )
@@ -727,9 +832,11 @@ def test_runtime_voice_transcribe_audio_requires_explicit_approval(tmp_path):
 
 def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path, monkeypatch):
     state = tmp_path / "state"
-    audio = tmp_path / "sample.webm"
-    model = tmp_path / "model.bin"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.webm"
+    model = state / "runtime" / "models" / "model.bin"
     adapter = tmp_path / "fake_stt.py"
+    audio.parent.mkdir(parents=True)
+    model.parent.mkdir(parents=True)
     audio.write_bytes(b"audio")
     model.write_bytes(b"model")
     adapter.write_text(
@@ -756,6 +863,7 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path, monkey
                 "model_path": str(model),
                 "stt_command": "python3 /tmp/malicious_client_supplied_stt.py",
                 "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
                 "timeout_seconds": 5,
             },
             request_id="req_1",
@@ -779,11 +887,14 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path, monkey
 
 
 def test_runtime_voice_transcribe_audio_requires_server_configured_adapter(tmp_path, monkeypatch):
-    audio = tmp_path / "sample.webm"
-    model = tmp_path / "model.bin"
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.webm"
+    model = state / "runtime" / "models" / "model.bin"
+    audio.parent.mkdir(parents=True)
+    model.parent.mkdir(parents=True)
     audio.write_bytes(b"audio")
     model.write_bytes(b"model")
-    app = create_app(tmp_path / "state")
+    app = create_app(state)
     client = TestClient(app)
     approval_id = _approve_voice_transcription(client, audio, model)
     monkeypatch.delenv("JARVIS_LOCAL_STT_COMMAND", raising=False)
@@ -797,6 +908,7 @@ def test_runtime_voice_transcribe_audio_requires_server_configured_adapter(tmp_p
                 "audio_file": str(audio),
                 "model_path": str(model),
                 "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
                 "timeout_seconds": 5,
             },
             request_id="req_1",
@@ -808,17 +920,17 @@ def test_runtime_voice_transcribe_audio_requires_server_configured_adapter(tmp_p
     assert app.state.event_store.approval(approval_id)["status"] == "approved"
 
 
-def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path, monkeypatch):
-    audio = tmp_path / "sample.webm"
-    model = tmp_path / "model.bin"
-    adapter = tmp_path / "empty_stt.py"
+def test_runtime_voice_transcribe_audio_requires_runtime_token(tmp_path):
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.webm"
+    model = state / "runtime" / "models" / "model.bin"
+    audio.parent.mkdir(parents=True)
+    model.parent.mkdir(parents=True)
     audio.write_bytes(b"audio")
     model.write_bytes(b"model")
-    adapter.write_text("print('')\n", encoding="utf-8")
-    app = create_app(tmp_path / "state")
+    app = create_app(state)
     client = TestClient(app)
     approval_id = _approve_voice_transcription(client, audio, model)
-    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
 
     response = client.post(
         "/rpc",
@@ -835,9 +947,76 @@ def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path, monkey
         ),
     )
 
+    assert response.json()["error"]["code"] == "unauthorized"
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
+
+
+def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.webm"
+    model = state / "runtime" / "models" / "model.bin"
+    adapter = tmp_path / "empty_stt.py"
+    audio.parent.mkdir(parents=True)
+    model.parent.mkdir(parents=True)
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text("print('')\n", encoding="utf-8")
+    app = create_app(state)
+    client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model)
+    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_path": str(model),
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
     assert response.status_code == 200
     assert response.json()["error"]["code"] == "invalid_audio_chunk"
     assert "empty transcript" in response.json()["error"]["message"]
+
+
+def test_runtime_voice_transcribe_audio_rejects_paths_outside_runtime_roots(tmp_path):
+    state = tmp_path / "state"
+    external_audio = tmp_path / "outside.webm"
+    model = state / "runtime" / "models" / "model.bin"
+    external_audio.write_bytes(b"audio")
+    model.parent.mkdir(parents=True)
+    model.write_bytes(b"model")
+    app = create_app(state)
+    client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, external_audio, model)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(external_audio),
+                "model_path": str(model),
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["error"]["code"] == "invalid_audio_path"
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):
@@ -872,6 +1051,15 @@ def test_runtime_websocket_accepts_json_rpc_requests(tmp_path):
 
     assert response["type"] == "response"
     assert response["result"]["status"] == "ok"
+
+
+def test_runtime_websocket_rejects_cross_origin_browser_clients(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    with pytest.raises(WebSocketDisconnect):
+        with client.websocket_connect("/ws", headers={"origin": "https://malicious.example"}):
+            pass
 
 
 def test_runtime_websocket_streams_pty_output(tmp_path):

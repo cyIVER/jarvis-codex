@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 import os
 import queue
+import secrets
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, Response
@@ -58,16 +60,21 @@ def create_app(state_dir: Path) -> FastAPI:
     event_broadcaster = RuntimeEventBroadcaster()
     approval_service = ApprovalService(store)
     voice_audio = VoiceAudioBuffer(state_dir)
+    runtime_token = secrets.token_urlsafe(32)
     app.state.event_store = store
     app.state.pty_supervisor = pty_supervisor
     app.state.event_broadcaster = event_broadcaster
     app.state.approval_service = approval_service
     app.state.voice_audio = voice_audio
+    app.state.runtime_token = runtime_token
     app.router.add_event_handler("shutdown", pty_supervisor.close_all)
 
     @app.get("/", response_class=HTMLResponse)
     def hud() -> HTMLResponse:
-        return HTMLResponse(HUD_HTML, headers={"Content-Security-Policy": HUD_CSP})
+        return HTMLResponse(
+            HUD_HTML.replace("__JARVIS_RUNTIME_TOKEN__", runtime_token),
+            headers={"Content-Security-Policy": HUD_CSP},
+        )
 
     @app.get("/assets/hud.js")
     def hud_js() -> Response:
@@ -99,10 +106,24 @@ def create_app(state_dir: Path) -> FastAPI:
 
     @app.post("/rpc")
     def rpc(frame: dict[str, Any]) -> dict[str, Any]:
-        return _handle_frame(store, pty_supervisor, event_broadcaster, approval_service, voice_audio, frame)
+        return _handle_frame(
+            store,
+            pty_supervisor,
+            event_broadcaster,
+            approval_service,
+            voice_audio,
+            frame,
+            runtime_token=runtime_token,
+        )
 
     @app.websocket("/ws")
     async def websocket_rpc(websocket: WebSocket) -> None:
+        if not _websocket_origin_allowed(
+            origin=websocket.headers.get("origin"),
+            host=websocket.headers.get("host"),
+        ):
+            await websocket.close(code=1008)
+            return
         await websocket.accept()
         send_lock = asyncio.Lock()
         stop_streaming = asyncio.Event()
@@ -119,6 +140,7 @@ def create_app(state_dir: Path) -> FastAPI:
                     approval_service,
                     voice_audio,
                     raw,
+                    runtime_token=runtime_token,
                 )
                 async with send_lock:
                     await websocket.send_json(response)
@@ -189,6 +211,7 @@ def _handle_frame(
     approval_service: ApprovalService,
     voice_audio: VoiceAudioBuffer,
     raw: str | bytes | dict[str, Any],
+    runtime_token: str | None = None,
 ) -> dict[str, Any]:
     try:
         frame = parse_frame(raw)
@@ -225,6 +248,7 @@ def _handle_frame(
             request_id,
             method,
             params,
+            runtime_token,
         )
     except PtyPolicyError as exc:
         decision = exc.decision
@@ -277,6 +301,7 @@ def _dispatch_request(
     request_id: str,
     method: str,
     params: dict[str, Any],
+    runtime_token: str | None,
 ) -> dict[str, Any]:
     if method == "initialize":
         return make_response(
@@ -333,6 +358,9 @@ def _dispatch_request(
                     "policy_profiles": sorted(POLICY_PROFILES),
                     "pwa_assets": True,
                     "approval_replay_protection": True,
+                    "approval_runtime_token": True,
+                    "websocket_origin_validation": True,
+                    "stt_runtime_path_constraints": True,
                     "voice_execution_authority": False,
                     "codeburn_shell": False,
                 },
@@ -417,6 +445,13 @@ def _dispatch_request(
         except PtyPolicyError as exc:
             if not _approval_allows_command(store, approval_id, command):
                 raise
+            if not _valid_runtime_token(params, runtime_token):
+                return make_error_response(
+                    request_id,
+                    code="unauthorized",
+                    message="approved PTY launches require the HUD runtime token",
+                    retryable=False,
+                )
             consumed = approval_service.consume(
                 approval_id=approval_id,
                 actor_id=str(params.get("actor_id") or "runtime"),
@@ -474,6 +509,13 @@ def _dispatch_request(
         return make_response(request_id, {"approvals": approval_service.list(status=status)})  # type: ignore[arg-type]
 
     if method == "approval.respond":
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="approval responses require the HUD runtime token",
+                retryable=False,
+            )
         status = str(params.get("status") or "")
         if status not in {"approved", "rejected"}:
             return make_error_response(request_id, code="invalid_status", message="status must be approved or rejected")
@@ -680,6 +722,27 @@ def _dispatch_request(
                 approval_required=True,
                 details={"required_approval_scope": "voice.transcribe_audio"},
             )
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="approved audio transcription requires the HUD runtime token",
+                retryable=False,
+            )
+        if not _path_within(voice_audio.root, audio_file):
+            return make_error_response(
+                request_id,
+                code="invalid_audio_path",
+                message="local audio transcription is restricted to runtime audio files",
+                retryable=False,
+            )
+        if not _path_within(voice_audio.model_root, model_path):
+            return make_error_response(
+                request_id,
+                code="invalid_model_path",
+                message="local audio transcription models must be under the runtime model directory",
+                retryable=False,
+            )
         stt_command = _local_stt_command()
         consumed = approval_service.consume(
             approval_id=approval_id,
@@ -811,8 +874,32 @@ def _normalize_path(path: str) -> str:
     return str(Path(path).expanduser().resolve())
 
 
+def _path_within(root: Path, path: Path) -> bool:
+    try:
+        path.expanduser().resolve().relative_to(root.expanduser().resolve())
+    except (OSError, ValueError):
+        return False
+    return True
+
+
 def _local_stt_command() -> str:
     command = os.environ.get(LOCAL_STT_COMMAND_ENV, "").strip()
     if not command:
         raise VoiceAudioError(f"{LOCAL_STT_COMMAND_ENV} is not configured")
     return command
+
+
+def _valid_runtime_token(params: dict[str, Any], runtime_token: str | None) -> bool:
+    candidate = params.get("runtime_token")
+    return isinstance(candidate, str) and bool(runtime_token) and secrets.compare_digest(candidate, runtime_token)
+
+
+def _websocket_origin_allowed(origin: str | None, host: str | None) -> bool:
+    if not origin:
+        return True
+    if not host:
+        return False
+    parsed = urlparse(origin)
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    return parsed.netloc == host

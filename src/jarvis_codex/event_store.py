@@ -206,6 +206,78 @@ class JarvisEventStore:
             created_at=timestamp,
         )
 
+    def consume_approval_event(
+        self,
+        *,
+        approval_id: str,
+        actor_id: str,
+        source_client: str,
+        reason: str = "",
+        created_at: int | None = None,
+    ) -> StoredEvent | None:
+        self.initialize()
+        event_id = f"evt_{uuid.uuid4().hex[:16]}"
+        timestamp = int(time.time()) if created_at is None else created_at
+        payload = {
+            "approval_id": approval_id,
+            "reason": reason,
+        }
+        payload_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        with self._connection() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE approvals
+                SET status = 'used',
+                    decided_at = ?
+                WHERE id = ?
+                  AND status = 'approved'
+                """,
+                (timestamp, approval_id),
+            )
+            if cursor.rowcount != 1:
+                return None
+            row = connection.execute("SELECT session_id FROM approvals WHERE id = ?", (approval_id,)).fetchone()
+            if row is None:
+                return None
+            session_id = str(row["session_id"])
+            cursor = connection.execute(
+                """
+                INSERT INTO events(
+                    id,
+                    session_id,
+                    actor_id,
+                    source_client,
+                    event_type,
+                    payload_json,
+                    correlation_id,
+                    parent_event_id,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, 'approval.consumed', ?, NULL, NULL, ?)
+                """,
+                (event_id, session_id, actor_id, source_client, payload_json, timestamp),
+            )
+            sequence = int(cursor.lastrowid)
+            connection.execute(
+                """
+                INSERT INTO event_search(event_id, session_id, event_type, content)
+                VALUES (?, ?, 'approval.consumed', ?)
+                """,
+                (event_id, session_id, _search_content(payload)),
+            )
+        return StoredEvent(
+            sequence=sequence,
+            id=event_id,
+            session_id=session_id,
+            actor_id=actor_id,
+            source_client=source_client,
+            event_type="approval.consumed",
+            payload=payload,
+            correlation_id=None,
+            parent_event_id=None,
+            created_at=timestamp,
+        )
+
     def events(self, session_id: str | None = None) -> list[StoredEvent]:
         self.initialize()
         query = "SELECT * FROM events"

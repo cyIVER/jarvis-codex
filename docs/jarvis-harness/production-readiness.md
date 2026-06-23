@@ -11,6 +11,7 @@ Implemented and validated in the local FastAPI runtime:
 - Runtime policy classification and hardline command blocking.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
+- Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
 - Runtime-served HUD shell for Codex, Antigravity, Codeburn, approvals, voice, sessions, and PWA status.
 - Browser click-to-arm microphone flow with browser STT where available.
 - Local audio chunk storage and approval-gated local STT adapter execution.
@@ -41,9 +42,12 @@ The following remain future or incomplete production gates:
 - Voice transcripts and voice intent proposals must not execute commands.
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
+- Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
+- Approval consumption must be atomic; concurrent consumers must not reuse the same approval.
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
-- Local STT transcription requires a matching approved audio-processing approval id and a server-configured `JARVIS_LOCAL_STT_COMMAND`; clients cannot supply adapter commands through RPC.
+- Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and a runtime-owned model path; clients cannot supply adapter commands through RPC.
+- The runtime WebSocket must reject cross-origin browser clients.
 - Runtime PTYs do not execute through a shell. Shell pipelines and shell operators are not supported execution semantics in the current supervisor.
 - The PWA service worker must not cache `/rpc`, `/ws`, or non-GET requests.
 - Public internet exposure is not part of v1.
@@ -64,7 +68,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-153 passed
+164 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning.
@@ -90,7 +94,8 @@ Smoke-check these surfaces, then stop the server:
 - `/service-worker.js` contains the HUD cache and excludes runtime RPC routes.
 - The HUD shows socket, policy, voice, approval, Codeburn, and PWA status metrics.
 - The microphone button requires a click before browser permission.
-- Approval buttons approve/reject only; approved launches use a separate launch button.
+- Approval cards expose operation, risk, and scope before approve/reject.
+- Approval buttons approve/reject only; approved launches use a separate token-gated launch button.
 
 ## Mobile PWA Gate
 

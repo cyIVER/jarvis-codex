@@ -95,21 +95,17 @@ class ApprovalService:
         source_client: str = "rpc",
         reason: str = "",
     ) -> ApprovalResult:
-        approval = self.store.approval(approval_id)
-        if approval is None:
-            raise ApprovalError("approval does not exist")
-        if approval["status"] != "approved":
-            raise ApprovalError("approval is not approved")
-        event = self.store.append_event(
-            session_id=str(approval["session_id"]),
+        event = self.store.consume_approval_event(
+            approval_id=approval_id,
             actor_id=actor_id,
             source_client=source_client,
-            event_type="approval.consumed",
-            payload={
-                "approval_id": approval_id,
-                "reason": reason,
-            },
+            reason=reason,
         )
+        if event is None:
+            approval = self.store.approval(approval_id)
+            if approval is None:
+                raise ApprovalError("approval does not exist")
+            raise ApprovalError("approval is not approved")
         updated = self.store.approval(approval_id)
         if updated is None:
             raise ApprovalError("approval projection was not updated")

@@ -79,6 +79,7 @@ HUD_HTML = """<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#06131d">
+  <meta name="jarvis-runtime-token" content="__JARVIS_RUNTIME_TOKEN__">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Jarvis">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -438,6 +439,7 @@ HUD_JS = r"""(() => {
   let utteranceId = null;
   let stoppingRecorder = false;
   let lastVoiceProposal = null;
+  const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
     codex: {
       label: "Codex",
@@ -478,6 +480,10 @@ HUD_JS = r"""(() => {
     const requestId = `hud_${requestSeq}`;
     requestIndex.set(requestId, { method, params });
     socket.send(JSON.stringify({ type: "request", id: requestId, method, params }));
+  }
+
+  function privilegedParams(params = {}) {
+    return { ...params, runtime_token: runtimeToken };
   }
 
   function currentSessionId() {
@@ -645,11 +651,11 @@ HUD_JS = r"""(() => {
     const approvalId = target.dataset.approvalId;
     const action = target.dataset.approvalAction;
     if (!approvalId || !action) return;
-    request("approval.respond", {
+    request("approval.respond", privilegedParams({
       approval_id: approvalId,
       status: action,
       reason: `HUD ${action} click`
-    });
+    }));
     log(`Approval ${action} requested for ${approvalId}.`);
   });
 
@@ -660,11 +666,11 @@ HUD_JS = r"""(() => {
     const command = target.dataset.command;
     const profile = target.dataset.profile || "observe";
     if (!approvalId || !command) return;
-    request("pty.create", {
+    request("pty.create", privilegedParams({
       command,
       profile,
       approval_id: approvalId
-    });
+    }));
     log(`Approved launch requested for ${approvalId}. Runtime policy gate still applies.`);
   });
 
@@ -809,15 +815,19 @@ HUD_JS = r"""(() => {
       approvalsList.textContent = "No pending approvals.";
       return;
     }
-    approvalsList.innerHTML = approvals.map((approval) => `
-      <section class="approval-item">
-        <strong>${escapeHtml(approval.summary || approval.id)}</strong>
-        <div>Risk: ${escapeHtml(approval.risk || "medium")}</div>
-        <div>Operation: ${escapeHtml(approval.operation || "")}</div>
-        <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="approved">Approve</button>
-        <button type="button" class="danger" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="rejected">Reject</button>
-      </section>
-    `).join("");
+    approvalsList.innerHTML = approvals.map((approval) => {
+      const scope = JSON.stringify(approval.scope || {}, null, 2);
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(approval.summary || approval.id)}</strong>
+          <div>Risk: ${escapeHtml(approval.risk || "medium")}</div>
+          <div>Operation: ${escapeHtml(approval.operation || "")}</div>
+          <pre>Scope: ${escapeHtml(scope)}</pre>
+          <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="approved">Approve</button>
+          <button type="button" class="danger" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="rejected">Reject</button>
+        </section>
+      `;
+    }).join("");
   }
 
   function renderSessions(sessions) {
