@@ -42,6 +42,7 @@ Implemented and validated in the local FastAPI runtime:
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
+- Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
 
 ## Not Yet Production-Complete
 
@@ -80,6 +81,7 @@ The following remain future or incomplete production gates:
 - Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
+- Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 
 ## Required Local Validation
 
@@ -87,7 +89,7 @@ Run from the repo root:
 
 ```bash
 python3 scripts/validate-jarvis-codex-phase1.py
-uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py
+uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py tests/test_packaging.py
 ```
 
 Expected current baseline:
@@ -97,7 +99,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-228 passed
+234 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.
@@ -127,23 +129,3 @@ Smoke-check these surfaces, then stop the server:
 - Approval buttons approve/reject only; approved launches use a separate token-gated launch button.
 
 ## Mobile PWA Gate
-
-Before marking mobile production-ready:
-
-- Bind only to a private interface or private VPN address.
-- Verify the route is inaccessible from public internet.
-- Test on an actual iPhone Safari session.
-- Confirm microphone permission flow on device.
-- Confirm service worker registration does not cache runtime RPC responses.
-- Confirm mobile approval details are complete before any approval response.
-
-## Release Decision
-
-The current build is a validated local runtime/HUD foundation. It is not yet a fully packaged production release.
-
-Advance to production release only after:
-
-- All required local validation passes.
-- Browser and mobile smoke checks pass.
-- Remaining production gaps are either implemented or explicitly waived.
-- A human reviews the final diff, commit log, and safety invariants.

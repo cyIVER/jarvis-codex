@@ -191,6 +191,33 @@ def test_release_manifest_json_is_read_only_summary(monkeypatch, capsys):
     assert data["artifact_copy_performed"] is False
 
 
+def test_release_packaging_preflight_json_is_read_only_summary(monkeypatch, capsys):
+    class FakePackagingPreflight:
+        def to_dict(self):
+            return {
+                "label": "Jarvis release packaging preflight",
+                "status": "READY_FOR_APPROVAL",
+                "install_performed": False,
+                "package_build_performed": False,
+                "signing_performed": False,
+                "artifact_copy_performed": False,
+                "writes_files": False,
+                "approval_required": True,
+            }
+
+    monkeypatch.setattr(cli, "build_packaging_preflight", lambda root: FakePackagingPreflight())
+
+    code = run_cli(monkeypatch, ["release", "packaging-preflight", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["package_build_performed"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["writes_files"] is False
+    assert data["approval_required"] is True
+
+
 def test_release_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
 

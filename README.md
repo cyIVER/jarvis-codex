@@ -36,6 +36,7 @@ jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilit
 jarvis-codex lane list --json             # inspect Worktrunk lane readiness without mutation
 jarvis-codex lane score --repo . --branch main --json
 jarvis-codex release manifest --json      # review release artifacts without packaging
+jarvis-codex release packaging-preflight --json
 jarvis-codex loop verify --json           # verify loop readiness without mutation
 jarvis-codex runtime serve                # serve the runtime HUD on 127.0.0.1:8765
 jarvis-codex mobile preflight --json      # classify private-network iPhone/PWA access without probing

@@ -12,6 +12,7 @@ from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
 from .mobile import build_mobile_preflight
+from .packaging import build_packaging_preflight
 from .release import build_release_manifest
 from .runtime_app import create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
@@ -82,6 +83,9 @@ def main() -> int:
     release_manifest = release_sub.add_parser("manifest", help="Print a read-only release artifact manifest")
     release_manifest.add_argument("--root", default=".", help="Repository root to inspect")
     release_manifest.add_argument("--json", action="store_true", help="Print release manifest as JSON")
+    release_packaging = release_sub.add_parser("packaging-preflight", help="Print a read-only release packaging preflight")
+    release_packaging.add_argument("--root", default=".", help="Repository root to inspect")
+    release_packaging.add_argument("--json", action="store_true", help="Print packaging preflight as JSON")
     runtime = sub.add_parser("runtime", help="Run the local Jarvis runtime")
     runtime_sub = runtime.add_subparsers(dest="runtime_command", required=True)
     runtime_serve = runtime_sub.add_parser("serve", help="Serve the runtime HUD on loopback by default")
@@ -199,6 +203,9 @@ def main() -> int:
             parser.error("release commands are JSON-only in this read-only first implementation; pass --json")
         if args.release_command == "manifest":
             print(json.dumps(build_release_manifest(Path(args.root)), indent=2, sort_keys=True))
+            return 0
+        if args.release_command == "packaging-preflight":
+            print(json.dumps(build_packaging_preflight(Path(args.root)).to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "runtime":
         if args.runtime_command == "serve":

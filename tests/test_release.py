@@ -40,6 +40,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "src/jarvis_codex/cli.py")
     write(tmp_path / "src/jarvis_codex/mobile.py")
     write(tmp_path / "src/jarvis_codex/gemini.py")
+    write(tmp_path / "src/jarvis_codex/packaging.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
     write(tmp_path / "tools/electron-hud/main.js")
@@ -75,6 +76,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "src/jarvis_codex/runtime_app.py" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/mobile.py" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/gemini.py" in manifest["release_candidates_present"]
+    assert "src/jarvis_codex/packaging.py" in manifest["release_candidates_present"]
     assert "tests/test_hud_browser.py" in manifest["release_candidates_present"]
     assert "tools/electron-hud/main.js" in manifest["release_candidates_present"]
     assert "electron_packaging_and_signing" in manifest["remaining_release_gates"]
@@ -84,6 +86,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "tests/test_electron_hud_scaffold.py" in manifest["required_validation"][1]
     assert "tests/test_mobile.py" in manifest["required_validation"][1]
     assert "tests/test_gemini.py" in manifest["required_validation"][1]
+    assert "tests/test_packaging.py" in manifest["required_validation"][1]
     assert all(item["release_candidate"] is False for item in generated)
     assert all(item["requires_approval"] is True for item in generated)
     assert before == after
@@ -130,6 +133,7 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "src/jarvis_codex/cli.py")
     write(tmp_path / "src/jarvis_codex/mobile.py")
     write(tmp_path / "src/jarvis_codex/gemini.py")
+    write(tmp_path / "src/jarvis_codex/packaging.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
     write(tmp_path / "tools/electron-hud/main.js")
