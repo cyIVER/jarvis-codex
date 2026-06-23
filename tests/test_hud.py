@@ -80,7 +80,13 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="readiness-gaps"' in response.text
     assert 'id="mobile-access-panel"' in response.text
     assert 'id="release-gate-panel"' in response.text
+    assert 'id="release-evidence-gate"' in response.text
+    assert 'id="release-evidence-reviewer"' in response.text
+    assert 'id="release-evidence-summary"' in response.text
+    assert 'id="record-release-evidence"' in response.text
+    assert 'id="release-evidence-status"' in response.text
     assert "Evidence records do not close gates" in response.text
+    assert "Record Evidence Metadata" in response.text
     assert "Displayed commands are proposals only" in response.text
     assert 'id="refresh-readiness"' in response.text
     assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
@@ -197,6 +203,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("agent.provider_status")' in response.text
     assert 'request("runtime.readiness")' in response.text
     assert 'request("release.gate_status")' in response.text
+    assert 'request("release.evidence_add"' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert 'request("approval.list", { status: "approved" })' in response.text
@@ -242,6 +249,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Runtime readiness refresh requested" in response.text
     assert "Release gate status loaded" in response.text
     assert "Evidence records do not close gates" in response.text
+    assert "Release evidence metadata recording requested" in response.text
+    assert "Gate closed:" in response.text
     assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text
     assert "PWA service worker registered" in response.text
     assert "currentSessionId()" in response.text

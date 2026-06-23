@@ -66,6 +66,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only external security review packet through `jarvis-codex release security-review-plan --json`; it maps OWASP ASVS/WSTG review surfaces without running scanners, launching services, probing networks, building packages, signing artifacts, or writing files.
 - State-only release evidence ledger through `jarvis-codex --state <state-dir> release evidence add/list --json` plus `release gate-status --json`; it records operator or reviewer evidence metadata, optional state-local artifact hashes, and open-gate evidence counts without copying artifacts, launching validations, or closing gates.
 - HUD release-gate status panel backed by the same read-only runtime RPC; it displays open gates and evidence counts without writing state, accepting evidence, or approving release.
+- HUD release-evidence metadata form backed by a runtime-token-gated RPC; it records gate, summary, and reviewer metadata only, with no browser artifact path input and no gate closure.
 
 ## Not Yet Production-Complete
 
@@ -125,6 +126,7 @@ The following remain future or incomplete production gates:
 - Security review planning must not run scanners, launch services, probe networks, build packages, sign artifacts, mutate Git, write files, or claim that review is complete.
 - Release evidence records must not be treated as execution authority, proof of test execution, publication approval, or automatic gate closure. Human acceptance remains required for external/device/signing gates.
 - HUD release-gate status is display-only. Seeing evidence counts in the UI must not be treated as permission to close gates, publish artifacts, launch validators, or run release commands.
+- HUD release-evidence recording must not be treated as artifact acceptance, test execution, publication approval, external reviewer sign-off, or gate closure. Browser clients cannot provide artifact paths for hashing.
 - Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 
 ## Required Local Validation

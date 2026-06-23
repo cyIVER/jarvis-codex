@@ -1387,6 +1387,56 @@ def test_runtime_release_gate_status_reads_state_without_writing(tmp_path):
     assert external["release_gate_closed"] is False
 
 
+def test_runtime_release_evidence_add_requires_token(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "release.evidence_add",
+            {"gate": "external_security_review", "summary": "Reviewer note"},
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()
+    assert data["error"]["code"] == "unauthorized"
+    assert not state.exists()
+
+
+def test_runtime_release_evidence_add_records_metadata_with_token(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+    token = app.state.runtime_token
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "release.evidence_add",
+            {
+                "gate": "actual_mobile_device_validation",
+                "summary": "Operator captured iPhone screenshot.",
+                "reviewer": "operator",
+                "runtime_token": token,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    evidence = data["evidence"]
+    assert data["state_write_performed"] is True
+    assert data["execution_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert evidence["gate"] == "actual_mobile_device_validation"
+    assert evidence["artifact_path"] is None
+    assert evidence["release_gate_closed"] is False
+    assert JarvisState(state).release_evidence()[0]["gate"] == "actual_mobile_device_validation"
+
+
 def test_runtime_profile_list_reports_policy_catalog_without_writing_state(tmp_path):
     state = tmp_path / "state"
     app = create_app(state)

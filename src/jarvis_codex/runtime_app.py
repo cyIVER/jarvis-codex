@@ -464,6 +464,7 @@ def _dispatch_request(
                     "telemetry.codeburn_status",
                     "runtime.health",
                     "runtime.readiness",
+                    "release.evidence_add",
                     "release.gate_status",
                     "profile.list",
                     "profile.set",
@@ -504,6 +505,33 @@ def _dispatch_request(
     if method == "release.gate_status":
         evidence = JarvisState(state_dir).release_evidence() if state_dir is not None else []
         return make_response(request_id, build_release_gate_status(evidence))
+
+    if method == "release.evidence_add":
+        if state_dir is None:
+            return make_error_response(request_id, code="state_unavailable", message="state directory is unavailable")
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="recording release evidence requires the HUD runtime token",
+                retryable=False,
+            )
+        gate = str(params.get("gate") or "").strip()
+        summary = str(params.get("summary") or "").strip()
+        reviewer = str(params.get("reviewer") or "operator").strip() or "operator"
+        try:
+            evidence = JarvisState(state_dir).record_release_evidence(gate, summary, reviewer)
+        except ValueError as exc:
+            return make_error_response(request_id, code="invalid_release_evidence", message=str(exc), retryable=False)
+        return make_response(
+            request_id,
+            {
+                "state_write_performed": True,
+                "evidence": evidence.__dict__,
+                "execution_authority": False,
+                "release_gate_closed": False,
+            },
+        )
 
     if method == "agent.provider_status":
         return make_response(request_id, build_agent_provider_status())

@@ -53,6 +53,14 @@ def test_hud_browser_connects_and_records_command_proposal(tmp_path):
             expect(page.locator("#socket-status")).to_have_text("online", timeout=5000)
             expect(page.locator("#pwa-status")).to_have_text("ready", timeout=5000)
             expect(page.locator("#readiness-status")).to_have_text("foundation-ready", timeout=5000)
+            expect(page.locator("#release-gate-status")).to_contain_text("open", timeout=5000)
+
+            page.locator("#release-evidence-gate").select_option("external_security_review")
+            page.locator("#release-evidence-reviewer").fill("browser-smoke")
+            page.locator("#release-evidence-summary").fill("Browser smoke evidence metadata; not review acceptance.")
+            page.locator("#record-release-evidence").click()
+            expect(page.locator("#release-evidence-status")).to_contain_text("Gate closed: no", timeout=5000)
+            expect(page.locator("#release-gate-panel")).to_contain_text("Evidence records: 1", timeout=5000)
 
             page.locator("#create-session").click()
             expect(page.locator("#active-session")).to_contain_text("Active session:", timeout=5000)

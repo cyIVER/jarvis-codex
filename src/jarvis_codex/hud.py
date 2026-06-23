@@ -375,6 +375,18 @@ HUD_HTML = """<!doctype html>
         <div id="readiness-gaps" class="log">Readiness summary pending.</div>
         <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
         <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
+        <select id="release-evidence-gate" aria-label="Release evidence gate">
+          <option value="actual_mobile_device_validation">actual_mobile_device_validation</option>
+          <option value="networked_gemini_live_validation">networked_gemini_live_validation</option>
+          <option value="electron_packaging_and_signing">electron_packaging_and_signing</option>
+          <option value="release_packaging_and_signing">release_packaging_and_signing</option>
+          <option value="external_security_review">external_security_review</option>
+          <option value="unattended_loop_scheduling">unattended_loop_scheduling</option>
+        </select>
+        <input id="release-evidence-reviewer" placeholder="Reviewer/operator" value="operator">
+        <textarea id="release-evidence-summary" rows="2" placeholder="Evidence summary. This does not close the gate."></textarea>
+        <button id="record-release-evidence" type="button">Record Evidence Metadata</button>
+        <div id="release-evidence-status" class="log">Evidence metadata is state-only and does not authorize release.</div>
         <button id="refresh-readiness" type="button">Refresh Readiness</button>
       </div>
 
@@ -540,6 +552,11 @@ HUD_JS = r"""(() => {
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
+  const releaseEvidenceGate = document.getElementById("release-evidence-gate");
+  const releaseEvidenceReviewer = document.getElementById("release-evidence-reviewer");
+  const releaseEvidenceSummary = document.getElementById("release-evidence-summary");
+  const recordReleaseEvidence = document.getElementById("record-release-evidence");
+  const releaseEvidenceStatus = document.getElementById("release-evidence-status");
   const refreshReadiness = document.getElementById("refresh-readiness");
   let socket;
   let requestSeq = 0;
@@ -802,6 +819,12 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "open_gate_count")) {
         renderReleaseGateStatus(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.evidence && frame.result.state_write_performed) {
+        releaseEvidenceStatus.textContent = `Evidence metadata recorded for ${frame.result.evidence.gate}. Gate closed: ${frame.result.release_gate_closed ? "yes" : "no"}.`;
+        request("release.gate_status");
         requestIndex.delete(frame.id);
         return;
       }
@@ -1191,6 +1214,24 @@ HUD_JS = r"""(() => {
     request("runtime.readiness");
     request("release.gate_status");
     log("Runtime readiness refresh requested.");
+  });
+
+  recordReleaseEvidence.addEventListener("click", () => {
+    const gate = releaseEvidenceGate.value;
+    const summary = releaseEvidenceSummary.value.trim();
+    const reviewer = releaseEvidenceReviewer.value.trim() || "operator";
+    if (!summary) {
+      releaseEvidenceStatus.textContent = "Evidence summary is required. No state was written.";
+      return;
+    }
+    request("release.evidence_add", {
+      gate,
+      summary,
+      reviewer,
+      runtime_token: runtimeToken
+    });
+    releaseEvidenceStatus.textContent = "Release evidence metadata recording requested. This does not close the gate.";
+    log(`Release evidence metadata requested for ${gate}. No gate closure authority granted.`);
   });
 
   refreshSessionHistoryButton.addEventListener("click", () => {
