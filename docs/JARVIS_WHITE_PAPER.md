@@ -30,7 +30,7 @@ But they leave four core failures in place:
 - The idea-capture path is weak and usually desk-bound.
 - Session continuity is fragile and context resets are expensive.
 - Safety boundaries are often implicit, inconsistent, or too coarse.
-- Execution capability exists, but execution governance is missing.
+- Execution capability exists, while execution governance must be explicit, testable, and local-first.
 
 Jarvis Codex exists to address those failures as a systems problem rather than a prompt problem.
 

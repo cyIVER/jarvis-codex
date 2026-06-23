@@ -30,6 +30,7 @@ jarvis-codex approve request "summary"    # create an approval request
 jarvis-codex handoff                      # generate a Codex handoff brief
 jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilities
 jarvis-codex doctor                       # inspect local state
+jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector
 ```
 
@@ -98,10 +99,11 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 
 ## Roadmap
 
-1. Local state and handoff CLI.
-2. Speech-to-text adapter.
-3. Codex App Server bridge.
-4. Approval-aware tool execution.
-5. Worktrunk-powered parallel coding sessions.
-6. Local browser UI and Remotion video review surface.
-7. Hardware-aware GPU/NPU acceleration adapters.
+1. Local state, handoff CLI, and read-only doctor.
+2. Project-local Codex governance and validator integration.
+3. Local browser UI and Remotion video review surface.
+4. Hardware-aware GPU/NPU inspection and approval gates.
+5. Speech-to-text adapter.
+6. Codex App Server bridge.
+7. Approval-aware tool execution.
+8. Worktrunk-powered parallel coding sessions.
