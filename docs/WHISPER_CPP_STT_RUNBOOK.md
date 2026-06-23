@@ -21,7 +21,7 @@ And so my fellow Americans ask not what your country can do for you
 ask what you can do for your country.
 ```
 
-This evidence proves the file-based local STT path. It does not approve microphone listeners, background recording, model downloads from Jarvis commands, cloud STT, Dockerized STT, GPU/NPU adapters, or runtime workflow execution.
+This evidence proves the file-based local STT path. It does not approve background microphone listeners, model downloads from Jarvis commands, cloud STT, Dockerized STT, GPU/NPU adapters, or runtime workflow execution. Foreground microphone use is a separate `voice listen` path that requires an explicit recorder adapter plus `--allow-microphone` and `--allow-audio-processing`.
 
 ## Required Local Inputs
 
@@ -94,7 +94,7 @@ On success, Jarvis captures the transcript as a normal episode with source `voic
 
 ## Guardrails
 
-- Do not use this as approval to record from a microphone.
+- Do not use file-based STT approval as approval to record from a microphone; use the separately gated `voice listen` foreground command.
 - Do not download or convert models from this command path.
 - Do not run Dockerized STT from this command path.
 - Do not use a cloud STT fallback.

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import uvicorn
 
 from .autonomous_loop import run_autonomous_loop_once, run_autonomous_loop_schedule
+from .codex_app_server import CodexAppServerConfig, CodexAppServerError, inline_approval_prompt, run_codex_turn
 from .gemini import (
     build_gemini_feasibility,
     build_gemini_live_evidence_brief,
@@ -33,6 +36,9 @@ from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import RELEASE_EVIDENCE_GATES, JarvisState
 from .voice import discover_local_stt_assets, ingest_audio_file, ingest_transcript_file, probe_audio_file
+from .voice_audio import VoiceAudioError, transcribe_with_local_adapter
+from .voice_intent import propose_voice_intent
+from .voice_mic import DEFAULT_RECORD_SECONDS, VoiceMicError, discover_recorder_command, record_microphone_once
 
 
 def main() -> int:
@@ -87,6 +93,22 @@ def main() -> int:
     voice_ingest.add_argument("--allow-audio-processing", action="store_true", help="Approve local audio processing for this command")
     voice_ingest.add_argument("--timeout-seconds", type=int, default=120, help="STT adapter timeout")
     voice_ingest.add_argument("--json", action="store_true", help="Print voice ingest result as JSON")
+    voice_plan = voice_sub.add_parser("plan", help="Classify a voice transcript into a planning turn without launching")
+    voice_plan.add_argument("transcript", nargs="+", help="Transcript text to classify")
+    voice_plan.add_argument("--profile", default="observe", help="Policy profile to use for command classification")
+    voice_plan.add_argument("--json", action="store_true", help="Print voice planning turn as JSON")
+    voice_ask = voice_sub.add_parser("ask", help="Send typed transcript text to Codex app-server")
+    voice_ask.add_argument("transcript", nargs="+", help="Transcript text to send")
+    _add_codex_voice_turn_args(voice_ask)
+    voice_listen = voice_sub.add_parser("listen", help="Record one foreground mic utterance, transcribe it, then send it to Codex")
+    voice_listen.add_argument("--seconds", type=int, default=DEFAULT_RECORD_SECONDS, help="Foreground recording duration")
+    voice_listen.add_argument("--record-command", help="Recorder adapter command; accepts --output-file and --seconds")
+    voice_listen.add_argument("--model", required=True, help="Path to an explicit local STT model file")
+    voice_listen.add_argument("--stt-command", required=True, help="Local STT adapter command; receives --audio-file and --model")
+    voice_listen.add_argument("--allow-microphone", action="store_true", help="Approve microphone access for this foreground command")
+    voice_listen.add_argument("--allow-audio-processing", action="store_true", help="Approve local STT processing for this foreground command")
+    voice_listen.add_argument("--timeout-seconds", type=int, default=120, help="Recorder and STT timeout")
+    _add_codex_voice_turn_args(voice_listen)
     lane = sub.add_parser("lane", help="Review Worktrunk lane state without mutation")
     lane_sub = lane.add_subparsers(dest="lane_command", required=True)
     lane_list = lane_sub.add_parser("list", help="List lane readiness from git worktree metadata")
@@ -260,7 +282,7 @@ def main() -> int:
         print(json.dumps(data, indent=2, sort_keys=True))
         return 0
     if args.command == "voice":
-        if not args.json:
+        if args.voice_command in {"discover", "probe", "ingest", "plan"} and not args.json:
             parser.error("voice commands are JSON-only; pass --json")
         if args.voice_command == "discover":
             roots = [Path(value) for value in args.search_root] if args.search_root else None
@@ -289,6 +311,63 @@ def main() -> int:
             )
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["status"] == "captured" else 1
+        if args.voice_command == "plan":
+            proposal = propose_voice_intent(" ".join(args.transcript), profile=args.profile)
+            print(json.dumps(proposal.to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.voice_command == "ask":
+            transcript = " ".join(args.transcript)
+            return _run_codex_voice_turn(args, transcript)
+        if args.voice_command == "listen":
+            record_command = args.record_command or os.environ.get("JARVIS_RECORD_COMMAND")
+            if not record_command:
+                discovery = discover_recorder_command()
+                print(json.dumps(discovery.to_dict(), indent=2, sort_keys=True))
+                return 1
+            if not args.allow_microphone:
+                result = {
+                    "status": "approval-required",
+                    "approval_required": "microphone",
+                    "message": "Microphone recording requires --allow-microphone for this foreground command.",
+                    "microphone_accessed": False,
+                    "audio_processed": False,
+                    "execution_authority": False,
+                }
+                print(json.dumps(result, indent=2, sort_keys=True))
+                return 1
+            if not args.allow_audio_processing:
+                result = {
+                    "status": "approval-required",
+                    "approval_required": "audio-processing",
+                    "message": "Local transcription requires --allow-audio-processing for this foreground command.",
+                    "microphone_accessed": False,
+                    "audio_processed": False,
+                    "execution_authority": False,
+                }
+                print(json.dumps(result, indent=2, sort_keys=True))
+                return 1
+            try:
+                recording = record_microphone_once(
+                    state_dir=Path(args.state),
+                    record_command=record_command,
+                    seconds=args.seconds,
+                    timeout_seconds=args.timeout_seconds,
+                )
+                stt = transcribe_with_local_adapter(
+                    audio_file=recording.audio_file,
+                    model_path=Path(args.model),
+                    stt_command=args.stt_command,
+                    timeout_seconds=args.timeout_seconds,
+                )
+            except (VoiceMicError, VoiceAudioError) as exc:
+                print(json.dumps({"status": "failed", "error": str(exc), "execution_authority": False}, indent=2, sort_keys=True))
+                return 1
+            if args.json:
+                print(json.dumps({"event_type": "microphone_recorded", **recording.to_dict()}, sort_keys=True))
+                print(json.dumps({"event_type": "transcript_ready", **stt.to_dict()}, sort_keys=True))
+            else:
+                print(f"Transcript: {stt.transcript}")
+            return _run_codex_voice_turn(args, stt.transcript)
     if args.command == "lane":
         if not args.json:
             parser.error("lane commands are JSON-only in this read-only first implementation; pass --json")
@@ -473,6 +552,97 @@ def main() -> int:
 
 def _is_loopback_host(host: str) -> bool:
     return host in {"127.0.0.1", "localhost", "::1"}
+
+
+def _add_codex_voice_turn_args(command: argparse.ArgumentParser) -> None:
+    command.add_argument("--session", help="Existing Codex app-server thread id to continue")
+    command.add_argument("--cwd", default=".", help="Working directory for the Codex turn")
+    command.add_argument(
+        "--approval-policy",
+        choices=["untrusted", "on-failure", "on-request", "never"],
+        default="on-request",
+        help="Codex app-server approval policy",
+    )
+    command.add_argument(
+        "--sandbox",
+        choices=["read-only", "workspace-write", "danger-full-access"],
+        default="workspace-write",
+        help="Codex app-server sandbox mode",
+    )
+    command.add_argument("--codex-model", dest="codex_model", help="Optional Codex model override")
+    command.add_argument("--effort", help="Optional reasoning effort override")
+    command.add_argument(
+        "--approval-mode",
+        choices=["inline", "deny"],
+        default="inline",
+        help="How Jarvis responds to app-server approval requests",
+    )
+    command.add_argument("--no-daemon-start", action="store_true", help="Use direct app-server stdio instead of trying the managed daemon first")
+    command.add_argument("--json", action="store_true", help="Print JSONL backend events")
+
+
+def _run_codex_voice_turn(args: argparse.Namespace, transcript: str) -> int:
+    config = CodexAppServerConfig(
+        cwd=Path(args.cwd),
+        session=args.session,
+        approval_policy=args.approval_policy,
+        sandbox=args.sandbox,
+        model=args.codex_model,
+        effort=args.effort,
+        start_daemon=not args.no_daemon_start,
+    )
+
+    def approval_callback(params: dict[str, object]) -> bool:
+        if args.approval_mode == "deny":
+            return False
+        return inline_approval_prompt(params)
+
+    try:
+        for event in run_codex_turn(transcript, config=config, approval_callback=approval_callback):
+            payload = {
+                **event.to_dict(),
+                "agent_mode": "full",
+                "approval_mode": args.approval_mode,
+                "execution_authority": True,
+            }
+            if args.json:
+                print(json.dumps(payload, sort_keys=True))
+            else:
+                _print_codex_event(payload)
+        return 0
+    except (CodexAppServerError, subprocess.CalledProcessError) as exc:
+        error = {
+            "status": "failed",
+            "error": str(exc),
+            "agent_mode": "full",
+            "approval_mode": args.approval_mode,
+            "execution_authority": True,
+        }
+        if args.json:
+            print(json.dumps(error, sort_keys=True))
+        else:
+            print(f"Codex app-server failed: {exc}")
+        return 1
+
+
+def _print_codex_event(event: dict[str, object]) -> None:
+    event_type = event.get("event_type")
+    if event_type in {"agent_message_delta", "plan_delta", "terminal_output"}:
+        print(str(event.get("text", "")), end="", flush=True)
+        return
+    if event_type == "thread_started":
+        print(f"Thread: {event.get('thread_id')}")
+        return
+    if event_type == "thread_resumed":
+        print(f"Thread: {event.get('thread_id')}")
+        return
+    if event_type == "turn_completed":
+        print("\nTurn completed.")
+        return
+    if event_type == "approval_requested":
+        return
+    if event_type == "approval_responded":
+        print("\nApproval response sent.")
 
 
 if __name__ == "__main__":

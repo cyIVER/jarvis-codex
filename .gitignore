@@ -4,6 +4,8 @@ __pycache__/
 .ruff_cache/
 .venv/
 tools/electron-hud/node_modules/
+tools/windows-mic/**/bin/
+tools/windows-mic/**/obj/
 dist/
 build/
 *.egg-info/

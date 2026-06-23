@@ -1418,6 +1418,102 @@ def test_voice_commands_require_json(tmp_path, monkeypatch):
     assert exc_info.value.code == 2
 
 
+def test_voice_plan_classifies_transcript_without_launch(monkeypatch, capsys):
+    code = run_cli(monkeypatch, ["voice", "plan", "ask", "Codex", "to", "review", "the", "failures", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["intent_type"] == "agent_handoff"
+    assert data["target"] == "codex"
+    assert data["approval_required"] is True
+    assert data["execution_authority"] is False
+    assert data["routed_as_command"] is False
+
+
+def test_voice_plan_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "voice", "plan", "run", "git", "status"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_voice_ask_streams_jsonl_from_codex_app_server(monkeypatch, capsys):
+    class FakeEvent:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    seen = {}
+
+    def fake_run_codex_turn(transcript, *, config, approval_callback):
+        seen["transcript"] = transcript
+        seen["config"] = config
+        yield FakeEvent({"event_type": "thread_resumed", "thread_id": "thread-1"})
+        yield FakeEvent({"event_type": "agent_message_delta", "thread_id": "thread-1", "turn_id": "turn-1", "text": "ok"})
+        yield FakeEvent({"event_type": "turn_completed", "thread_id": "thread-1", "turn_id": "turn-1"})
+
+    monkeypatch.setattr(cli, "run_codex_turn", fake_run_codex_turn)
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "voice",
+            "ask",
+            "plan",
+            "this",
+            "feature",
+            "--session",
+            "thread-1",
+            "--approval-mode",
+            "deny",
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    rows = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert seen["transcript"] == "plan this feature"
+    assert seen["config"].session == "thread-1"
+    assert rows[0]["agent_mode"] == "full"
+    assert rows[0]["approval_mode"] == "deny"
+    assert rows[0]["execution_authority"] is True
+    assert rows[1]["event_type"] == "agent_message_delta"
+    assert rows[1]["text"] == "ok"
+
+
+def test_voice_listen_requires_microphone_approval(tmp_path, monkeypatch, capsys):
+    recorder = tmp_path / "recorder.py"
+    recorder.write_text("pass\n", encoding="utf-8")
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "voice",
+            "listen",
+            "--record-command",
+            f"{sys.executable} {recorder}",
+            "--model",
+            str(tmp_path / "model.bin"),
+            "--stt-command",
+            sys.executable,
+            "--json",
+        ],
+    )
+
+    assert code == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "approval-required"
+    assert data["approval_required"] == "microphone"
+    assert data["microphone_accessed"] is False
+    assert data["audio_processed"] is False
+
+
 def test_voice_probe_checks_stt_readiness_without_runtime_or_state(tmp_path, monkeypatch, capsys):
     audio = tmp_path / "sample.wav"
     model = tmp_path / "ggml-base.en.bin"

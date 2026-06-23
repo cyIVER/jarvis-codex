@@ -25,6 +25,9 @@ By default, state is stored in `./state`.
 ```bash
 jarvis-codex capture "task text"          # create an inbox episode
 jarvis-codex voice ingest --transcript-file transcript.txt --json
+jarvis-codex voice plan grab this file in this location src/app.py --json
+jarvis-codex voice ask "explore this codebase and summarize the routing" --sandbox read-only --approval-mode deny --json
+jarvis-codex voice listen --record-command "$JARVIS_RECORD_COMMAND" --model models/ggml-base.en.bin --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" --allow-microphone --allow-audio-processing --sandbox read-only --json
 jarvis-codex voice discover --json
 jarvis-codex voice probe --audio-file recording.wav --model models/ggml-base.en.bin --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" --json
 jarvis-codex voice ingest --audio-file recording.wav --model models/ggml-base.en.bin --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" --allow-audio-processing --json
