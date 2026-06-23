@@ -221,7 +221,7 @@
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 8</strong>Readiness</div>
+        <div class="ring-text"><strong>PHASE 9</strong>History</div>
       </div>
     </header>
 
@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$556.29</div>
-          <div class="note">Latest Codeburn month snapshot: 6046 calls. Daily counter reset after midnight.</div>
+          <div class="value">$558.07</div>
+          <div class="note">Latest Codeburn month snapshot: 6061 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">Runtime, PTY supervision, profile catalog, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
+          <div class="note">Runtime, PTY supervision, profile catalog, semantic message history, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
         </div>
       </div>
     </section>
@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>; message history <code>efe573e</code>.</li>
         </ul>
       </div>
       <div>
@@ -285,7 +285,7 @@
           <li>Plan-viewer harness routes and durable queues remain planning state only, not command authority.</li>
           <li>Voice intent proposals classify transcripts but must not execute commands.</li>
           <li>AG challenge review found STT, approval replay, command policy, WebSocket origin, token, and API-contract issues; fixes are committed in <code>89b09fc</code>, <code>c176976</code>, and <code>7d3e0b5</code>.</li>
-          <li>Final integrated validation passed: governance PASS, 165 tests, and HUD/PWA browser smoke.</li>
+          <li>Final integrated validation passed: governance PASS, 167 tests, and HUD/PWA browser smoke.</li>
           <li>Windows AC sleep and hibernate were set to never for the overnight run.</li>
         </ul>
       </div>
@@ -302,6 +302,7 @@
         <div class="step"><strong>Phase 5</strong><span>Dynamic swarm, delivery loop, AG adversaries, and Codeburn telemetry are moving into runtime HUD controls.</span></div>
         <div class="step"><strong>Phase 6</strong><span>Private-network iPhone PWA shell assets are moving into the runtime HUD.</span></div>
         <div class="step"><strong>Phase 7</strong><span>Production readiness runbook, full targeted validation, AG challenge review, and HUD/PWA browser smoke are complete for the current local runtime foundation.</span></div>
+        <div class="step"><strong>Phase 8</strong><span>Runtime readiness, policy profiles, and semantic message history are exposed as non-writing runtime APIs.</span></div>
       </div>
     </section>
 

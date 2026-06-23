@@ -75,8 +75,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed browser voice status output in `7d8685f`.
 - Implemented and validated non-writing runtime policy profile catalog.
 - Committed and pushed runtime policy profile catalog in `0b23f80`.
-- Ran final integrated validation: governance PASS, 165 tests passed.
-- Refreshed Codeburn snapshot: month `$556.29`, 6046 calls.
+- Implemented and validated non-writing session-scoped semantic message history through `message.list`.
+- Committed and pushed runtime semantic message history in `efe573e`.
+- Ran final integrated validation: governance PASS, 167 tests passed.
+- Refreshed Codeburn snapshot: month `$558.07`, 6061 calls.
 
 ## Pending
 

@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 06:25 EDT
+updated: 2026-06-23 01:52 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -46,7 +46,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - HUD readiness panel committed and pushed as `495e7a9`.
 - Browser-managed voice status output committed and pushed as `7d8685f`.
 - Runtime policy profile catalog committed and pushed as `0b23f80`.
-- Current Codeburn snapshot: month `$556.29`, 6046 calls.
+- Runtime semantic message history committed and pushed as `efe573e`.
+- Current Codeburn snapshot: month `$558.07`, 6061 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -62,6 +63,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 - Plan-viewer package must stay display-only and planning-only; commands and harness routes must not gain execution authority.
 - Voice-origin command proposals must remain non-executing until an explicit runtime approval path is added.
+- Runtime message history is a semantic event/history view; it is not an execution queue.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
