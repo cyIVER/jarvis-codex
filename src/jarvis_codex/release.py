@@ -289,6 +289,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "tools/electron-hud/package-lock.json",
+            "electron-hud-lockfile",
+            True,
+            False,
+            "Pinned Electron HUD dependency lockfile generated without installing node_modules or running package scripts.",
+        ),
+        _artifact(
+            root,
             "tools/electron-hud/main.js",
             "electron-hud-main",
             True,

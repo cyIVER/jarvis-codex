@@ -153,13 +153,18 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 239 tests passed.
 - Ran AG mobile validation-plan safety review; no execution-authority, network-probe, service-launch, state-write, or approval-boundary issue was found.
 - Implemented and validated read-only Gemini Live validation planning. It prepares cloud voice evidence steps without starting OAuth, opening WebSockets, probing the network, launching adapters, writing state, exposing secrets, approving cloud spend, or granting execution authority.
+- Committed and pushed read-only Gemini Live validation planner in `e546350`.
 - Ran final integrated validation: governance PASS, 244 tests passed.
 - Ran AG Gemini validation-plan safety review; no OAuth, WebSocket, network-probe, adapter-launch, state-write, secret-exposure, spend-authority, or fallback-boundary issue was found.
-- Refreshed Codeburn snapshot: month `$614.67`, 6573 calls.
+- Generated the Electron HUD package lock with lifecycle scripts disabled, no audit/fund run, no `node_modules`, no packaging, no signing, no artifact copy, and no service launch.
+- Updated packaging preflight to drop the lock-generation gate when the lockfile is present while preserving install/package/signing gates.
+- Ran final integrated validation: governance PASS, 245 tests passed.
+- Ran AG Electron lock boundary review; no install, package, sign, artifact-copy, service-launch, or implied-authority issue was found.
+- Refreshed Codeburn snapshot: month `$617.25`, 6595 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approved Electron dependency lock/install, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approved Electron dependency install/package/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

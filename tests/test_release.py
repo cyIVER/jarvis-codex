@@ -43,6 +43,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "src/jarvis_codex/packaging.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
+    write(tmp_path / "tools/electron-hud/package-lock.json")
     write(tmp_path / "tools/electron-hud/main.js")
     write(tmp_path / "tools/electron-hud/preload.js")
     write(tmp_path / "tools/plan-viewer/index.html")
@@ -79,6 +80,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "src/jarvis_codex/packaging.py" in manifest["release_candidates_present"]
     assert "tests/test_hud_browser.py" in manifest["release_candidates_present"]
     assert "tools/electron-hud/main.js" in manifest["release_candidates_present"]
+    assert "tools/electron-hud/package-lock.json" in manifest["release_candidates_present"]
     assert "electron_packaging_and_signing" in manifest["remaining_release_gates"]
     assert "actual_swarm_agent_launch" in manifest["remaining_release_gates"]
     assert "actual_loop_execution" in manifest["remaining_release_gates"]
@@ -136,6 +138,7 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "src/jarvis_codex/packaging.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
+    write(tmp_path / "tools/electron-hud/package-lock.json")
     write(tmp_path / "tools/electron-hud/main.js")
     write(tmp_path / "tools/electron-hud/preload.js")
     write(tmp_path / "tools/plan-viewer/index.html")

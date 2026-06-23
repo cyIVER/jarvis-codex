@@ -71,4 +71,18 @@ def test_packaging_preflight_keeps_packaging_commands_as_recommendations(tmp_pat
 
     assert "npm install" in preflight.recommended_commands
     assert "npm run package" in preflight.recommended_commands
+    assert "npm install --package-lock-only" in preflight.recommended_commands
+    assert "approve dependency lockfile generation before npm writes package-lock.json" in preflight.remaining_gates
+    assert "approve dependency installation before creating node_modules" in preflight.remaining_gates
+
+
+def test_packaging_preflight_drops_lock_generation_gate_when_lock_exists(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps({"devDependencies": {"electron": "42.4.1"}}))
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert preflight.package_lock_present is True
+    assert "npm install --package-lock-only" not in preflight.recommended_commands
+    assert "approve dependency lockfile generation before npm writes package-lock.json" not in preflight.remaining_gates
     assert "approve dependency installation before creating node_modules" in preflight.remaining_gates

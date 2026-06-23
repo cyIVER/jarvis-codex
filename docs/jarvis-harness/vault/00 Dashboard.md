@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 04:05 EDT
+updated: 2026-06-23 04:18 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -69,8 +69,9 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - HUD loop lifecycle controls committed and pushed as `f9f240e`.
 - Read-only release packaging preflight committed and pushed as `b9dcfb1`.
 - Read-only mobile validation planner committed and pushed as `6acfb68`.
-- Read-only Gemini Live validation planner is implemented and awaiting commit.
-- Current Codeburn snapshot: month `$614.67`, 6573 calls.
+- Read-only Gemini Live validation planner committed and pushed as `e546350`.
+- Electron HUD package-lock is generated and awaiting commit.
+- Current Codeburn snapshot: month `$617.25`, 6595 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -100,6 +101,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - HUD loop lifecycle controls request approval and record approved state only; they do not auto-approve or execute.
 - HUD swarm lifecycle controls request approvals and record approved lifecycle state only; they do not auto-approve or execute.
 - Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
+- Electron package-lock pins dependency resolution only; it does not install dependencies, build packages, sign artifacts, copy outputs, or launch services.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
@@ -113,6 +115,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, approved Electron dependency lock/install, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, approved Electron dependency install/package/sign flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

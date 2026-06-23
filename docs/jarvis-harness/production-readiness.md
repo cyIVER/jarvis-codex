@@ -40,6 +40,7 @@ Implemented and validated in the local FastAPI runtime:
 - Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
+- Electron HUD dependency lockfile generated with lifecycle scripts disabled and no `node_modules` installation.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
@@ -50,7 +51,7 @@ Implemented and validated in the local FastAPI runtime:
 
 The following remain future or incomplete production gates:
 
-- Electron desktop app packaging, installer generation, and signing.
+- Electron dependency installation, desktop app packaging, installer generation, and signing.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
 - Actual loop execution and actual multi-agent launch orchestration.
@@ -83,6 +84,7 @@ The following remain future or incomplete production gates:
 - Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
 - Mobile validation plans are evidence checklists only; they must not launch the runtime, probe the network, open browsers, or grant execution authority.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
+- The Electron lockfile is not proof of an installed or packaged app; dependency installation, package builds, signing, and artifact copy remain separate gated actions.
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
@@ -103,7 +105,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-244 passed
+245 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

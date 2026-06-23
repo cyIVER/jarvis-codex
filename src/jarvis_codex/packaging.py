@@ -70,6 +70,23 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
 
     status = "READY_FOR_APPROVAL" if package_json.exists() and npm_available else "NEEDS_SETUP"
 
+    recommended_commands: list[str] = []
+    remaining_gates: list[str] = []
+    if not package_lock.exists():
+        recommended_commands.append("npm install --package-lock-only")
+        remaining_gates.append("approve dependency lockfile generation before npm writes package-lock.json")
+    recommended_commands.extend(["npm install", "npm run package", "npm run make"])
+    remaining_gates.extend(
+        [
+            "approve dependency installation before creating node_modules",
+            "add reviewed Electron packaging scripts before running package or make commands",
+            "choose Windows/macOS/Linux artifact targets",
+            "configure and verify signing credentials without committing secrets",
+            "run packaging in an isolated release worktree or clean checkout",
+            "perform malware/security review before distributing installers",
+        ]
+    )
+
     return PackagingPreflight(
         label="Jarvis release packaging preflight",
         status=status,
@@ -87,22 +104,9 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         service_launch_performed=False,
         writes_files=False,
         approval_required=True,
-        recommended_commands=[
-            "npm install --package-lock-only",
-            "npm install",
-            "npm run package",
-            "npm run make",
-        ],
+        recommended_commands=recommended_commands,
         warnings=warnings,
-        remaining_gates=[
-            "approve dependency lockfile generation before npm writes package-lock.json",
-            "approve dependency installation before creating node_modules",
-            "add reviewed Electron packaging scripts before running package or make commands",
-            "choose Windows/macOS/Linux artifact targets",
-            "configure and verify signing credentials without committing secrets",
-            "run packaging in an isolated release worktree or clean checkout",
-            "perform malware/security review before distributing installers",
-        ],
+        remaining_gates=remaining_gates,
     )
 
 
