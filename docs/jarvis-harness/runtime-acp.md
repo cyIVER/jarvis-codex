@@ -43,12 +43,15 @@ Required v1 capabilities:
 - `voice.transcribe_audio`
 - `voice.intent_propose`
 - `swarm.start`
+- `swarm.launch`
 - `loop.start`
 - `loop.pause`
 - `loop.resume`
 - `loop.stop`
 
 Loop lifecycle methods record approved state only. They do not launch agents, start PTYs, execute shell commands, mutate Worktrunk, run runtime workflows, or grant execution authority.
+
+`swarm.launch` is the exception that starts role-labeled PTY panes. It requires an approved `swarm.launch` scope that exactly names each role command, profile, and cwd, plus the HUD runtime token. It uses the same runtime policy and PTY supervisor path as `pty.create`; hardline blocks still win and Worktrunk/Git mutation is not performed by the launch method itself.
 
 The CLI also exposes `jarvis-codex loop run-once --allow-validation --json` for one bounded loop iteration. It runs only fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records evidence under the selected `--state` directory. It is not a generic command runner and does not launch services, agents, PTYs, Worktrunk, Git mutation, network probes, or runtime workflows.
 

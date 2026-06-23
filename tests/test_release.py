@@ -84,13 +84,15 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "tools/electron-hud/package-lock.json" in manifest["release_candidates_present"]
     assert "tools/electron-hud/electron-builder.json" in manifest["release_candidates_present"]
     assert "electron_packaging_and_signing" in manifest["remaining_release_gates"]
-    assert "actual_swarm_agent_launch" in manifest["remaining_release_gates"]
-    assert "actual_loop_execution" in manifest["remaining_release_gates"]
+    assert "hud_swarm_launch_controls" in manifest["remaining_release_gates"]
+    assert "unattended_loop_scheduling" in manifest["remaining_release_gates"]
     assert "npm run typecheck" not in manifest["required_validation"]
     assert "tests/test_electron_hud_scaffold.py" in manifest["required_validation"][1]
     assert "tests/test_mobile.py" in manifest["required_validation"][1]
     assert "tests/test_gemini.py" in manifest["required_validation"][1]
     assert "tests/test_packaging.py" in manifest["required_validation"][1]
+    assert "tests/test_loop_readiness.py" in manifest["required_validation"][1]
+    assert "tests/test_autonomous_loop.py" in manifest["required_validation"][1]
     assert all(item["release_candidate"] is False for item in generated)
     assert all(item["requires_approval"] is True for item in generated)
     assert before == after

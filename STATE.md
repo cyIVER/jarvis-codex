@@ -67,8 +67,11 @@ pattern: product-readiness-triage
 - [x] PM-020 - Bounded loop run-once execution
   Loop action: added `jarvis-codex loop run-once --allow-validation --json` to run fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and write loop-run evidence under the selected state directory.
   Human decision: the runner does not accept arbitrary commands, launch services, probe the network, mutate Git/Worktrunk, start agents, start PTYs, or execute runtime workflows.
-- [ ] PM-021 - Next product slice
-  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, actual swarm launch design, and unattended loop scheduling.
+- [x] PM-021 - Backend swarm role launch
+  Loop action: added backend `swarm.launch` for approval-gated role-labeled PTY pane launch with exact role command/profile/cwd scope, HUD runtime-token enforcement, and hardline policy preservation.
+  Human decision: HUD swarm launch controls, mobile validation, Gemini Live validation, release signing, and unattended scheduling remain separate gates.
+- [ ] PM-022 - Next product slice
+  Loop action: pending prioritization between HUD swarm launch controls, real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and unattended loop scheduling.
   Human decision: not selected yet.
 
 ## Watch List
@@ -91,3 +94,4 @@ Run log: 2026-06-23 | findings: runtime STT needed a model cache path that did n
 Run log: 2026-06-23 | findings: HUD lacked a button path from captured audio chunks to approved local STT | actions: added transcription approval request and approved transcription controls for the latest captured audio path | escalations: 0
 Run log: 2026-06-23 | findings: mobile host discovery existed only in CLI/docs and was not visible in the harness | actions: added non-writing mobile access evidence to runtime readiness and HUD display-only command proposals | escalations: 0
 Run log: 2026-06-23 | findings: loop lifecycle records did not perform a bounded iteration | actions: added fixed-check `loop run-once` execution with local JSON evidence and no arbitrary command authority | escalations: 0
+Run log: 2026-06-23 | findings: swarm lifecycle records still did not launch role panes | actions: added approval-gated `swarm.launch` with exact role command/profile/cwd scope and hardline policy preservation | escalations: 0

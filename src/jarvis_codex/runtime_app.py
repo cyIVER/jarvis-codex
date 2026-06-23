@@ -84,7 +84,6 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
     remaining_gaps = [
         "iphone_private_network_validation",
         "approved_gemini_live_network_test",
-        "actual_swarm_agent_launch",
         "signed_release_artifacts",
         "external_security_review",
     ]
@@ -106,6 +105,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "voice_execution_authority": False,
             "codeburn_shell": False,
             "swarm_lifecycle_records": True,
+            "swarm_role_launch": True,
             "loop_lifecycle_records": True,
             "bounded_loop_run_once": True,
             "agent_provider_status": True,
@@ -463,6 +463,7 @@ def _dispatch_request(
                     "swarm.plan",
                     "command.classify",
                     "command.propose",
+                    "swarm.launch",
                     "pty.create",
                     "pty.input",
                     "pty.resize",
@@ -920,6 +921,148 @@ def _dispatch_request(
                 "worktrunk_mutation": False,
                 "pty_launch": False,
                 "command_execution": False,
+                "runtime_workflow_execution": False,
+            },
+        )
+
+    if method == "swarm.launch":
+        session_id = str(params.get("session_id") or "")
+        swarm_event_id = str(params.get("swarm_event_id") or "").strip()
+        approval_id = str(params.get("approval_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if store.session(session_id) is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        if not swarm_event_id:
+            return make_error_response(request_id, code="missing_swarm_event_id", message="swarm_event_id is required")
+        roles = _normalize_swarm_launch_roles(params.get("roles") or [])
+        if roles is None:
+            return make_error_response(request_id, code="invalid_roles", message="roles must be a non-empty list")
+
+        preflight = _preflight_swarm_launch_roles(roles)
+        blocked = [item for item in preflight if item["policy"]["status"] == "block"]
+        if blocked:
+            return make_error_response(
+                request_id,
+                code="policy_blocked",
+                message="swarm launch role command is blocked by policy",
+                retryable=False,
+                policy_blocked=True,
+                details={"blocked_roles": blocked},
+            )
+
+        if not _approval_allows_swarm_launch(
+            store,
+            approval_id=approval_id,
+            session_id=session_id,
+            swarm_event_id=swarm_event_id,
+            roles=roles,
+        ):
+            return make_error_response(
+                request_id,
+                code="approval_required",
+                message="swarm.launch requires a matching approved role launch approval",
+                approval_required=True,
+                details={
+                    "required_approval_scope": "swarm.launch",
+                    "session_id": session_id,
+                    "swarm_event_id": swarm_event_id,
+                    "roles": _approval_role_scope(roles),
+                },
+            )
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="approved swarm.launch requires the HUD runtime token",
+                retryable=False,
+            )
+
+        consumed = approval_service.consume(
+            approval_id=approval_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason="swarm.launch started approved role-labeled PTY panes",
+        )
+        event_broadcaster.publish(consumed.event)
+
+        launched: list[dict[str, Any]] = []
+        try:
+            for role in roles:
+                decision = classify_command(role["command"], role["profile"])  # type: ignore[arg-type]
+                result = pty_supervisor.spawn(
+                    role["command"],
+                    profile=role["profile"],  # type: ignore[arg-type]
+                    cwd=role["cwd"] or None,
+                    approval_granted=decision.approval_required,
+                )
+                pane = result.to_dict()
+                pane.update(
+                    {
+                        "role_id": role["role_id"],
+                        "label": role["label"],
+                        "cwd": role["cwd"],
+                        "approval_id": approval_id,
+                    }
+                )
+                launched.append(pane)
+        except Exception:
+            for pane in launched:
+                try:
+                    pty_supervisor.kill(str(pane["channel_id"]))
+                except Exception:
+                    pass
+            raise
+
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="swarm.launched",
+            parent_event_id=swarm_event_id,
+            payload={
+                "swarm_event_id": swarm_event_id,
+                "approval_id": approval_id,
+                "roles": [
+                    {
+                        "role_id": pane["role_id"],
+                        "label": pane["label"],
+                        "command": pane["command"],
+                        "profile": pane["profile"],
+                        "channel_id": pane["channel_id"],
+                        "pid": pane["pid"],
+                        "cwd": pane["cwd"],
+                    }
+                    for pane in launched
+                ],
+                "execution_authority": True,
+                "agent_launch": True,
+                "pty_launch": True,
+                "command_execution": True,
+                "worktrunk_mutation": False,
+                "git_mutation": False,
+                "runtime_workflow_execution": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "swarm_launch_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "swarm_event_id": swarm_event_id,
+                "roles": launched,
+                "role_count": len(launched),
+                "writes_state": True,
+                "approval_consumed": True,
+                "execution_authority": True,
+                "agent_launch": True,
+                "pty_launch": True,
+                "command_execution": True,
+                "worktrunk_mutation": False,
+                "git_mutation": False,
                 "runtime_workflow_execution": False,
             },
         )
@@ -1583,6 +1726,64 @@ def _normalize_swarm_lanes(value: Any) -> list[dict[str, str]] | None:
     return normalized
 
 
+def _normalize_swarm_launch_roles(value: Any) -> list[dict[str, str]] | None:
+    if not isinstance(value, list) or not value:
+        return None
+    if len(value) > 4:
+        return None
+    normalized: list[dict[str, str]] = []
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            return None
+        command = _normalize_command(str(item.get("command") or ""))
+        if not command:
+            return None
+        profile = str(item.get("profile") or "swarm")
+        if profile not in POLICY_PROFILES:
+            return None
+        role_id = str(item.get("role_id") or item.get("id") or f"role-{index}").strip()[:80]
+        label = str(item.get("label") or item.get("role") or role_id or f"Role {index}").strip()[:120]
+        cwd = str(item.get("cwd") or "").strip()
+        normalized.append(
+            {
+                "role_id": role_id or f"role-{index}",
+                "label": label or f"Role {index}",
+                "command": command,
+                "profile": profile,
+                "cwd": cwd,
+            }
+        )
+    return normalized
+
+
+def _preflight_swarm_launch_roles(roles: list[dict[str, str]]) -> list[dict[str, Any]]:
+    preflight: list[dict[str, Any]] = []
+    for role in roles:
+        decision = classify_command(role["command"], role["profile"])  # type: ignore[arg-type]
+        preflight.append(
+            {
+                "role_id": role["role_id"],
+                "label": role["label"],
+                "command": role["command"],
+                "profile": role["profile"],
+                "policy": decision.to_dict(),
+            }
+        )
+    return preflight
+
+
+def _approval_role_scope(roles: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [
+        {
+                "role_id": role["role_id"],
+                "command": _normalize_command(role["command"]),
+                "profile": role["profile"],
+                "cwd": role["cwd"],
+            }
+        for role in roles
+    ]
+
+
 def _approval_allows_command(store: JarvisEventStore, approval_id: str, command: str) -> bool:
     if not approval_id.strip():
         return False
@@ -1594,6 +1795,46 @@ def _approval_allows_command(store: JarvisEventStore, approval_id: str, command:
     scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
     scoped_command = _normalize_command(str(scope.get("command") or ""))
     return expected in {operation, scoped_command}
+
+
+def _approval_allows_swarm_launch(
+    store: JarvisEventStore,
+    *,
+    approval_id: str,
+    session_id: str,
+    swarm_event_id: str,
+    roles: list[dict[str, str]],
+) -> bool:
+    if not approval_id.strip() or not swarm_event_id:
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    if str(approval.get("operation") or "") != "swarm.launch":
+        return False
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    scoped_roles = scope.get("roles")
+    if not isinstance(scoped_roles, list):
+        return False
+    expected_roles = _approval_role_scope(roles)
+    actual_roles: list[dict[str, str]] = []
+    for item in scoped_roles:
+        if not isinstance(item, dict):
+            return False
+        actual_roles.append(
+            {
+                "role_id": str(item.get("role_id") or item.get("id") or ""),
+                "command": _normalize_command(str(item.get("command") or "")),
+                "profile": str(item.get("profile") or "swarm"),
+                "cwd": str(item.get("cwd") or "").strip(),
+            }
+        )
+    return (
+        scope.get("source") == "swarm.launch"
+        and scope.get("session_id") == session_id
+        and scope.get("swarm_event_id") == swarm_event_id
+        and actual_roles == expected_roles
+    )
 
 
 def _approval_allows_audio_transcription(

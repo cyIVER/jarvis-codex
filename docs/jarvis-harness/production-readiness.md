@@ -20,6 +20,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only semantic history search through `message.search`.
 - Planning-only swarm lane proposal records through `swarm.plan` without agent launch, PTY launch, Worktrunk mutation, or command execution.
 - Approval-gated swarm lifecycle records through `swarm.start` and `swarm.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
+- Approval-gated role-labeled swarm launch through `swarm.launch`; it requires exact scoped approval for role command/profile/cwd plus the HUD runtime token, starts PTY panes through runtime policy, preserves hardline blocks, and does not mutate Worktrunk or Git.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
@@ -68,7 +69,7 @@ The following remain future or incomplete production gates:
 - Electron desktop app signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- Actual multi-agent launch orchestration.
+- HUD controls for approved swarm role launch.
 - Higher-level unattended loop scheduling beyond bounded `loop run-once`.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
@@ -85,6 +86,7 @@ The following remain future or incomplete production gates:
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
 - Swarm plans are planning records only; they must not be treated as permission to launch agents, mutate Worktrunk, start PTYs, or run commands.
 - Swarm lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
+- Swarm role launch requires a matching `swarm.launch` approval that exactly names role IDs, commands, profiles, and cwd values, plus the HUD runtime token. Hardline blocks override approvals. The launch method starts only runtime-managed PTYs and must not mutate Worktrunk, mutate Git, or execute runtime workflows.
 - Loop lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as autonomous execution, agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
 - Bounded `loop run-once` does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.

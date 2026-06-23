@@ -72,6 +72,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
     assert "swarm.plan" in data["result"]["capabilities"]
+    assert "swarm.launch" in data["result"]["capabilities"]
     assert "command.propose" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
@@ -815,6 +816,274 @@ def test_runtime_swarm_stop_records_approved_lifecycle_without_execution(tmp_pat
     assert app.state.event_store.approval(approval["id"])["status"] == "used"
 
 
+def test_runtime_swarm_launch_starts_approved_role_labeled_pty_panes(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    command = "python3 -c \"print('codex role')\""
+    roles = [{"role_id": "codex-executor", "label": "Codex Executor", "command": command, "profile": "swarm"}]
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Launch swarm role panes",
+                "operation": "swarm.launch",
+                "risk": "high",
+                "scope": {
+                    "source": "swarm.launch",
+                    "session_id": "session-swarm",
+                    "swarm_event_id": "evt_started",
+                    "roles": roles,
+                },
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": roles,
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_2",
+        ),
+    )
+
+    try:
+        result = response.json()["result"]
+        channel_id = result["roles"][0]["channel_id"]
+        app.state.pty_supervisor.get(channel_id).wait(timeout=2)
+        deadline = time.time() + 2
+        text = ""
+        while time.time() < deadline and "codex role" not in text:
+            text += "".join(chunk.chunk for chunk in app.state.pty_supervisor.drain_output(channel_id))
+            time.sleep(0.02)
+    finally:
+        app.state.pty_supervisor.close_all()
+
+    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    assert result["role_count"] == 1
+    assert result["execution_authority"] is True
+    assert result["agent_launch"] is True
+    assert result["pty_launch"] is True
+    assert result["command_execution"] is True
+    assert result["worktrunk_mutation"] is False
+    assert result["git_mutation"] is False
+    assert result["runtime_workflow_execution"] is False
+    assert result["roles"][0]["role_id"] == "codex-executor"
+    assert result["roles"][0]["approval_id"] == approval["id"]
+    assert "codex role" in text
+    assert event.event_type == "swarm.launched"
+    assert event.parent_event_id == "evt_started"
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+
+
+def test_runtime_swarm_launch_requires_matching_approval_and_runtime_token(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    command = "python3 -c \"print('codex role')\""
+    roles = [{"role_id": "codex-executor", "command": command, "profile": "swarm"}]
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Launch swarm role panes",
+                "operation": "swarm.launch",
+                "risk": "high",
+                "scope": {
+                    "source": "swarm.launch",
+                    "session_id": "session-swarm",
+                    "swarm_event_id": "evt_started",
+                    "roles": roles,
+                },
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    missing_token = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": roles,
+                "approval_id": approval["id"],
+            },
+            request_id="req_2",
+        ),
+    )
+    mismatched_command = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": [{"role_id": "codex-executor", "command": "pwd", "profile": "swarm"}],
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_3",
+        ),
+    )
+    mismatched_cwd = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": [{"role_id": "codex-executor", "command": command, "profile": "swarm", "cwd": str(tmp_path)}],
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_4",
+        ),
+    )
+
+    assert missing_token.json()["error"]["code"] == "unauthorized"
+    assert mismatched_command.json()["error"]["code"] == "approval_required"
+    assert mismatched_cwd.json()["error"]["code"] == "approval_required"
+    assert app.state.event_store.approval(approval["id"])["status"] == "approved"
+
+
+def test_runtime_swarm_launch_validates_role_shape_and_limit(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+
+    invalid_profile = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": [{"role_id": "bad", "command": "pwd", "profile": "unknown"}],
+            },
+            request_id="req_2",
+        ),
+    )
+    too_many_roles = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": [{"role_id": f"role-{index}", "command": "pwd"} for index in range(5)],
+            },
+            request_id="req_3",
+        ),
+    )
+
+    assert invalid_profile.json()["error"]["code"] == "invalid_roles"
+    assert too_many_roles.json()["error"]["code"] == "invalid_roles"
+
+
+def test_runtime_swarm_launch_preserves_hardline_policy_blocks(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    roles = [{"role_id": "danger", "command": "git reset --hard HEAD", "profile": "swarm"}]
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Launch dangerous swarm role",
+                "operation": "swarm.launch",
+                "risk": "high",
+                "scope": {
+                    "source": "swarm.launch",
+                    "session_id": "session-swarm",
+                    "swarm_event_id": "evt_started",
+                    "roles": roles,
+                },
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.launch",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "roles": roles,
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_2",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "policy_blocked"
+    assert response.json()["error"]["policy_blocked"] is True
+    assert app.state.event_store.approval(approval["id"])["status"] == "approved"
+
+
 def test_runtime_loop_start_records_approved_lifecycle_without_execution(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -1060,6 +1329,7 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
     assert data["checks"]["agent_provider_status"] is True
+    assert data["checks"]["swarm_role_launch"] is True
     assert data["checks"]["electron_hud_scaffold"] is True
     assert data["checks"]["electron_lockfile"] is True
     assert data["checks"]["mobile_preflight"] is True

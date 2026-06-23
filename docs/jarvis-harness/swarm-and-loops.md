@@ -42,9 +42,12 @@ Current runtime support is intentionally state-first:
 - `swarm.plan` records planned lane assignments.
 - `swarm.start` records an approved lifecycle start for a plan.
 - `swarm.stop` records an approved lifecycle stop for a recorded swarm event.
+- `swarm.launch` starts approved role-labeled PTY panes for exact role commands.
 - `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` record approved loop lifecycle state for a session.
 
-These records do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
+Plan and lifecycle records do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
+
+`swarm.launch` is explicitly different: it launches role-labeled PTY panes only after a matching `swarm.launch` approval and the HUD runtime token. The approval scope must list the exact role IDs, commands, profiles, and cwd values. Hardline policy blocks still override approvals. The launch method does not mutate Git, mutate Worktrunk, or execute runtime workflows.
 
 The HUD exposes matching loop lifecycle controls. The controls can request approval and record approved lifecycle state, but they do not start autonomous loop execution.
 
@@ -117,6 +120,6 @@ Before commit or push:
 - `/loop` lifecycle methods can record approved state without starting execution.
 - `loop run-once` can execute fixed validators and record a bounded loop-run event.
 - `/swarm` can record role-labeled lifecycle state with scoped approvals.
-- Actual role-labeled pane spawning remains a future implementation gate.
+- `/swarm` can launch approved role-labeled PTY panes without Worktrunk or Git mutation.
 - High-risk work triggers adversarial review.
 - Commit/push steps are visible, logged, and policy-gated.
