@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.governance import EXPECTED_AGENTS, EXPECTED_SKILLS, validate_phase1_governance
+from jarvis_codex import governance
+from jarvis_codex.governance import DEFAULT_REPO, EXPECTED_AGENTS, EXPECTED_SKILLS, validate_phase1_governance
 
 
 VALID_AGENT_INSTRUCTIONS = """Allowed skills:
@@ -114,6 +115,13 @@ def test_current_governance_validation_returns_structured_pass_result():
         "writes_reports": False,
         "not_test_replacement": True,
     }
+
+
+def test_default_governance_repo_is_portable():
+    source = Path(governance.__file__).read_text(encoding="utf-8")
+
+    assert DEFAULT_REPO == Path(__file__).resolve().parents[1]
+    assert "/home/iveri/repos/jarvis-codex" not in source
 
 
 def test_governance_validation_failure_from_temp_fixture(tmp_path):

@@ -7,7 +7,16 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_REPO = Path("/home/iveri/repos/jarvis-codex")
+def discover_default_repo(start: Path | None = None) -> Path:
+    """Find the project root for the checked-out Jarvis Codex repository."""
+    current = (start or Path(__file__)).resolve()
+    for candidate in (current.parent, *current.parents):
+        if (candidate / "pyproject.toml").exists() and (candidate / ".codex" / "config.toml").exists():
+            return candidate
+    return current.parents[2]
+
+
+DEFAULT_REPO = discover_default_repo()
 
 EXPECTED_AGENTS = {
     "jarvis_explorer.toml",
