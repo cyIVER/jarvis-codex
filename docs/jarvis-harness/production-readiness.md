@@ -15,6 +15,7 @@ Implemented and validated in the local FastAPI runtime:
 - Runtime-served HUD shell for Codex, Antigravity, Codeburn, approvals, voice, sessions, and PWA status.
 - HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
 - Browser click-to-arm microphone flow with browser STT where available.
+- Browser-managed spoken runtime status through `speechSynthesis` after a user click.
 - Local audio chunk storage and approval-gated local STT adapter execution.
 - Voice intent proposals that do not execute commands.
 - Plan-viewer route safety for display-only plan context.
@@ -41,6 +42,7 @@ The following remain future or incomplete production gates:
 
 - The browser HUD must not execute shell commands directly.
 - Voice transcripts and voice intent proposals must not execute commands.
+- Browser-managed speech output must not run local TTS commands or grant approval authority.
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.

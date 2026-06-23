@@ -34,6 +34,16 @@ Requirements:
 - Transcript preview.
 - Risk-gated command routing.
 
+### Browser Output Lane
+
+Goal: immediate spoken feedback without server-side TTS execution.
+
+Implemented behavior:
+
+- The HUD can speak runtime readiness status through browser `speechSynthesis` after a user click.
+- The speech text is derived from the non-writing `runtime.readiness` response.
+- Browser output is not command authority and does not run a local TTS adapter.
+
 ## Turn State Machine
 
 States:
@@ -60,6 +70,7 @@ Events:
 - `voice.interrupted`
 - `voice.approval_required`
 - `voice.stopped`
+- browser-managed status speech click
 
 ## Command Safety
 
@@ -90,4 +101,3 @@ The iPhone PWA should show:
 - Jarvis can create structured plan/session notes.
 - High-risk commands require confirmation.
 - Local fallback works when cloud realtime is unavailable.
-

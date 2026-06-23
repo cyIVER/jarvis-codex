@@ -13,6 +13,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
     assert "Jarvis Harness" in response.text
     assert 'id="mic-toggle"' in response.text
+    assert 'id="speak-status"' in response.text
     assert 'id="proposal-preview"' in response.text
     assert 'id="request-proposal-approval"' in response.text
     assert 'id="approvals-list"' in response.text
@@ -46,6 +47,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "new WebSocket" in response.text
     assert "getUserMedia({ audio: true })" in response.text
     assert "SpeechRecognition" in response.text
+    assert "speechSynthesis" in response.text
+    assert "SpeechSynthesisUtterance" in response.text
+    assert "speakRuntimeStatus" in response.text
+    assert "No local TTS command was run" in response.text
     assert "MediaRecorder" in response.text
     assert 'request("voice.audio_chunk"' in response.text
     assert 'request("voice.submit"' in response.text

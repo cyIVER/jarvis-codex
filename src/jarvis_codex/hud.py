@@ -387,6 +387,7 @@ HUD_HTML = """<!doctype html>
         <h2>Voice Control</h2>
         <div class="panel-body voice">
           <button id="mic-toggle" class="voice-button" type="button">Mic</button>
+          <button id="speak-status" type="button">Speak Status</button>
           <div id="voice-log" class="log">Microphone is disabled until you click the button and approve browser permission.</div>
           <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
           <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
@@ -421,6 +422,7 @@ HUD_JS = r"""(() => {
   const voiceLog = document.getElementById("voice-log");
   const proposalPreview = document.getElementById("proposal-preview");
   const micToggle = document.getElementById("mic-toggle");
+  const speakStatus = document.getElementById("speak-status");
   const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
   const approvalsList = document.getElementById("approvals-list");
@@ -445,6 +447,7 @@ HUD_JS = r"""(() => {
   let utteranceId = null;
   let stoppingRecorder = false;
   let lastVoiceProposal = null;
+  let lastReadiness = null;
   const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
     codex: {
@@ -645,6 +648,10 @@ HUD_JS = r"""(() => {
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
     log("Runtime readiness refresh requested.");
+  });
+
+  speakStatus.addEventListener("click", () => {
+    speakRuntimeStatus();
   });
 
   sessionsList.addEventListener("click", (event) => {
@@ -873,12 +880,33 @@ HUD_JS = r"""(() => {
   }
 
   function renderReadiness(readiness) {
+    lastReadiness = readiness;
     readinessStatus.textContent = readiness.status || "unknown";
     const gaps = Array.isArray(readiness.remaining_gaps) ? readiness.remaining_gaps : [];
     readinessGaps.textContent = gaps.length
       ? `Remaining release gaps: ${gaps.join(", ")}`
       : "No remaining release gaps reported.";
     log(`Runtime readiness: ${readiness.status || "unknown"}; production complete: ${Boolean(readiness.production_complete)}.`);
+  }
+
+  function speakRuntimeStatus() {
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      voiceLog.textContent = "Browser speech synthesis is unavailable. No local TTS command was run.";
+      log("Browser speech synthesis unavailable.");
+      return;
+    }
+    const readiness = lastReadiness || { status: "unknown", remaining_gaps: [] };
+    const gaps = Array.isArray(readiness.remaining_gaps) ? readiness.remaining_gaps : [];
+    const summary = gaps.length
+      ? `Jarvis runtime is ${readiness.status || "unknown"}. Remaining release gaps: ${gaps.slice(0, 4).join(", ")}.`
+      : `Jarvis runtime is ${readiness.status || "unknown"}. No remaining release gaps reported.`;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(summary);
+    utterance.rate = 0.95;
+    utterance.pitch = 0.85;
+    window.speechSynthesis.speak(utterance);
+    voiceLog.textContent = "Speaking browser-managed runtime status. This does not run local TTS or execute commands.";
+    log("Browser-managed voice output requested. No local TTS command was run.");
   }
 
   function approvedLaunchCommand(approval) {

@@ -16,6 +16,11 @@ Fallback lane:
 - Local cinematic TTS adapter with an original Jarvis-inspired voice.
 - No real-person or copyrighted character voice clone.
 
+Current implemented browser lane:
+
+- The HUD can speak the runtime readiness summary with browser-managed `speechSynthesis` after a user click.
+- Browser speech output does not run a local TTS command, grant execution authority, or approve tool use.
+
 ## UX Model
 
 Use click-to-arm voice:
@@ -47,6 +52,8 @@ Local fallback pipeline:
 
 The local fallback may be slower than cloud realtime but must be private and auditable.
 
+The current browser-managed speech output is a UX affordance, not the local TTS adapter. The local adapter remains separately gated because it would execute a runtime-side command.
+
 ## Gemini OAuth Constraint
 
 The runtime must include an early feasibility gate:
@@ -70,4 +77,3 @@ The runtime must include an early feasibility gate:
 - Cloud realtime cannot activate without approved auth.
 - Local fallback can route a spoken prompt to a session.
 - Spoken commands that imply destructive action create approval requests.
-
