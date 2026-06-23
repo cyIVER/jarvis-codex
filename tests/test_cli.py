@@ -436,6 +436,163 @@ def test_release_evidence_list_is_state_only_summary(tmp_path, monkeypatch, caps
     assert "writes_state" not in data["release_evidence"][0]
 
 
+def test_release_gate_accept_requires_existing_evidence_and_closes_gate(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "external_security_review",
+            "--summary",
+            "External reviewer attestation accepted by operator.",
+            "--reviewer",
+            "external-reviewer",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    evidence = json.loads(capsys.readouterr().out)["evidence"]
+
+    accept_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "gate",
+            "accept",
+            "--gate",
+            "external_security_review",
+            "--evidence-id",
+            evidence["id"],
+            "--summary",
+            "Operator accepts the external reviewer attestation.",
+            "--reviewer",
+            "operator",
+            "--json",
+        ],
+    )
+
+    assert accept_code == 0
+    accepted = json.loads(capsys.readouterr().out)
+    acceptance = accepted["acceptance"]
+    assert accepted["state_write_performed"] is True
+    assert accepted["execution_authority"] is False
+    assert accepted["evidence_closes_gates"] is False
+    assert acceptance["gate"] == "external_security_review"
+    assert acceptance["evidence_id"] == evidence["id"]
+    assert acceptance["reviewer"] == "operator"
+    assert acceptance["release_gate_closed"] is True
+    assert acceptance["publication_ready"] is False
+    assert (state / "release" / "gate-acceptance.jsonl").exists()
+
+    status_code = run_cli(monkeypatch, ["--state", str(state), "release", "gate-status", "--json"])
+    assert status_code == 0
+    status = json.loads(capsys.readouterr().out)
+    external = next(item for item in status["gates"] if item["gate"] == "external_security_review")
+    assert external["status"] == "accepted"
+    assert external["release_gate_closed"] is True
+    assert external["accepted_evidence_id"] == evidence["id"]
+    assert status["accepted_gate_count"] == 1
+    assert status["open_gate_count"] == 5
+
+
+def test_release_gate_accept_rejects_unknown_or_mismatched_evidence(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "actual_mobile_device_validation",
+            "--summary",
+            "Operator captured mobile evidence.",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    evidence = json.loads(capsys.readouterr().out)["evidence"]
+
+    with pytest.raises(ValueError) as exc_info:
+        run_cli(
+            monkeypatch,
+            [
+                "--state",
+                str(state),
+                "release",
+                "gate",
+                "accept",
+                "--gate",
+                "external_security_review",
+                "--evidence-id",
+                evidence["id"],
+                "--summary",
+                "Wrong gate should be rejected.",
+                "--json",
+            ],
+        )
+
+    assert "existing evidence record for the same gate" in str(exc_info.value)
+
+
+def test_release_gate_list_is_state_only_summary(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "unattended_loop_scheduling",
+            "--summary",
+            "Operator accepted bounded loop evidence.",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    evidence = json.loads(capsys.readouterr().out)["evidence"]
+    accept_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "gate",
+            "accept",
+            "--gate",
+            "unattended_loop_scheduling",
+            "--evidence-id",
+            evidence["id"],
+            "--summary",
+            "Operator accepts bounded loop policy evidence.",
+            "--json",
+        ],
+    )
+    assert accept_code == 0
+    capsys.readouterr()
+
+    list_code = run_cli(monkeypatch, ["--state", str(state), "release", "gate", "list", "--json"])
+
+    assert list_code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["execution_authority"] is False
+    assert len(data["release_gate_acceptances"]) == 1
+    assert data["release_gate_acceptances"][0]["gate"] == "unattended_loop_scheduling"
+    assert data["release_gate_acceptances"][0]["release_gate_closed"] is True
+
+
 def test_release_evidence_add_rejects_external_artifact_path(tmp_path, monkeypatch):
     state = tmp_path / "state"
     artifact = tmp_path / "outside-state-release.txt"
@@ -502,9 +659,10 @@ def test_release_readiness_checklist_json_is_read_only_summary(tmp_path, monkeyp
     state = tmp_path / "state"
     seen = {}
 
-    def fake_checklist(root, evidence_records):
+    def fake_checklist(root, evidence_records, acceptance_records):
         seen["root"] = root
         seen["evidence_records"] = evidence_records
+        seen["acceptance_records"] = acceptance_records
         return {
             "label": "Jarvis Codex release readiness checklist",
             "status": "blocked",
@@ -530,6 +688,7 @@ def test_release_readiness_checklist_json_is_read_only_summary(tmp_path, monkeyp
     data = json.loads(capsys.readouterr().out)
     assert str(seen["root"]) == "/repo"
     assert seen["evidence_records"] == []
+    assert seen["acceptance_records"] == []
     assert data["writes_files"] is False
     assert data["writes_state"] is False
     assert data["network_probe_performed"] is False

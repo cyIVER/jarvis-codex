@@ -50,6 +50,20 @@ class ReleaseEvidence:
     release_gate_closed: bool = False
 
 
+@dataclass(frozen=True)
+class ReleaseGateAcceptance:
+    id: str
+    created_at: int
+    gate: str
+    evidence_id: str
+    summary: str
+    reviewer: str
+    status: str = "accepted"
+    execution_authority: bool = False
+    publication_ready: bool = False
+    release_gate_closed: bool = True
+
+
 RELEASE_EVIDENCE_GATES = {
     "actual_mobile_device_validation",
     "electron_packaging_and_signing",
@@ -114,6 +128,9 @@ class JarvisState:
     def release_evidence(self) -> list[dict[str, Any]]:
         return self._read_jsonl(self.release / "evidence.jsonl")
 
+    def release_gate_acceptances(self) -> list[dict[str, Any]]:
+        return self._read_jsonl(self.release / "gate-acceptance.jsonl")
+
     def record_release_evidence(
         self,
         gate: str,
@@ -154,6 +171,43 @@ class JarvisState:
         )
         self._append_jsonl(self.release / "evidence.jsonl", asdict(evidence))
         return evidence
+
+    def accept_release_gate(
+        self,
+        gate: str,
+        evidence_id: str,
+        summary: str,
+        reviewer: str = "operator",
+    ) -> ReleaseGateAcceptance:
+        self.init()
+        normalized_gate = gate.strip()
+        if normalized_gate not in RELEASE_EVIDENCE_GATES:
+            raise ValueError(f"gate must be one of: {', '.join(sorted(RELEASE_EVIDENCE_GATES))}")
+        normalized_evidence_id = evidence_id.strip()
+        if not normalized_evidence_id:
+            raise ValueError("release gate acceptance requires an evidence id")
+        matching_evidence = [
+            item
+            for item in self.release_evidence()
+            if item.get("id") == normalized_evidence_id and item.get("gate") == normalized_gate
+        ]
+        if not matching_evidence:
+            raise ValueError("release gate acceptance requires an existing evidence record for the same gate")
+        normalized_summary = summary.strip()
+        if not normalized_summary:
+            raise ValueError("release gate acceptance summary cannot be empty")
+        normalized_reviewer = reviewer.strip() or "operator"
+        acceptance = ReleaseGateAcceptance(
+            id=_new_id("gate_acceptance"),
+            created_at=_now(),
+            gate=normalized_gate,
+            evidence_id=normalized_evidence_id,
+            summary=normalized_summary,
+            reviewer=normalized_reviewer,
+        )
+        self._append_jsonl(self.release / "gate-acceptance.jsonl", asdict(acceptance))
+        return acceptance
+
 
     def recent_handoffs(self, limit: int = 1) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []

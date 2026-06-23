@@ -125,6 +125,16 @@ def main() -> int:
     release_evidence_add.add_argument("--json", action="store_true", help="Print evidence record as JSON")
     release_evidence_list = release_evidence_sub.add_parser("list", help="List release-gate evidence records")
     release_evidence_list.add_argument("--json", action="store_true", help="Print evidence records as JSON")
+    release_gate = release_sub.add_parser("gate", help="Accept or list explicit human release-gate decisions")
+    release_gate_sub = release_gate.add_subparsers(dest="release_gate_command", required=True)
+    release_gate_accept = release_gate_sub.add_parser("accept", help="Accept a release gate using an existing evidence record")
+    release_gate_accept.add_argument("--gate", required=True, choices=sorted(RELEASE_EVIDENCE_GATES), help="Release gate to accept")
+    release_gate_accept.add_argument("--evidence-id", required=True, help="Existing evidence id for the same release gate")
+    release_gate_accept.add_argument("--summary", required=True, help="Human-readable acceptance summary")
+    release_gate_accept.add_argument("--reviewer", default="operator", help="Reviewer or operator name/handle")
+    release_gate_accept.add_argument("--json", action="store_true", help="Print gate acceptance as JSON")
+    release_gate_list = release_gate_sub.add_parser("list", help="List release-gate acceptance records")
+    release_gate_list.add_argument("--json", action="store_true", help="Print gate acceptance records as JSON")
     release_gate_status = release_sub.add_parser("gate-status", help="Summarize release gates and recorded evidence without closing gates")
     release_gate_status.add_argument("--json", action="store_true", help="Print gate status as JSON")
     release_checklist = release_sub.add_parser("readiness-checklist", help="Print a read-only release readiness checklist")
@@ -323,11 +333,42 @@ def main() -> int:
             if args.release_evidence_command == "list":
                 print(json.dumps({"release_evidence": state.release_evidence(), "execution_authority": False}, indent=2, sort_keys=True))
                 return 0
+        if args.release_command == "gate":
+            if args.release_gate_command == "accept":
+                acceptance = state.accept_release_gate(args.gate, args.evidence_id, args.summary, args.reviewer)
+                print(
+                    json.dumps(
+                        {
+                            "state_write_performed": True,
+                            "execution_authority": False,
+                            "evidence_closes_gates": False,
+                            "acceptance": acceptance.__dict__,
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return 0
+            if args.release_gate_command == "list":
+                print(
+                    json.dumps(
+                        {"release_gate_acceptances": state.release_gate_acceptances(), "execution_authority": False},
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return 0
         if args.release_command == "gate-status":
-            print(json.dumps(build_release_gate_status(state.release_evidence()), indent=2, sort_keys=True))
+            print(json.dumps(build_release_gate_status(state.release_evidence(), state.release_gate_acceptances()), indent=2, sort_keys=True))
             return 0
         if args.release_command == "readiness-checklist":
-            print(json.dumps(build_release_readiness_checklist(Path(args.root), state.release_evidence()), indent=2, sort_keys=True))
+            print(
+                json.dumps(
+                    build_release_readiness_checklist(Path(args.root), state.release_evidence(), state.release_gate_acceptances()),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
             return 0
     if args.command == "runtime":
         if args.runtime_command == "readiness":

@@ -343,6 +343,45 @@ def test_release_gate_status_summarizes_evidence_without_closing_gates():
     assert status["evidence_closes_gates"] is False
     assert status["human_acceptance_required"] is True
     assert external["status"] == "open"
+    assert external["acceptance_count"] == 0
+    assert external["release_gate_closed"] is False
+
+
+def test_release_gate_status_closes_only_with_explicit_acceptance():
+    status = build_release_gate_status(
+        [
+            {
+                "id": "evidence_external",
+                "created_at": 1,
+                "gate": "external_security_review",
+                "reviewer": "external-reviewer",
+                "summary": "reviewer attestation",
+                "release_gate_closed": False,
+            },
+        ],
+        [
+            {
+                "id": "gate_acceptance_external",
+                "created_at": 2,
+                "gate": "external_security_review",
+                "evidence_id": "evidence_external",
+                "reviewer": "operator",
+                "summary": "operator accepted reviewer attestation",
+                "release_gate_closed": True,
+            },
+        ],
+    )
+
+    external = next(item for item in status["gates"] if item["gate"] == "external_security_review")
+    assert status["status"] == "open-gates"
+    assert status["publication_ready"] is False
+    assert status["open_gate_count"] == 5
+    assert status["accepted_gate_count"] == 1
+    assert status["evidence_closes_gates"] is False
+    assert external["status"] == "accepted"
+    assert external["release_gate_closed"] is True
+    assert external["accepted_evidence_id"] == "evidence_external"
+    assert external["latest_acceptance_id"] == "gate_acceptance_external"
 
 
 def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp_path):
@@ -463,3 +502,100 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert any("do not start daemons" in action for action in unattended["unsafe_actions_not_authorized"])
     assert any("READY_FOR_OPERATOR_REVIEW" in note for note in unattended["notes"])
     assert before == after
+
+
+def test_release_readiness_checklist_reports_ready_when_all_gates_accepted(tmp_path):
+    write(tmp_path / "README.md")
+    write(tmp_path / "STATE.md", "loop_status: active\nlevel: L1\n")
+    write(tmp_path / "LOOP.md")
+    write(
+        tmp_path / "loop-budget.md",
+        "Default cadence: manual/operator-requested\n"
+        "Suggested token cap per loop cycle: 120k\n"
+        "## Kill Switches\n"
+        "## Escalation Rules\n",
+    )
+    write(tmp_path / "loop-run-log.md")
+    write(tmp_path / "docs/PRODUCT_READINESS.md")
+    write(tmp_path / "docs/safety.md")
+    write(tmp_path / "docs/PLAN_VIEWER.md")
+    write(tmp_path / "docs/REMOTION_REVIEW.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md", "jarvis-codex release manifest --json\n")
+    write(tmp_path / "docs/RUNTIME_GATES.md")
+    write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
+    write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
+    write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
+    write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")
+    write(tmp_path / "docs/jarvis-harness/README.md")
+    write(tmp_path / "docs/jarvis-harness/production-readiness.md")
+    write(tmp_path / "docs/jarvis-harness/runtime-acp.md")
+    write(tmp_path / "docs/jarvis-harness/api-contract.md")
+    write(tmp_path / "docs/jarvis-harness/acceptance-matrix.md")
+    write(tmp_path / "docs/jarvis-harness/mobile-access.md")
+    write(tmp_path / "docs/jarvis-harness/voice-mode.md")
+    write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
+    write(tmp_path / "docs/jarvis-harness/external-security-review.md")
+    write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
+    write(tmp_path / "src/jarvis_codex/runtime_app.py")
+    write(tmp_path / "src/jarvis_codex/hud.py")
+    write(tmp_path / "src/jarvis_codex/cli.py")
+    write(tmp_path / "src/jarvis_codex/mobile.py")
+    write(tmp_path / "src/jarvis_codex/gemini.py")
+    write(tmp_path / "src/jarvis_codex/packaging.py")
+    write(tmp_path / "tests/test_hud_browser.py")
+    write(tmp_path / "tools/electron-hud/package.json")
+    write(tmp_path / "tools/electron-hud/package-lock.json")
+    write(tmp_path / "tools/electron-hud/electron-builder.json")
+    write(tmp_path / "tools/electron-hud/assets/icon.svg")
+    write(tmp_path / "tools/electron-hud/assets/icon.png")
+    write(tmp_path / "tools/electron-hud/dist/linux-unpacked/jarvis")
+    write(tmp_path / "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage")
+    write(tmp_path / "video/remotion/README.md")
+    write(tmp_path / "video/remotion/src/MorningBriefing.tsx")
+    write(tmp_path / "video/remotion/out/morning-briefing.png")
+    write(tmp_path / "video/remotion/out/morning-briefing.mp4")
+
+    gates = [
+        "actual_mobile_device_validation",
+        "electron_packaging_and_signing",
+        "external_security_review",
+        "networked_gemini_live_validation",
+        "release_packaging_and_signing",
+        "unattended_loop_scheduling",
+    ]
+    evidence_records = [
+        {
+            "id": f"evidence_{gate}",
+            "created_at": index,
+            "gate": gate,
+            "reviewer": "operator",
+            "summary": f"accepted evidence for {gate}",
+            "release_gate_closed": False,
+        }
+        for index, gate in enumerate(gates, start=1)
+    ]
+    acceptance_records = [
+        {
+            "id": f"gate_acceptance_{gate}",
+            "created_at": index + 10,
+            "gate": gate,
+            "evidence_id": f"evidence_{gate}",
+            "reviewer": "operator",
+            "summary": f"operator accepted {gate}",
+            "release_gate_closed": True,
+        }
+        for index, gate in enumerate(gates, start=1)
+    ]
+
+    checklist = build_release_readiness_checklist(tmp_path, evidence_records, acceptance_records)
+
+    assert checklist["status"] == "ready-for-human-release-review"
+    assert checklist["publication_ready"] is True
+    assert checklist["release_gate_closed"] is True
+    assert checklist["human_acceptance_required"] is False
+    assert checklist["blocked_by"] == []
+    assert checklist["summary"]["open_gate_count"] == 0
+    assert checklist["summary"]["accepted_gate_count"] == 6
+    assert all(item["release_gate_closed"] is True for item in checklist["checklist"])
+    assert all(item["requires_human_acceptance"] is False for item in checklist["checklist"])

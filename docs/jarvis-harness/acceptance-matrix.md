@@ -17,7 +17,7 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 | Voice | File-based local STT and approved browser-audio transcription controls work through local adapters. | Mock provider, local adapter, whisper.cpp wrapper, runtime, and HUD tests. | Microphone capture, audio storage, and transcription remain separately approved steps. |
 | Swarm | Operator can plan swarm lanes, record lifecycle, and launch approved role-labeled PTY panes. | Swarm planner, lifecycle, launch, runtime, and HUD tests. | `swarm.launch` requires exact scoped approval, HUD token, and policy clearance; no Worktrunk or Git mutation. |
 | Loop | Bounded run-once and foreground schedule execute fixed validators/readiness collectors and write local evidence; unattended policy is reportable. | Loop readiness, unattended policy, and autonomous-loop tests. | No daemon/background scheduling, arbitrary commands, agent fanout, or unattended mutation. |
-| Release review | Manifest, artifact evidence, gate status, readiness checklist, external security packet, and evidence ledger are available. | Release, CLI, runtime, HUD, and browser smoke tests. | Review-only; no signing, copying, publishing, gate closure, or external acceptance. |
+| Release review | Manifest, artifact evidence, gate status, readiness checklist, external security packet, evidence ledger, and explicit gate acceptance records are available. | Release, CLI, runtime, HUD, and browser smoke tests. | Evidence and checklists are review-only; gate acceptance is a separate state-only human decision and grants no execution authority. |
 | Codeburn | Usage snapshots are captured at phase boundaries. | CLI smoke and readiness note checks. | Missing telemetry should be reported as a warning, not treated as release proof. |
 | AG review | High-risk phases receive read-only AG challenge review when useful. | HUD challenge approval request coverage and explicit challenge passes. | AG output is advisory; approved AG panes remain runtime-gated and do not become execution authority. |
 | Git flow | Coherent phase commits are pushed after validation. | Git log, status checks, and CI. | Commit/push may occur only after scoped validation; no destructive git commands. |
@@ -30,6 +30,7 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 - Voice can trigger audio capture, transcription, or high-risk action without confirmation.
 - Mobile endpoint binds publicly by default.
 - Release evidence, gate status, or checklist output closes gates automatically.
+- Release gate acceptance grants command execution, signing, publication, Git mutation, or Worktrunk mutation authority.
 - Event store cannot replay session history.
 - PTY logs are not persisted.
 - Git, Worktrunk, service, install, migration, or destructive mutation bypasses hardline policy.

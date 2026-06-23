@@ -431,45 +431,68 @@ def build_external_security_evidence_brief(root: Path) -> dict[str, Any]:
     }
 
 
-def build_release_gate_status(evidence_records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Summarize release-gate evidence without closing gates."""
+def build_release_gate_status(
+    evidence_records: list[dict[str, Any]],
+    acceptance_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Summarize release-gate evidence and explicit human acceptances."""
     records_by_gate: dict[str, list[dict[str, Any]]] = {gate: [] for gate in sorted(RELEASE_EVIDENCE_GATES)}
     for record in evidence_records:
         gate = record.get("gate")
         if isinstance(gate, str) and gate in records_by_gate:
             records_by_gate[gate].append(record)
 
+    accepted_by_gate: dict[str, list[dict[str, Any]]] = {gate: [] for gate in sorted(RELEASE_EVIDENCE_GATES)}
+    for record in acceptance_records or []:
+        gate = record.get("gate")
+        if isinstance(gate, str) and gate in accepted_by_gate and record.get("release_gate_closed") is True:
+            accepted_by_gate[gate].append(record)
+
     gates: list[dict[str, Any]] = []
     for gate in sorted(RELEASE_EVIDENCE_GATES):
         records = sorted(records_by_gate[gate], key=lambda item: item.get("created_at", 0), reverse=True)
+        acceptances = sorted(accepted_by_gate[gate], key=lambda item: item.get("created_at", 0), reverse=True)
         latest = records[0] if records else None
+        latest_acceptance = acceptances[0] if acceptances else None
+        accepted = latest_acceptance is not None
         gates.append(
             {
                 "gate": gate,
-                "status": "open",
+                "status": "accepted" if accepted else "open",
                 "evidence_count": len(records),
+                "acceptance_count": len(acceptances),
                 "latest_evidence_id": latest.get("id") if latest else None,
                 "latest_reviewer": latest.get("reviewer") if latest else None,
                 "latest_summary": latest.get("summary") if latest else None,
-                "release_gate_closed": False,
-                "requires_human_acceptance": True,
+                "latest_acceptance_id": latest_acceptance.get("id") if latest_acceptance else None,
+                "latest_acceptance_reviewer": latest_acceptance.get("reviewer") if latest_acceptance else None,
+                "latest_acceptance_summary": latest_acceptance.get("summary") if latest_acceptance else None,
+                "accepted_evidence_id": latest_acceptance.get("evidence_id") if latest_acceptance else None,
+                "release_gate_closed": accepted,
+                "requires_human_acceptance": not accepted,
             }
         )
 
+    open_gate_count = sum(1 for gate in gates if not gate["release_gate_closed"])
     return {
         "label": "Jarvis Codex release gate status",
-        "status": "open-gates",
+        "status": "open-gates" if open_gate_count else "accepted",
         "writes_state": False,
         "execution_authority": False,
-        "publication_ready": False,
+        "publication_ready": open_gate_count == 0,
         "evidence_closes_gates": False,
-        "human_acceptance_required": True,
-        "open_gate_count": len(gates),
+        "human_acceptance_required": open_gate_count > 0,
+        "open_gate_count": open_gate_count,
+        "accepted_gate_count": len(gates) - open_gate_count,
         "gates": gates,
     }
 
 
-def build_release_readiness_checklist(root: Path, evidence_records: list[dict[str, Any]]) -> dict[str, Any]:
+def build_release_readiness_checklist(
+    root: Path,
+    evidence_records: list[dict[str, Any]],
+    acceptance_records: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Aggregate release gate next actions without launching validators or closing gates."""
     root = root.resolve()
     manifest = build_release_manifest(root)
@@ -478,7 +501,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     packaging_brief = build_packaging_signing_evidence_brief(root)
     security_review = build_external_security_review_plan(root)
     security_brief = build_external_security_evidence_brief(root)
-    gate_status = build_release_gate_status(evidence_records)
+    gate_status = build_release_gate_status(evidence_records, acceptance_records)
     mobile_validation = build_mobile_validation_plan().to_dict()
     gemini_validation = build_gemini_live_validation_plan().to_dict()
     gemini_evidence_brief = build_gemini_live_evidence_brief().to_dict()
@@ -544,7 +567,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     ]
 
     open_gates = [item["gate"] for item in checklist_items if item["status"] == "open"]
-    blocked_by = sorted({gate for gate in manifest["remaining_release_gates"] if gate in RELEASE_EVIDENCE_GATES} | set(open_gates))
+    blocked_by = sorted(open_gates)
 
     return {
         "label": "Jarvis Codex release readiness checklist",
@@ -559,9 +582,9 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
         "artifact_copy_performed": False,
         "runtime_launch_performed": False,
         "execution_authority": False,
-        "publication_ready": False,
-        "release_gate_closed": False,
-        "human_acceptance_required": True,
+        "publication_ready": not blocked_by,
+        "release_gate_closed": not blocked_by,
+        "human_acceptance_required": bool(blocked_by),
         "not_test_replacement": True,
         "evidence_closes_gates": False,
         "blocked_by": blocked_by,
@@ -574,6 +597,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "gemini_validation_plan_status": gemini_validation["status"],
             "unattended_loop_policy_status": unattended_policy["status"],
             "open_gate_count": gate_status["open_gate_count"],
+            "accepted_gate_count": gate_status["accepted_gate_count"],
         },
         "recommended_read_only_commands": [
             "jarvis-codex release manifest --json",
@@ -601,7 +625,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "run mobile browser validation",
             "start background schedulers or daemons",
             "mutate Git or Worktrunk state",
-            "close release gates",
+            "automatically close release gates from evidence records",
         ],
         "checklist": checklist_items,
     }
@@ -622,8 +646,10 @@ def _release_checklist_item(
         "status": status.get("status", "open"),
         "evidence_count": status.get("evidence_count", 0),
         "latest_evidence_id": status.get("latest_evidence_id"),
-        "release_gate_closed": False,
-        "requires_human_acceptance": True,
+        "accepted_evidence_id": status.get("accepted_evidence_id"),
+        "latest_acceptance_id": status.get("latest_acceptance_id"),
+        "release_gate_closed": status.get("release_gate_closed", False),
+        "requires_human_acceptance": status.get("requires_human_acceptance", True),
         "next_action": next_action,
         "read_only_command": read_only_command,
         "required_evidence": required_evidence,
