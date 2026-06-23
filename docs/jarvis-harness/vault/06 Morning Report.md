@@ -236,10 +236,13 @@ This note backs the morning HTML dashboard.
 - Reconciled the acceptance matrix, product readiness review, and loop state with the current validated release checklist, HUD release checklist, loop budget checks, approval-gated swarm launch, and open external release gates.
 - Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, and 309 tests passed.
 - Committed product readiness artifact reconciliation in `0d564ed`.
+- Implemented and validated read-only `jarvis-codex loop unattended-policy --json`; it reports bounded foreground schedule limits, stop controls, escalation requirements, and approval gates without writing state, launching loops, or closing the unattended release gate.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, unattended policy PASS, release checklist linkage PASS, and 312 tests passed.
+- Committed unattended loop policy report in `3892d1f`.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, background/unattended loop scheduling, signed release packaging, and external security reviewer attestation.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, accepted unattended/background scheduling evidence, signed release packaging, and external security reviewer attestation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
