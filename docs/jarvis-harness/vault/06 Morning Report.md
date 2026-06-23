@@ -22,12 +22,13 @@ This note backs the morning HTML dashboard.
 - Exported dashboard to `/mnt/c/Users/iveri/Downloads/jarvis-harness-overnight-dashboard.html`.
 - Committed and pushed `5bcd036 Plan Jarvis harness production architecture`.
 - Implemented and pushed SQLite event store and ACP protocol frames in `5442ab5`.
-- Added policy classifier slice under AG review.
+- Implemented and pushed policy classifier slice in `faa97b3`.
+- Implemented and validated runtime FastAPI app slice with HTTP RPC, WebSocket RPC, session creation, policy classification, and explicit planned-method responses.
 
 ## Pending
 
-- Finish policy classifier AG review and commit if clean.
-- Continue runtime service skeleton planning and implementation.
+- Commit and push runtime FastAPI app slice.
+- Continue managed PTY adapter planning and implementation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

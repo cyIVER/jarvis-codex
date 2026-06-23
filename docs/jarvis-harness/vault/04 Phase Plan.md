@@ -34,10 +34,12 @@ Completed:
 
 - SQLite/WAL event store with FTS search projection.
 - ACP-style protocol frame utilities.
+- Runtime policy classifier with hardline block, approval, and allow decisions.
+- FastAPI runtime app with `/health`, `/rpc`, WebSocket RPC, session creation, command classification, and planned-method stubs.
 
 In progress:
 
-- Policy classifier.
+- Managed PTY adapter design.
 
 ## Phase 2 Managed PTYs
 
