@@ -65,10 +65,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed AG-triggered runtime safety hardening in `89b09fc`.
 - Ran final integrated validation: governance PASS, 158 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
 - Implemented non-writing `runtime.readiness` RPC for current foundation status and remaining release gaps.
+- Committed and pushed runtime readiness RPC in `c176976`.
+- Refreshed Codeburn snapshot: month `$546.90`, 5961 calls.
 
 ## Pending
 
-- Validate and commit runtime readiness RPC.
 - Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm command surfaces, and release packaging.
 - Keep dashboard current as phases progress.
 

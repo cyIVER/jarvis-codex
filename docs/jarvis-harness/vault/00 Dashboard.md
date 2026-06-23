@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 05:04 EDT
+updated: 2026-06-23 05:22 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -37,11 +37,12 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Session continuity controls committed and pushed as `2405333`.
 - Live Codeburn telemetry committed and pushed as `fa1d8b1`.
 - Mobile/PWA shell affordances committed and pushed as `b70ad56`.
-- Production readiness runbook is in progress with current implementation state, safety invariants, validation, and mobile gates.
+- Production readiness runbook is committed with current implementation state, safety invariants, validation, and mobile gates.
 - AG challenge review triggered safety hardening: one-shot approvals, server-configured STT adapter, narrowed dev-loop execution, and Codeburn telemetry-only HUD path.
 - AG-triggered runtime safety hardening committed and pushed as `89b09fc`.
 - Final integrated validation passed: governance PASS, 158 tests, and HUD/PWA browser smoke.
-- Runtime readiness RPC is in progress to expose foundation status and remaining release gaps without writing state.
+- Runtime readiness RPC committed and pushed as `c176976`.
+- Current Codeburn snapshot: month `$546.90`, 5961 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -63,6 +64,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Validate and commit runtime readiness RPC.
-2. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm commands, and release packaging.
+1. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm commands, and release packaging.
+2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
