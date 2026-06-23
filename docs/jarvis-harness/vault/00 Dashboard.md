@@ -16,6 +16,9 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 ## Current State
 
 - Specs created under `docs/jarvis-harness/`.
+- Spec slice committed and pushed as `5bcd036`.
+- Runtime event store and protocol frames committed and pushed as `5442ab5`.
+- Policy classifier is under validation.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -24,7 +27,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Active Work
 
-- [[04 Phase Plan#Phase 0 Spec Writeout]]
+- [[04 Phase Plan#Phase 1 Runtime Foundation And HUD Shell]]
 - [[06 Morning Report]]
 
 ## Watchpoints
@@ -36,6 +39,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Validate spec files.
-2. Commit and push spec slice.
-3. Continue into runtime foundation planning.
+1. Finish policy classifier review.
+2. Commit and push policy slice if AG review is clean.
+3. Continue into runtime service skeleton planning and implementation.

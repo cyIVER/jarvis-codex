@@ -10,7 +10,7 @@ status: active
 
 ## Phase 0 Spec Writeout
 
-Status: in progress.
+Status: committed and pushed.
 
 Deliver:
 
@@ -21,12 +21,23 @@ Deliver:
 
 ## Phase 1 Runtime Foundation And HUD Shell
 
+Status: in progress.
+
 Deliver:
 
 - SQLite event store.
 - ACP runtime skeleton.
 - Electron shell.
 - Ten modes.
+
+Completed:
+
+- SQLite/WAL event store with FTS search projection.
+- ACP-style protocol frame utilities.
+
+In progress:
+
+- Policy classifier.
 
 ## Phase 2 Managed PTYs
 
@@ -69,4 +80,3 @@ Deliver:
 Deliver:
 
 - End-to-end validation and release readiness report.
-
