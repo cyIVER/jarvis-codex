@@ -104,6 +104,8 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "gemini_validation_plan": True,
             "packaging_preflight": True,
             "electron_package_artifact": electron_package_artifact,
+            "local_stt_discovery": True,
+            "mobile_host_discovery": True,
         },
         "remaining_gaps": remaining_gaps,
     }
