@@ -1842,7 +1842,15 @@ def test_runtime_voice_audio_chunk_rejects_bad_base64(tmp_path):
     assert response.json()["error"]["code"] == "invalid_audio_chunk"
 
 
-def _approve_voice_transcription(client: TestClient, audio: Path, model: Path) -> str:
+def _approve_voice_transcription(client: TestClient, audio: Path, model: Path, model_id: str | None = None) -> str:
+    scope = {
+        "source": "voice.transcribe_audio",
+        "audio_file": str(audio),
+    }
+    if model_id:
+        scope["model_id"] = model_id
+    else:
+        scope["model_path"] = str(model)
     request_response = client.post(
         "/rpc",
         json=make_request(
@@ -1852,11 +1860,7 @@ def _approve_voice_transcription(client: TestClient, audio: Path, model: Path) -
                 "summary": "Transcribe local audio",
                 "operation": "voice.transcribe_audio",
                 "risk": "medium",
-                "scope": {
-                    "source": "voice.transcribe_audio",
-                    "audio_file": str(audio),
-                    "model_path": str(model),
-                },
+                "scope": scope,
             },
             request_id="approval_req",
         ),
@@ -1987,6 +1991,130 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path, monkey
     assert payload["external_services"] is False
     assert payload["execution_authority"] is False
     assert app.state.event_store.approval(approval_id)["status"] == "used"
+
+
+def test_runtime_voice_transcribe_audio_resolves_server_model_id(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.wav"
+    model_root = tmp_path / "stt-models"
+    model = model_root / "ggml-tiny.en.bin"
+    adapter = tmp_path / "fake_stt.py"
+    audio.parent.mkdir(parents=True)
+    model_root.mkdir()
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text(
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--audio-file')\n"
+        "parser.add_argument('--model')\n"
+        "args = parser.parse_args()\n"
+        "assert args.model.endswith('ggml-tiny.en.bin')\n"
+        "print('transcribed from server model id')\n",
+        encoding="utf-8",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model, model_id="tiny.en")
+    monkeypatch.setenv("JARVIS_LOCAL_STT_MODELS_DIR", str(model_root))
+    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_id": "tiny.en",
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    payload = data["event"]["payload"]
+    assert response.status_code == 200
+    assert payload["text"] == "transcribed from server model id"
+    assert payload["model_id"] == "tiny.en"
+    assert payload["model_path"] == str(model.resolve())
+    assert data["transcription"]["model_path"] == str(model.resolve())
+    assert app.state.event_store.approval(approval_id)["status"] == "used"
+
+
+def test_runtime_voice_transcribe_audio_rejects_unsafe_model_id_before_adapter(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.wav"
+    model_root = tmp_path / "stt-models"
+    adapter_marker = tmp_path / "adapter-ran"
+    adapter = tmp_path / "fake_stt.py"
+    audio.parent.mkdir(parents=True)
+    model_root.mkdir()
+    audio.write_bytes(b"audio")
+    adapter.write_text(
+        f"from pathlib import Path\nPath({str(adapter_marker)!r}).write_text('ran', encoding='utf-8')\nprint('bad')\n",
+        encoding="utf-8",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+    monkeypatch.setenv("JARVIS_LOCAL_STT_MODELS_DIR", str(model_root))
+    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_id": "../secret;touch-pwned",
+                "approval_id": "approval_missing",
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_model_path"
+    assert not adapter_marker.exists()
+
+
+def test_runtime_voice_transcribe_audio_rejects_direct_cache_path_without_model_id(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    audio = state / "runtime" / "audio" / "session-voice" / "sample.wav"
+    model_root = tmp_path / "stt-models"
+    model = model_root / "ggml-tiny.en.bin"
+    audio.parent.mkdir(parents=True)
+    model_root.mkdir()
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    app = create_app(state)
+    client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model)
+    monkeypatch.setenv("JARVIS_LOCAL_STT_MODELS_DIR", str(model_root))
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_path": str(model),
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_model_path"
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
 
 
 def test_runtime_voice_transcribe_audio_requires_server_configured_adapter(tmp_path, monkeypatch):

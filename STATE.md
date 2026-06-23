@@ -55,8 +55,11 @@ pattern: product-readiness-triage
 - [x] PM-016 - Real local STT transcription exercise
   Loop action: cached whisper.cpp v1.9.1 and `ggml-tiny.en.bin` outside the repo, proved `voice discover --json` is `READY`, probed the JFK sample without writes, and captured one approved sample transcript into `/tmp` state.
   Human decision: this validates file-based local STT only; microphone listeners, runtime chunk transcription, cloud STT, and background capture remain gated.
-- [ ] PM-017 - Next product slice
-  Loop action: pending prioritization between runtime-captured audio chunk STT, operator release review, and broader release readiness review.
+- [x] PM-017 - Runtime STT model-id boundary
+  Loop action: added server-resolved `model_id` support for `voice.transcribe_audio` so runtime audio can use a configured local model directory without accepting arbitrary client model paths.
+  Human decision: clients still cannot supply adapter commands or arbitrary filesystem model paths; transcription remains approval-gated.
+- [ ] PM-018 - Next product slice
+  Loop action: pending prioritization between HUD control wiring for model-id transcription, operator release review, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List
@@ -75,3 +78,4 @@ pattern: product-readiness-triage
 ---
 Run log: 2026-06-23 | findings: voice ingress needed actual STT instead of transcript-only deferral | actions: added approval-gated local executable STT adapter path | escalations: 0
 Run log: 2026-06-23 | findings: local STT cache was missing | actions: installed whisper.cpp v1.9.1 user-cache binary, downloaded `ggml-tiny.en.bin`, probed JFK sample, captured approved sample transcript into temp state | escalations: 0
+Run log: 2026-06-23 | findings: runtime STT needed a model cache path that did not let clients pass arbitrary filesystem paths | actions: added server-resolved `model_id` support under `JARVIS_LOCAL_STT_MODELS_DIR` with traversal and direct-cache-path tests | escalations: 0

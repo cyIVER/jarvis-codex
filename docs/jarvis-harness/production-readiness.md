@@ -88,7 +88,7 @@ The following remain future or incomplete production gates:
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
 - Agent provider status is a readiness matrix only; it must not launch Codex, Antigravity, Codeburn, PTYs, shell commands, Worktrunk, services, or runtime workflows.
-- Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and a runtime-owned model path; clients cannot supply adapter commands through RPC.
+- Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and either a runtime-owned model path or a safe `model_id` resolved under server-configured `JARVIS_LOCAL_STT_MODELS_DIR`; clients cannot supply adapter commands or arbitrary model paths through RPC.
 - Local STT discovery is read-only; it does not approve transcription or select hidden cloud/model fallbacks.
 - Local TTS synthesis requires a matching approved audio-processing approval id bound to the requested text SHA-256, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_TTS_COMMAND`, and a runtime-owned output path; clients cannot supply adapter commands or output paths through RPC.
 - The runtime WebSocket must reject cross-origin browser clients.

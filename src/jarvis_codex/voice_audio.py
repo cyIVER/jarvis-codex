@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 MAX_AUDIO_CHUNK_BYTES = 2 * 1024 * 1024
+SAFE_MODEL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,80}$")
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,23 @@ class VoiceAudioBuffer:
         safe_session = _safe_name(session_id or "hud")
         safe_suffix = suffix if suffix.startswith(".") and re.fullmatch(r"\.[A-Za-z0-9]+", suffix) else ".wav"
         return self.root / safe_session / f"tts_{uuid.uuid4().hex[:16]}{safe_suffix}"
+
+
+def resolve_local_stt_model(model_root: Path, model_id: str) -> Path:
+    """Resolve an identifier-only ggml model name under a server-owned root."""
+    candidate = model_id.strip()
+    if not candidate or not SAFE_MODEL_ID.fullmatch(candidate) or ".." in candidate:
+        raise VoiceAudioError("model_id must be a safe ggml model identifier")
+    filename = candidate if candidate.startswith("ggml-") and candidate.endswith(".bin") else f"ggml-{candidate}.bin"
+    resolved_root = model_root.expanduser().resolve()
+    resolved = (resolved_root / filename).resolve()
+    try:
+        resolved.relative_to(resolved_root)
+    except ValueError as exc:
+        raise VoiceAudioError("model_id resolved outside the local STT model directory") from exc
+    if not resolved.is_file():
+        raise VoiceAudioError(f"local STT model not found for model_id: {candidate}")
+    return resolved
 
 
 def _safe_name(value: str) -> str:

@@ -184,6 +184,8 @@ This note backs the morning HTML dashboard.
 - Added non-writing Codex, Antigravity, and Codeburn provider status matrix to runtime RPC, readiness, and HUD. It reports provider roles and boundaries without launching providers, PTYs, shell commands, Worktrunk, services, or workflows.
 - Ran final integrated validation: governance PASS, 263 tests passed.
 - Refreshed Codeburn snapshot: month `$646.59`, 6841 calls.
+- Added server-resolved `model_id` support for `voice.transcribe_audio`; the runtime can use `JARVIS_LOCAL_STT_MODELS_DIR` without accepting arbitrary client model paths.
+- Added tests for valid model-id transcription, unsafe model-id rejection before adapter execution, and direct cache path rejection without `model_id`.
 
 ## Pending
 

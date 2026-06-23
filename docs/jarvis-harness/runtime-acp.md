@@ -58,6 +58,8 @@ The wire model should separate:
 - Voice transcript, intent, and audio status events.
 - Approval prompts and decisions.
 
+`voice.transcribe_audio` is approval-gated. The client may provide a runtime-owned `model_path` or a safe `model_id`. When `model_id` is used, the runtime resolves it under server-configured `JARVIS_LOCAL_STT_MODELS_DIR` or the runtime model directory. Clients must not provide adapter commands or arbitrary filesystem model paths.
+
 Implemented WebSocket runtime streams currently include:
 
 - `stream` frames for PTY output.

@@ -30,7 +30,13 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
-from .voice_audio import VoiceAudioBuffer, VoiceAudioError, synthesize_with_local_adapter, transcribe_with_local_adapter
+from .voice_audio import (
+    VoiceAudioBuffer,
+    VoiceAudioError,
+    resolve_local_stt_model,
+    synthesize_with_local_adapter,
+    transcribe_with_local_adapter,
+)
 from .voice_intent import propose_voice_intent
 
 POLICY_PROFILE_DETAILS = {
@@ -57,6 +63,7 @@ POLICY_PROFILE_DETAILS = {
 }
 POLICY_PROFILES = set(POLICY_PROFILE_DETAILS)
 LOCAL_STT_COMMAND_ENV = "JARVIS_LOCAL_STT_COMMAND"
+LOCAL_STT_MODELS_DIR_ENV = "JARVIS_LOCAL_STT_MODELS_DIR"
 LOCAL_TTS_COMMAND_ENV = "JARVIS_LOCAL_TTS_COMMAND"
 PLANNED_METHODS = {
     "prompt.cancel",
@@ -1181,7 +1188,7 @@ def _dispatch_request(
                     "local_stt_adapter": {
                         "status": "approval-gated",
                         "privacy": "local",
-                        "note": "Saved audio may be transcribed only with a matching approval id and server-configured local STT command.",
+                        "note": "Saved audio may be transcribed only with a matching approval id, server-configured local STT command, and runtime-owned model path or server-resolved model id.",
                     },
                     "local_tts_adapter": {
                         "status": "approval-gated",
@@ -1321,9 +1328,21 @@ def _dispatch_request(
 
     if method == "voice.transcribe_audio":
         audio_file = Path(str(params.get("audio_file") or ""))
-        model_path = Path(str(params.get("model_path") or ""))
+        model_id = str(params.get("model_id") or "").strip()
+        if model_id:
+            try:
+                model_path = resolve_local_stt_model(_local_stt_model_root(voice_audio.model_root), model_id)
+            except VoiceAudioError as exc:
+                return make_error_response(
+                    request_id,
+                    code="invalid_model_path",
+                    message=str(exc),
+                    retryable=False,
+                )
+        else:
+            model_path = Path(str(params.get("model_path") or ""))
         approval_id = str(params.get("approval_id") or "")
-        if not _approval_allows_audio_transcription(store, approval_id, audio_file, model_path):
+        if not _approval_allows_audio_transcription(store, approval_id, audio_file, model_path, model_id=model_id or None):
             return make_error_response(
                 request_id,
                 code="approval_required",
@@ -1346,11 +1365,15 @@ def _dispatch_request(
                 message="local audio transcription is restricted to runtime audio files",
                 retryable=False,
             )
-        if not _path_within(voice_audio.model_root, model_path):
+        if model_id:
+            model_root = _local_stt_model_root(voice_audio.model_root)
+        else:
+            model_root = voice_audio.model_root
+        if not _path_within(model_root, model_path):
             return make_error_response(
                 request_id,
                 code="invalid_model_path",
-                message="local audio transcription models must be under the runtime model directory",
+                message="local audio transcription models must be under the configured local STT model directory",
                 retryable=False,
             )
         stt_command = _local_stt_command()
@@ -1380,6 +1403,7 @@ def _dispatch_request(
                 "provider": str(params.get("provider") or "local-stt-adapter"),
                 "audio_file": str(transcript.audio_file),
                 "model_path": str(transcript.model_path),
+                "model_id": model_id or None,
                 "execution_authority": False,
                 "routed_as_command": False,
                 "audio_processed": True,
@@ -1562,6 +1586,8 @@ def _approval_allows_audio_transcription(
     approval_id: str,
     audio_file: Path,
     model_path: Path,
+    *,
+    model_id: str | None = None,
 ) -> bool:
     if not approval_id.strip():
         return False
@@ -1571,10 +1597,13 @@ def _approval_allows_audio_transcription(
     if str(approval.get("operation") or "") != "voice.transcribe_audio":
         return False
     scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    model_scope_matches = _normalize_path(str(scope.get("model_path") or "")) == _normalize_path(str(model_path))
+    if model_id:
+        model_scope_matches = model_scope_matches or scope.get("model_id") == model_id
     return (
         scope.get("source") == "voice.transcribe_audio"
         and _normalize_path(str(scope.get("audio_file") or "")) == _normalize_path(str(audio_file))
-        and _normalize_path(str(scope.get("model_path") or "")) == _normalize_path(str(model_path))
+        and model_scope_matches
     )
 
 
@@ -1655,6 +1684,11 @@ def _local_stt_command() -> str:
     if not command:
         raise VoiceAudioError(f"{LOCAL_STT_COMMAND_ENV} is not configured")
     return command
+
+
+def _local_stt_model_root(default_root: Path) -> Path:
+    configured = os.environ.get(LOCAL_STT_MODELS_DIR_ENV, "").strip()
+    return Path(configured).expanduser() if configured else default_root
 
 
 def _local_tts_command() -> str:
