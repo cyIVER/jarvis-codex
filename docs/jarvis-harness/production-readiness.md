@@ -61,6 +61,7 @@ Implemented and validated in the local FastAPI runtime:
 - Local dependency audit evidence is clean for the current JavaScript package surfaces: `tools/electron-hud` and `video/remotion` both report zero high-or-worse npm vulnerabilities.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
+- Read-only mobile evidence brief through `jarvis-codex mobile evidence-brief --json`; it packages the target URL, approval-gated serve command, evidence checklist, and release-evidence recording command without probing, serving, opening browsers, writing state, or closing the mobile release gate.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
 - Read-only Gemini Live validation planning through `jarvis-codex gemini validation-plan --json`; it prepares cloud voice evidence steps without starting OAuth, opening WebSockets, launching adapters, probing the network, writing state, exposing secrets, or granting execution authority.
 - Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
@@ -117,6 +118,7 @@ The following remain future or incomplete production gates:
 - Mobile host discovery is candidate selection only; it does not prove iPhone reachability or approve runtime serving.
 - HUD-displayed mobile commands are not execution authority and must not be treated as approval to bind non-loopback, run Worktrunk, mutate git, start local ML, launch Docker, start services, or run daemons.
 - Mobile validation plans are evidence checklists only; they must not launch the runtime, probe the network, open browsers, or grant execution authority.
+- Mobile evidence briefs are operator collection aids only; they must not be treated as proof that an iPhone reached the HUD or as permission to close `actual_mobile_device_validation`.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
 - The Electron lockfile is not proof of an installed or packaged app; dependency installation, package builds, signing, and artifact copy remain separate gated actions.
 - Local Electron `node_modules` is an ignored setup artifact only; package builds, signing, and artifact copy remain separate gated actions.

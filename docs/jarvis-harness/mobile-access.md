@@ -34,8 +34,9 @@ V1 PWA includes:
 - Use `jarvis-codex mobile preflight --host <private-ip-or-vpn-ip> --json` before serving a non-loopback runtime.
 - The mobile preflight is read-only. It does not launch services, probe the network, write state, or prove that an iPhone can connect.
 - Use `jarvis-codex mobile validation-plan --host <private-ip-or-vpn-ip> --json` to prepare the operator evidence checklist for a real iPhone/PWA validation session.
+- Use `jarvis-codex mobile evidence-brief --host <private-ip-or-vpn-ip> --json` to package the target URL, approval-gated serve command, required screenshots/notes, and release-evidence recording command into one read-only operator brief.
 - On this WSL host, discovery currently recommends `172.28.39.152` as the private-interface candidate. Treat this as local evidence only; the operator still has to approve the serve command and verify reachability from the iPhone.
-- The validation-plan command is also read-only. It does not launch the runtime, open a browser, contact the phone, probe the network, write state, or grant permission to execute displayed commands.
+- The validation-plan and evidence-brief commands are read-only. They do not launch the runtime, open a browser, contact the phone, probe the network, write state, close release gates, or grant permission to execute displayed commands.
 - HUD-displayed mobile commands are display-only proposals. They are not buttons, shell execution, Worktrunk execution, git execution, local ML execution, service launch authority, or approval to bind non-loopback.
 - Mobile sessions are separate clients with their own session IDs.
 - Mobile approvals must show the same action details as desktop.
@@ -52,6 +53,8 @@ A real iPhone validation session should capture evidence outside the CLI:
 - Note that the runtime was served only on an approved private-network address.
 
 The validation plan is not execution authority. Starting the runtime, binding to a non-loopback address, running Worktrunk, running git commands, starting local ML, starting Docker, launching services, or running daemons still requires a separate explicit approval for the exact action.
+
+The evidence brief is also not validation proof. It helps the operator collect and record evidence, but `actual_mobile_device_validation` remains open until a human accepts the iPhone evidence.
 
 ## Native iOS Future Scope
 

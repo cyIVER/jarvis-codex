@@ -648,7 +648,25 @@ def test_mobile_validation_plan_json_is_read_only_summary(monkeypatch, capsys):
     assert data["service_launch_performed"] is False
     assert data["writes_state"] is False
     assert data["execution_authority"] is False
-    assert any("microphone permission" in step for step in data["device_test_steps"])
+
+
+def test_mobile_evidence_brief_json_is_read_only_summary(monkeypatch, capsys):
+    code = run_cli(monkeypatch, ["mobile", "evidence-brief", "--host", "192.168.1.20", "--port", "8765", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["label"] == "Jarvis mobile operator evidence brief"
+    assert data["status"] == "READY_FOR_OPERATOR_TEST"
+    assert data["target_url"] == "http://192.168.1.20:8765"
+    assert data["network_probe_performed"] is False
+    assert data["service_launch_performed"] is False
+    assert data["writes_state"] is False
+    assert data["browser_opened"] is False
+    assert data["execution_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert "actual_mobile_device_validation" in data["release_evidence_command"]
+    assert any("microphone permission" in item for item in data["required_operator_evidence"])
+    assert any("<state-dir>/release/" in step for step in data["operator_steps"])
 
 
 def test_mobile_validation_plan_requires_json(monkeypatch):

@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from jarvis_codex.mobile import build_mobile_preflight, build_mobile_validation_plan, classify_mobile_host, discover_mobile_hosts
+from jarvis_codex.mobile import (
+    build_mobile_evidence_brief,
+    build_mobile_preflight,
+    build_mobile_validation_plan,
+    classify_mobile_host,
+    discover_mobile_hosts,
+)
 
 
 def test_mobile_preflight_keeps_loopback_safe_but_not_iphone_reachable() -> None:
@@ -127,3 +133,36 @@ def test_mobile_validation_plan_rejects_public_exposure_as_ready_target() -> Non
     assert plan.iphone_reachable_candidate is False
     assert any("public host" in warning for warning in plan.warnings)
     assert any("do not probe the network" in action for action in plan.unsafe_actions)
+
+
+def test_mobile_evidence_brief_is_read_only_and_release_gate_safe() -> None:
+    brief = build_mobile_evidence_brief("192.168.1.20", 8765)
+
+    assert brief.label == "Jarvis mobile operator evidence brief"
+    assert brief.status == "READY_FOR_OPERATOR_TEST"
+    assert brief.target_url == "http://192.168.1.20:8765"
+    assert brief.host_class == "private-lan"
+    assert brief.iphone_reachable_candidate is True
+    assert brief.public_exposure_risk is False
+    assert brief.writes_state is False
+    assert brief.network_probe_performed is False
+    assert brief.service_launch_performed is False
+    assert brief.browser_opened is False
+    assert brief.execution_authority is False
+    assert brief.release_gate_closed is False
+    assert brief.requires_human_acceptance is True
+    assert "--allow-non-loopback" in brief.runtime_command
+    assert "actual_mobile_device_validation" in brief.release_evidence_command
+    assert any("iPhone Safari" in item for item in brief.required_operator_evidence)
+    assert any("<state-dir>/release/" in step for step in brief.operator_steps)
+    assert any("do not close" in action for action in brief.unsafe_actions)
+
+
+def test_mobile_evidence_brief_rejects_loopback_as_ready_target() -> None:
+    brief = build_mobile_evidence_brief()
+
+    assert brief.status == "NEEDS_PRIVATE_TARGET"
+    assert brief.host_class == "loopback"
+    assert brief.iphone_reachable_candidate is False
+    assert brief.release_gate_closed is False
+    assert any("not reachable from an iPhone" in warning for warning in brief.warnings)

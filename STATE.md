@@ -103,7 +103,10 @@ pattern: product-readiness-triage
 - [x] PM-032 - Unattended loop policy report
   Loop action: added read-only `loop unattended-policy --json` to summarize bounded foreground schedule limits, budget evidence, stop controls, escalation rules, and approval requirements without starting loops or writing state.
   Human decision: unattended/background operation remains an open release gate; this report is policy evidence only and does not approve daemons, background schedulers, arbitrary commands, or gate closure.
-- [ ] PM-033 - Next product slice
+- [x] PM-033 - Mobile operator evidence brief
+  Loop action: added read-only `mobile evidence-brief --json` to package the target URL, approval-gated serve command, iPhone screenshot/note requirements, and release evidence recording command for actual private-network validation.
+  Human decision: the brief does not launch the runtime, open browsers, probe networks, write state, or close `actual_mobile_device_validation`; human-accepted device evidence is still required.
+- [ ] PM-034 - Next product slice
   Loop action: pending prioritization between actual iPhone private-network validation evidence, approved Gemini Live network validation, Electron signing/distribution flow, external security reviewer attestation, and accepted unattended/background scheduling evidence.
   Human decision: not selected yet.
 
@@ -137,3 +140,4 @@ Run log: 2026-06-23 | findings: release gates were spread across separate comman
 Run log: 2026-06-23 | findings: loop verifier checked budget presence but not budget policy | actions: added loop-budget policy marker checks for cadence, token cap, kill switches, and escalation rules | escalations: 0
 Run log: 2026-06-23 | findings: product readiness artifacts lagged committed platform state | actions: reconciled acceptance matrix and loop state with current validated surfaces | escalations: 0
 Run log: 2026-06-23 | findings: unattended loop scheduling gate lacked a compact policy evidence command | actions: added read-only unattended loop policy report and linked it from release readiness | escalations: 0
+Run log: 2026-06-23 | findings: actual iPhone validation still needed an operator-ready evidence packet | actions: added read-only mobile evidence brief with release-evidence recording instructions | escalations: 0

@@ -90,6 +90,36 @@ class MobileHostDiscovery:
         return data
 
 
+@dataclass(frozen=True)
+class MobileEvidenceBrief:
+    label: str
+    status: str
+    target_url: str
+    host_class: str
+    iphone_reachable_candidate: bool
+    public_exposure_risk: bool
+    runtime_command: str
+    preflight_command: str
+    validation_plan_command: str
+    release_evidence_command: str
+    required_operator_evidence: list[str]
+    operator_steps: list[str]
+    pass_criteria: list[str]
+    fail_criteria: list[str]
+    unsafe_actions: list[str]
+    warnings: list[str]
+    writes_state: bool
+    network_probe_performed: bool
+    service_launch_performed: bool
+    browser_opened: bool
+    execution_authority: bool
+    release_gate_closed: bool
+    requires_human_acceptance: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def build_mobile_preflight(host: str = "127.0.0.1", port: int = 8765, scheme: str = "http") -> MobilePreflight:
     normalized_host = host.strip() or "127.0.0.1"
     normalized_scheme = scheme.strip().lower() or "http"
@@ -232,6 +262,58 @@ def build_mobile_validation_plan(host: str = "127.0.0.1", port: int = 8765, sche
             "do not treat checklist completion as approval for git, Worktrunk, local ML, Docker, service, or daemon commands",
         ],
         warnings=warnings,
+    )
+
+
+def build_mobile_evidence_brief(host: str = "127.0.0.1", port: int = 8765, scheme: str = "http") -> MobileEvidenceBrief:
+    """Prepare a compact operator evidence brief without serving, probing, browsing, or writing state."""
+    preflight = build_mobile_preflight(host, port, scheme)
+    plan = build_mobile_validation_plan(host, port, scheme)
+    release_summary = (
+        f"iPhone private-network validation for {plan.target_url}; attach screenshots/notes under "
+        "<state-dir>/release/ before recording artifact metadata."
+    )
+    release_command = (
+        "jarvis-codex --state <state-dir> release evidence add "
+        "--gate actual_mobile_device_validation "
+        f"--summary {json.dumps(release_summary)} --reviewer operator --json"
+    )
+    warnings = list(dict.fromkeys([*preflight.warnings, *plan.warnings]))
+    return MobileEvidenceBrief(
+        label="Jarvis mobile operator evidence brief",
+        status=plan.status,
+        target_url=plan.target_url,
+        host_class=plan.host_class,
+        iphone_reachable_candidate=plan.iphone_reachable_candidate,
+        public_exposure_risk=preflight.public_exposure_risk,
+        runtime_command=preflight.runtime_command,
+        preflight_command=f"jarvis-codex mobile preflight --host {preflight.host} --port {port} --scheme {scheme} --json",
+        validation_plan_command=f"jarvis-codex mobile validation-plan --host {preflight.host} --port {port} --scheme {scheme} --json",
+        release_evidence_command=release_command,
+        required_operator_evidence=plan.required_operator_evidence,
+        operator_steps=[
+            "Confirm the host class is private-network or approved VPN scoped.",
+            "Approve the exact runtime serve command before starting the runtime.",
+            "Capture iPhone screenshots or notes for each required evidence item.",
+            "Store any evidence artifact under <state-dir>/release/ before hashing it with release evidence add.",
+            "Record release evidence metadata only after the operator reviews the collected evidence.",
+        ],
+        pass_criteria=plan.pass_criteria,
+        fail_criteria=plan.fail_criteria,
+        unsafe_actions=[
+            *plan.unsafe_actions,
+            "do not treat this brief as proof that an iPhone reached the HUD",
+            "do not record evidence for artifacts outside <state-dir>/release/",
+            "do not close the actual_mobile_device_validation gate from this brief",
+        ],
+        warnings=warnings,
+        writes_state=False,
+        network_probe_performed=False,
+        service_launch_performed=False,
+        browser_opened=False,
+        execution_authority=False,
+        release_gate_closed=False,
+        requires_human_acceptance=True,
     )
 
 

@@ -28,6 +28,7 @@ The current release is a governed local operating substrate:
 - read-only release readiness checklist that aggregates open release gates and next actions without running them
 - runtime and HUD release gate status, release evidence metadata recording, and release readiness checklist panels
 - approval-gated backend swarm role launch and HUD swarm launch controls
+- mobile operator evidence brief for private iPhone/PWA validation collection
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
 - read-only unattended loop policy report for budget, stop, escalation, and human-observable run requirements
@@ -47,6 +48,7 @@ The current release is a governed local operating substrate:
 | Voice ingress can start without always-on listeners. | Low | Transcript capture exists, `voice discover --json` now reports `READY` for the local whisper.cpp cache, `voice probe --audio-file ... --model ... --stt-command ... --json` passed against the JFK sample without state writes, `voice ingest --audio-file ... --model ... --stt-command ... --allow-audio-processing --json` captured a sample transcript into `/tmp` state, `scripts/whisper-cpp-stt-adapter.py` wraps local `whisper.cpp`, runtime `model_id` resolution avoids arbitrary client model paths, and HUD controls can request approval for the latest captured browser-audio chunk before local STT transcription. | Keep always-on microphone listeners, cloud STT, and Codex App Server bridges separate from the proven local approval-gated STT paths. |
 | Local Remotion review assets improve review and handoff quality without adding hosted risk. | Low | Typecheck, render, audit, scaffold tests, and the read-only release manifest pass. | Review generated asset with the operator before any copy, publication, or tracked release bundle. |
 | Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Low | Read-only lane tests pass, docs say mutation is approval-gated, `jarvis-codex lane list --json` plus `lane score --json` expose review-only CLI output, and an isolated real-worktree fixture covers multiple worktrees. | Exercise manually on operator-selected real worktrees before any mutation PRD. |
+| Actual iPhone validation needs operator evidence, not another automated probe. | Low | `jarvis-codex mobile evidence-brief --json` packages the target URL, serve command, evidence checklist, and release evidence command without serving, probing, browsing, writing state, or closing the gate. | Run the brief against the operator-selected private host, collect screenshots/notes on the iPhone, and record accepted evidence under the release evidence ledger. |
 
 ## Prioritized Backlog
 
@@ -60,6 +62,7 @@ The current release is a governed local operating substrate:
 | 6 | GitHub CI and review templates | CI and templates are present and validation-only. | High | Watch the first remote CI result after push; do not add publish/release jobs without approval. |
 | 7 | Loop readiness and unattended policy verifier | Local JSON verifier and unattended policy report are implemented without adding new project-local skills or agents. | High | Keep loop-triage and loop-verifier skills deferred until the governance baseline is intentionally expanded; do not enable background scheduling without accepted operator policy evidence. |
 | 8 | Voice ingress and Codex App Server bridge | File-based STT is implemented and locally exercised with cached `whisper.cpp` v1.9.1, `ggml-tiny.en.bin`, readiness discovery, readiness probe, and one approved sample transcription into temp state; runtime `model_id` resolution and HUD approval controls cover browser-audio transcription through the approved local path. Microphone listeners, cloud STT, and Codex App Server bridge remain higher-risk runtime phases. | High | Keep always-on capture, cloud STT, and bridge work behind separate approval gates. |
+| 9 | Mobile operator evidence collection | The read-only evidence brief now packages the mobile validation plan into operator-ready proof steps. | High | Use the brief during the actual iPhone test; do not close the release gate until a human accepts the evidence. |
 
 ## Release Acceptance Criteria
 
@@ -79,6 +82,7 @@ The current release is a governed local operating substrate:
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier, budget-policy markers, and runtime-authority marker checks.
 - `jarvis-codex loop unattended-policy --json` reports foreground schedule limits, stop controls, approval gates, and no daemon/background authority.
+- `tests/test_mobile.py` covers mobile host classification, private-network preflight, validation planning, and evidence-brief safety boundaries.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
 - `tests/test_whisper_cpp_adapter.py` covers the included `whisper.cpp` adapter wrapper, including `--check-only`, with a fake local binary.
 - Global architecture validation has zero errors.
