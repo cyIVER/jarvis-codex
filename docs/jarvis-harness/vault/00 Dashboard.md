@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:33 EDT
+updated: 2026-06-23 02:37 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -56,7 +56,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only semantic history search committed and pushed as `e8ca6e4`.
 - Planning-only swarm plan recording committed and pushed as `f315583`.
 - State-only command proposal recording committed and pushed as `ed9e22e`.
-- Current Codeburn snapshot: month `$579.97`, 6278 calls.
+- Automated HUD browser smoke coverage committed and pushed as `79897e0`.
+- Current Codeburn snapshot: month `$581.81`, 6294 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.

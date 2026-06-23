@@ -101,7 +101,10 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 189 tests passed.
 - Ran AG challenge review for `command.propose`; no approval or execution authority leak was found.
 - Ran HUD browser smoke for command proposal recording and semantic-history rendering.
-- Refreshed Codeburn snapshot: month `$579.97`, 6278 calls.
+- Added automated HUD browser smoke coverage that starts runtime on temporary state, verifies WebSocket/PWA/readiness, creates a session, and records a command proposal.
+- Committed and pushed HUD browser smoke coverage in `79897e0`.
+- Ran final integrated validation: governance PASS, 190 tests passed.
+- Refreshed Codeburn snapshot: month `$581.81`, 6294 calls.
 
 ## Pending
 
