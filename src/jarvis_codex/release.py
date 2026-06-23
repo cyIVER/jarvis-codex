@@ -249,6 +249,30 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "tools/electron-hud/package.json",
+            "electron-hud-package",
+            True,
+            False,
+            "Local-only Electron HUD scaffold package. Installing or packaging remains a separate approval-gated step.",
+        ),
+        _artifact(
+            root,
+            "tools/electron-hud/main.js",
+            "electron-hud-main",
+            True,
+            False,
+            "Hardened Electron main process that loads the local runtime HUD and denies cross-origin navigation.",
+        ),
+        _artifact(
+            root,
+            "tools/electron-hud/preload.js",
+            "electron-hud-preload",
+            True,
+            False,
+            "Minimal preload bridge that exposes no shell authority to the renderer.",
+        ),
+        _artifact(
+            root,
             "tools/plan-viewer/index.html",
             "static-review-surface",
             True,
@@ -317,14 +341,16 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
                 "tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py "
                 "tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py "
                 "tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py "
-                "tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py"
+                "tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py "
+                "tests/test_electron_hud_scaffold.py"
             ),
         ],
         "remaining_release_gates": [
-            "electron_packaging",
+            "electron_packaging_and_signing",
             "actual_mobile_device_validation",
             "gemini_oauth_realtime_feasibility",
-            "safe_swarm_start_stop_design",
+            "actual_swarm_agent_launch",
+            "loop_command_surfaces",
             "release_packaging_and_signing",
             "external_security_review",
         ],

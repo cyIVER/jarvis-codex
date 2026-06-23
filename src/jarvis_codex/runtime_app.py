@@ -389,9 +389,10 @@ def _dispatch_request(
                     "voice_execution_authority": False,
                     "codeburn_shell": False,
                     "swarm_lifecycle_records": True,
+                    "electron_hud_scaffold": True,
                 },
                 "remaining_gaps": [
-                    "electron_packaging",
+                    "electron_packaging_and_signing",
                     "iphone_private_network_validation",
                     "gemini_oauth_feasibility",
                     "actual_swarm_agent_launch",
