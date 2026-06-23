@@ -253,10 +253,15 @@ This note backs the morning HTML dashboard.
 - Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, packaging/signing evidence-brief proof, release checklist linkage PASS, and 321 tests passed.
 - Committed and pushed packaging/signing evidence brief in `489a5d9`.
 - Refreshed Codeburn snapshot: today `$20.48` across 190 calls; month `$731.05`, 7583 calls.
+- Implemented and validated read-only `jarvis-codex release security-evidence-brief --json`; it packages external reviewer scope, standards, findings/remediation requirements, accepted-attestation requirements, and release evidence recording command without scanners, service launches, network probes, package builds, signing, copy/publish actions, file writes, or replacing human sign-off.
+- Ran Antigravity challenge review on the external security evidence brief; no read-only boundary issue was found.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, external security evidence-brief proof, release checklist linkage PASS, and 323 tests passed.
+- Committed and pushed external security evidence brief in `750180f`.
+- Refreshed Codeburn snapshot: today `$25.35` across 222 calls; month `$735.92`, 7615 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, approved packaging/signing execution using the packaging evidence brief, accepted unattended/background scheduling evidence, and external security reviewer attestation.
+- Remaining production gaps: real iPhone private-network validation with the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, approved packaging/signing execution using the packaging evidence brief, accepted human external security attestation using the security evidence brief, and accepted unattended/background scheduling evidence.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

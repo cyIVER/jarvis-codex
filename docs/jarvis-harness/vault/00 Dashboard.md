@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 07:49 EDT
+updated: 2026-06-23 07:56 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -85,7 +85,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only mobile evidence brief committed and pushed as `467c4c6`; it packages iPhone validation evidence collection without launching, probing, browsing, writing state, or closing gates.
 - Read-only Gemini Live evidence brief committed and pushed as `4f3d540`; it packages credential, billing, redaction, network-test, fallback, and release-ledger requirements without OAuth, WebSockets, network probes, state writes, cloud-spend authority, or gate closure.
 - Read-only packaging/signing evidence brief committed and pushed as `489a5d9`; it packages preflight, artifact, signing, security-review, publication, and release-ledger requirements without npm, build, signing, copy, publish, state writes, or gate closure.
-- Current Codeburn snapshot: today `$20.48` across 190 calls; month `$731.05`, 7583 calls.
+- Read-only external security evidence brief committed and pushed as `750180f`; it packages reviewer scope, standards, findings/remediation, accepted attestation, and release-ledger requirements without scanners, services, probes, builds, signing, copy/publish actions, state writes, or gate closure.
+- Current Codeburn snapshot: today `$25.35` across 222 calls; month `$735.92`, 7615 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -131,6 +132,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Mobile evidence brief is an operator collection aid only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or close the actual mobile validation gate.
 - Gemini Live evidence brief is an operator collection aid only; it does not start OAuth, open WebSockets, probe the network, launch adapters, approve cloud spend, write state, or close the networked Gemini validation gate.
 - Packaging/signing evidence brief is an operator collection aid only; it does not run npm, build packages, sign artifacts, copy outputs, publish artifacts, access signing credentials, write files, or close packaging gates.
+- External security evidence brief is an operator collection aid only; it does not run scanners, launch services, probe networks, build packages, sign artifacts, copy outputs, publish artifacts, replace human reviewer sign-off, write files, or close the external review gate.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
@@ -149,6 +151,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gates: real iPhone private-network validation using the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, approved packaging/signing execution using the packaging evidence brief, external reviewer attestation, unattended/background scheduling policy, and safe runtime operator polish.
+1. Continue with remaining production gates: real iPhone private-network validation using the operator evidence brief, approved Gemini Live network test using the Gemini evidence brief, approved packaging/signing execution using the packaging evidence brief, accepted human external security attestation using the security evidence brief, unattended/background scheduling policy, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
