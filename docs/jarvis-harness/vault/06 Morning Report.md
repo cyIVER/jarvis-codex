@@ -112,7 +112,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed loopback runtime serve command in `c3db6ad`.
 - Ran final integrated validation: governance PASS, 201 tests passed.
 - Ran AG security review for `runtime serve`; no runtime boundary issue was found.
-- Refreshed Codeburn snapshot: month `$588.42`, 6348 calls.
+- Implemented and validated current-harness release artifact review. The manifest now includes harness docs, runtime/HUD source, browser smoke coverage, and explicit no-build/no-launch/no-copy flags.
+- Committed and pushed release manifest alignment in `b5fda5e`.
+- Ran final integrated validation: governance PASS, 204 tests passed.
+- Ran AG release-boundary review; no release authority issue was found.
+- Refreshed Codeburn snapshot: month `$590.07`, 6365 calls.
 
 ## Pending
 

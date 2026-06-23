@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:50 EDT
+updated: 2026-06-23 02:54 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -59,7 +59,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Automated HUD browser smoke coverage committed and pushed as `79897e0`.
 - Approval-gated local TTS adapter committed and pushed as `4c747cb`.
 - Loopback runtime serve command committed and pushed as `c3db6ad`.
-- Current Codeburn snapshot: month `$588.42`, 6348 calls.
+- Current harness release manifest committed and pushed as `b5fda5e`.
+- Current Codeburn snapshot: month `$590.07`, 6365 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -86,6 +87,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Swarm plans are semantic planning records only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
+- Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
