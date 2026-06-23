@@ -12,6 +12,7 @@ This repository uses a Loop Engineering L1 workflow: report first, implement onl
 - Run log: `loop-run-log.md`.
 - Budget: `loop-budget.md`.
 - Primary backlog: `docs/PRODUCT_READINESS.md`.
+- Local verifier: `jarvis-codex loop verify --json`.
 - PM workflow: `pm-command-library` for discovery, PRD, prioritization, and roadmap decisions.
 - Challenge lane: `gemini-integration` through Antigravity for read-only second-pass review when the next slice is ambiguous or high impact.
 - Maker/checker split: main thread implements bounded slices; `jarvis_reviewer`, project tests, and validators act as checker gates.
@@ -51,6 +52,7 @@ The loop may do these without a separate prompt when they are directly tied to t
 - add or update tests, docs, and package code for bounded slices
 - run `uv run pytest`
 - run `python3 scripts/validate-jarvis-codex-phase1.py`
+- run `uv run jarvis-codex loop verify --json`
 - run Remotion typecheck/audit in `video/remotion`
 - run the global architecture validator after Codex governance, pack, agent, workflow, or architecture documentation changes
 - create commits with exact-path staging for validated, scoped packages

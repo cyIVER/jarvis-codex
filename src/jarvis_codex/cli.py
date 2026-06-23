@@ -7,6 +7,7 @@ from pathlib import Path
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
+from .loop_readiness import validate_loop_readiness
 from .release import build_release_manifest
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
@@ -59,6 +60,11 @@ def main() -> int:
     release_manifest = release_sub.add_parser("manifest", help="Print a read-only release artifact manifest")
     release_manifest.add_argument("--root", default=".", help="Repository root to inspect")
     release_manifest.add_argument("--json", action="store_true", help="Print release manifest as JSON")
+    loop = sub.add_parser("loop", help="Review autonomous loop readiness without mutation")
+    loop_sub = loop.add_subparsers(dest="loop_command", required=True)
+    loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
+    loop_verify.add_argument("--root", default=".", help="Repository root to inspect")
+    loop_verify.add_argument("--json", action="store_true", help="Print loop readiness as JSON")
     doctor = sub.add_parser("doctor", help="Inspect state")
     doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
@@ -126,6 +132,13 @@ def main() -> int:
         if args.release_command == "manifest":
             print(json.dumps(build_release_manifest(Path(args.root)), indent=2, sort_keys=True))
             return 0
+    if args.command == "loop":
+        if not args.json:
+            parser.error("loop commands are JSON-only in this read-only first implementation; pass --json")
+        if args.loop_command == "verify":
+            result = validate_loop_readiness(Path(args.root))
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["status"] == "PASS" else 1
     if args.command == "doctor":
         data = state.doctor()
         if args.governance:

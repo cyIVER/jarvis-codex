@@ -37,7 +37,10 @@ pattern: product-readiness-triage
 - [x] PM-010 - GitHub CI and review templates
   Loop action: added validation-only GitHub CI, PR template, issue template, and guardrail tests.
   Human decision: no render, publish, release upload, or runtime execution in CI; workflow actions use current Node 24-compatible major versions.
-- [ ] PM-011 - Next product slice
+- [x] PM-011 - Local loop readiness verifier
+  Loop action: added read-only `jarvis-codex loop verify --json`, package tests, and docs.
+  Human decision: no new project-local loop skills or agents until governance baseline expansion is approved.
+- [ ] PM-012 - Next product slice
   Loop action: pending prioritization between voice ingress discovery, release publication planning, and broader release readiness review.
   Human decision: not selected yet.
 
@@ -45,7 +48,7 @@ pattern: product-readiness-triage
 
 - Validator portability and governance drift checks.
 - Project-local `skills.config` only if repeated routing noise appears.
-- Loop audit score is 86/100; remaining gaps are triage skill, loop-verifier skill, and loop-budget skill automation.
+- Loop audit score is 86/100; generic loop-triage, loop-verifier skill, and loop-budget skill automation remain deferred to avoid changing the Phase 1 governance baseline.
 - Voice ingress and Codex App Server bridge remain discovery only.
 - Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging; manifest output is review-only.
 
@@ -55,4 +58,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: loop audit needed GitHub validation surfaces | actions: added validation-only CI and review templates | escalations: 0
+Run log: 2026-06-23 | findings: loop verifier needed local drift checks without new skills | actions: added read-only loop verify CLI | escalations: 0

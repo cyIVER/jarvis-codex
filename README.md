@@ -33,6 +33,7 @@ jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilit
 jarvis-codex lane list --json             # inspect Worktrunk lane readiness without mutation
 jarvis-codex lane score --repo . --branch main --json
 jarvis-codex release manifest --json      # review release artifacts without packaging
+jarvis-codex loop verify --json           # verify loop readiness without mutation
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector

@@ -189,3 +189,64 @@ def test_release_commands_require_json(monkeypatch):
         cli.main()
 
     assert exc_info.value.code == 2
+
+
+def test_loop_verify_json_returns_read_only_status(monkeypatch, capsys):
+    seen = {}
+
+    def fake_loop_readiness(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis Codex loop readiness",
+            "status": "PASS",
+            "execution_authority": False,
+            "writes_files": False,
+            "checks_passed": 3,
+            "failures": 0,
+            "failure_details": [],
+            "checks": [],
+        }
+
+    monkeypatch.setattr(cli, "validate_loop_readiness", fake_loop_readiness)
+
+    code = run_cli(monkeypatch, ["loop", "verify", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["status"] == "PASS"
+    assert data["execution_authority"] is False
+    assert data["writes_files"] is False
+
+
+def test_loop_verify_failure_returns_nonzero(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "validate_loop_readiness",
+        lambda root: {
+            "label": "Jarvis Codex loop readiness",
+            "status": "FAIL",
+            "execution_authority": False,
+            "writes_files": False,
+            "checks_passed": 1,
+            "failures": 1,
+            "failure_details": [{"name": "state", "path": "STATE.md", "status": "fail", "note": "missing"}],
+            "checks": [],
+        },
+    )
+
+    code = run_cli(monkeypatch, ["loop", "verify", "--root", "/repo", "--json"])
+
+    assert code == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "FAIL"
+    assert data["failures"] == 1
+
+
+def test_loop_commands_require_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "verify"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
