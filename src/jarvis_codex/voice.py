@@ -10,6 +10,15 @@ from typing import Any
 from .state import JarvisState
 
 
+DEFAULT_STT_SEARCH_ROOTS = [
+    Path("models"),
+    Path.home() / "models",
+    Path.home() / ".cache" / "whisper.cpp",
+    Path.home() / "whisper.cpp",
+    Path.home() / "src" / "whisper.cpp",
+]
+
+
 def _resolve_command(command: list[str]) -> str | None:
     if not command:
         return None
@@ -85,6 +94,51 @@ def probe_audio_file(audio_path: Path, model_path: Path, stt_command: str) -> di
         "failures": len(failures),
         "execution_authority": False,
         "runtime_started": False,
+        "audio_processed": False,
+        "external_services": False,
+        "model_downloaded": False,
+        "writes_state": False,
+    }
+
+
+def discover_local_stt_assets(search_roots: list[Path] | None = None, path_env: str | None = None) -> dict[str, Any]:
+    """Discover local STT binaries and models without downloading, recording, or processing audio."""
+    roots = [path.resolve() for path in (search_roots or DEFAULT_STT_SEARCH_ROOTS)]
+    command_candidates = _discover_whisper_commands(roots, path_env)
+    model_candidates = _discover_whisper_models(roots)
+    checks = [
+        {
+            "name": "whisper_command_candidates",
+            "status": "pass" if command_candidates else "fail",
+            "count": len(command_candidates),
+        },
+        {
+            "name": "ggml_model_candidates",
+            "status": "pass" if model_candidates else "fail",
+            "count": len(model_candidates),
+        },
+    ]
+    failures = [check for check in checks if check["status"] != "pass"]
+    recommended_commands = []
+    if command_candidates and model_candidates:
+        adapter = "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command " + shlex.quote(command_candidates[0])
+        model = shlex.quote(model_candidates[0])
+        recommended_commands = [
+            f"jarvis-codex voice probe --audio-file recording.wav --model {model} --stt-command {shlex.quote(adapter)} --json",
+            f"jarvis-codex voice ingest --audio-file recording.wav --model {model} --stt-command {shlex.quote(adapter)} --allow-audio-processing --json",
+        ]
+    return {
+        "status": "READY" if not failures else "NEEDS_SETUP",
+        "source": "voice-stt-discovery",
+        "search_roots": [str(path) for path in roots],
+        "command_candidates": command_candidates,
+        "model_candidates": model_candidates,
+        "checks": checks,
+        "failures": len(failures),
+        "recommended_commands": recommended_commands,
+        "execution_authority": False,
+        "runtime_started": False,
+        "microphone_accessed": False,
         "audio_processed": False,
         "external_services": False,
         "model_downloaded": False,
@@ -201,3 +255,31 @@ def ingest_audio_file(
         "characters": len(transcript),
         "returncode": 0,
     }
+
+
+def _discover_whisper_commands(search_roots: list[Path], path_env: str | None) -> list[str]:
+    candidates: list[str] = []
+    for name in ("whisper-cli", "whisper-cli.exe"):
+        resolved = shutil.which(name, path=path_env)
+        if resolved:
+            candidates.append(str(Path(resolved).resolve()))
+    for root in search_roots:
+        if not root.exists():
+            continue
+        for name in ("whisper-cli", "whisper-cli.exe"):
+            for path in root.rglob(name):
+                if path.is_file():
+                    candidates.append(str(path.resolve()))
+    return sorted(dict.fromkeys(candidates))
+
+
+def _discover_whisper_models(search_roots: list[Path]) -> list[str]:
+    candidates: list[str] = []
+    for root in search_roots:
+        if not root.exists():
+            continue
+        for pattern in ("ggml*.bin", "*.ggml.bin"):
+            for path in root.rglob(pattern):
+                if path.is_file():
+                    candidates.append(str(path.resolve()))
+    return sorted(dict.fromkeys(candidates))

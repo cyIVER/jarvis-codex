@@ -75,7 +75,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Electron HUD local dependency readiness committed and pushed as `8198500`.
 - Electron Builder config and reviewed package/make scripts are ready for approval-gated packaging validation.
 - Non-signing Electron package execution produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact; signing and distribution remain gated.
-- Current Codeburn snapshot: month `$629.82`, 6708 calls.
+- Read-only local STT discovery is available through `jarvis-codex voice discover --json`.
+- Current Codeburn snapshot: month `$630.30`, 6713 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -108,6 +109,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Electron package-lock pins dependency resolution only; it does not install dependencies, build packages, sign artifacts, copy outputs, or launch services.
 - Electron Builder config and package/make scripts define the reviewed local packaging path only; they do not prove package execution, signing, distribution, or artifact security review.
 - Local Electron dist artifacts are validation evidence only; they are not signed, copied, reviewed, or distribution-ready release artifacts.
+- STT discovery is local asset inspection only; it does not access microphones, process audio, download models, call cloud services, start the runtime, or write state.
+- Current local STT discovery result is `NEEDS_SETUP` because no local `whisper-cli` or ggml model candidate was found.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.

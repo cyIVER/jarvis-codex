@@ -17,7 +17,7 @@ from .release import build_release_manifest
 from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
-from .voice import ingest_audio_file, ingest_transcript_file, probe_audio_file
+from .voice import discover_local_stt_assets, ingest_audio_file, ingest_transcript_file, probe_audio_file
 
 
 def main() -> int:
@@ -55,6 +55,9 @@ def main() -> int:
     )
     voice = sub.add_parser("voice", help="Capture voice-origin input through transcript or approved local STT")
     voice_sub = voice.add_subparsers(dest="voice_command", required=True)
+    voice_discover = voice_sub.add_parser("discover", help="Discover local STT binaries and models without processing audio")
+    voice_discover.add_argument("--search-root", action="append", default=[], help="Additional local directory to search")
+    voice_discover.add_argument("--json", action="store_true", help="Print local STT discovery as JSON")
     voice_probe = voice_sub.add_parser("probe", help="Check local STT inputs without processing audio")
     voice_probe.add_argument("--audio-file", required=True, help="Path to a local audio file for STT")
     voice_probe.add_argument("--model", required=True, help="Path to an explicit local STT model file")
@@ -165,6 +168,11 @@ def main() -> int:
     if args.command == "voice":
         if not args.json:
             parser.error("voice commands are JSON-only; pass --json")
+        if args.voice_command == "discover":
+            roots = [Path(value) for value in args.search_root] if args.search_root else None
+            result = discover_local_stt_assets(roots)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["status"] == "READY" else 1
         if args.voice_command == "probe":
             result = probe_audio_file(Path(args.audio_file), Path(args.model), args.stt_command)
             print(json.dumps(result, indent=2, sort_keys=True))

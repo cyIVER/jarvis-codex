@@ -10,7 +10,15 @@ jarvis-codex voice ingest --transcript-file transcript.txt --json
 
 This reads a UTF-8 text transcript and captures it as a normal Jarvis episode with source `voice-transcript-file`.
 
-Before processing audio, check local STT readiness without writing state or running transcription:
+Before processing audio, discover local STT candidates without writing state or running transcription:
+
+```bash
+jarvis-codex voice discover --json
+```
+
+Use `--search-root <path>` one or more times to include operator-selected local model or `whisper.cpp` directories. Discovery reports local `whisper-cli` and ggml model candidates only. It does not access microphones, process audio, download models, call cloud services, start the runtime, or write state.
+
+Then check local STT readiness without writing state or running transcription:
 
 ```bash
 jarvis-codex voice probe \
@@ -54,6 +62,7 @@ python3 scripts/whisper-cpp-stt-adapter.py \
 - Returns JSON with `execution_authority: false` and `external_services: false`.
 - For transcript files, returns `runtime_started: false` and `audio_processed: false`.
 - For approved audio files, returns `runtime_started: true`, `audio_processed: true`, and `model_downloaded: false`.
+- For STT discovery, returns no episode, writes no state, and does not process audio.
 - For readiness probes, returns no episode and writes no state.
 
 ## What It Does Not Do
@@ -63,7 +72,7 @@ python3 scripts/whisper-cpp-stt-adapter.py \
 - Does not call external APIs.
 - Does not start Codex App Server.
 - Does not launch a service, daemon, Docker container, GPU workload, or long-running runtime workflow.
-- Does not download or discover models.
+- Does not download, select, or approve models. Discovery only lists local candidates.
 - Does not approve tool execution.
 
 ## Approval Boundary

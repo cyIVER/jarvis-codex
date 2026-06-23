@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import wave
 
 import pytest
 
 from jarvis_codex.state import JarvisState
-from jarvis_codex.voice import ingest_audio_file, ingest_transcript_file, probe_audio_file
+from jarvis_codex.voice import discover_local_stt_assets, ingest_audio_file, ingest_transcript_file, probe_audio_file
 
 
 def write_wav(path, sample_width=2):
@@ -148,6 +149,42 @@ def test_probe_audio_file_reports_ready_without_runtime_or_state(tmp_path):
     assert result["writes_state"] is False
     assert result["audio"]["whisper_cpp_compatible"] is True
     assert not state_dir.exists()
+
+
+def test_discover_local_stt_assets_finds_explicit_search_root_without_processing_audio(tmp_path):
+    bin_dir = tmp_path / "bin"
+    model_dir = tmp_path / "models"
+    whisper = bin_dir / "whisper-cli"
+    model = model_dir / "ggml-base.en.bin"
+    bin_dir.mkdir()
+    model_dir.mkdir()
+    whisper.write_text("#!/bin/sh\n", encoding="utf-8")
+    whisper.chmod(0o755)
+    model.write_bytes(b"model")
+
+    result = discover_local_stt_assets([tmp_path], path_env=str(bin_dir))
+
+    assert result["status"] == "READY"
+    assert str(whisper.resolve()) in result["command_candidates"]
+    assert str(model.resolve()) in result["model_candidates"]
+    assert result["runtime_started"] is False
+    assert result["microphone_accessed"] is False
+    assert result["audio_processed"] is False
+    assert result["model_downloaded"] is False
+    assert result["writes_state"] is False
+    assert "voice probe" in result["recommended_commands"][0]
+    assert "--allow-audio-processing" in result["recommended_commands"][1]
+
+
+def test_discover_local_stt_assets_reports_missing_assets_without_writes(tmp_path):
+    result = discover_local_stt_assets([tmp_path], path_env=os.devnull)
+
+    assert result["status"] == "NEEDS_SETUP"
+    assert result["failures"] == 2
+    assert result["command_candidates"] == []
+    assert result["model_candidates"] == []
+    assert result["recommended_commands"] == []
+    assert result["writes_state"] is False
 
 
 def test_probe_audio_file_fails_missing_model_and_bad_wav_without_runtime(tmp_path):

@@ -16,6 +16,20 @@ Reference: https://github.com/ggml-org/whisper.cpp
 
 ## Readiness Probe
 
+First discover local candidates:
+
+```bash
+jarvis-codex voice discover --json
+```
+
+Add explicit search roots when models or `whisper.cpp` live outside common locations:
+
+```bash
+jarvis-codex voice discover --search-root ~/whisper.cpp --search-root ~/models --json
+```
+
+Discovery is read-only. It does not access microphones, process audio, download models, call cloud services, start the runtime, or write state.
+
 Run this before transcription:
 
 ```bash

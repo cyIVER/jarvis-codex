@@ -31,6 +31,7 @@ Implemented and validated in the local FastAPI runtime:
 - Browser click-to-arm microphone flow with browser STT where available.
 - Browser-managed spoken runtime status through `speechSynthesis` after a user click.
 - Local audio chunk storage and approval-gated local STT adapter execution.
+- Read-only local STT asset discovery through `jarvis-codex voice discover --json` without microphone access, audio processing, model download, runtime start, cloud calls, or state writes.
 - Approval-gated local TTS adapter execution with server-configured command, runtime token, text-hash approval binding, and runtime-owned output paths.
 - Voice intent proposals that do not execute commands.
 - Plan-viewer route safety for display-only plan context.
@@ -80,6 +81,7 @@ The following remain future or incomplete production gates:
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
 - Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and a runtime-owned model path; clients cannot supply adapter commands through RPC.
+- Local STT discovery is read-only; it does not approve transcription or select hidden cloud/model fallbacks.
 - Local TTS synthesis requires a matching approved audio-processing approval id bound to the requested text SHA-256, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_TTS_COMMAND`, and a runtime-owned output path; clients cannot supply adapter commands or output paths through RPC.
 - The runtime WebSocket must reject cross-origin browser clients.
 - Runtime PTYs do not execute through a shell. Shell pipelines and shell operators are not supported execution semantics in the current supervisor.
@@ -112,7 +114,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-248 passed
+253 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

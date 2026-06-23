@@ -579,6 +579,44 @@ def test_voice_probe_checks_stt_readiness_without_runtime_or_state(tmp_path, mon
     assert not state.exists()
 
 
+def test_voice_discover_reports_local_stt_assets_without_state(tmp_path, monkeypatch, capsys):
+    bin_dir = tmp_path / "bin"
+    model_dir = tmp_path / "models"
+    whisper = bin_dir / "whisper-cli"
+    model = model_dir / "ggml-small.en.bin"
+    bin_dir.mkdir()
+    model_dir.mkdir()
+    whisper.write_text("#!/bin/sh\n", encoding="utf-8")
+    whisper.chmod(0o755)
+    model.write_bytes(b"model")
+    state = tmp_path / "state"
+    monkeypatch.setenv("PATH", str(bin_dir))
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "voice",
+            "discover",
+            "--search-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "READY"
+    assert str(whisper.resolve()) in data["command_candidates"]
+    assert str(model.resolve()) in data["model_candidates"]
+    assert data["runtime_started"] is False
+    assert data["microphone_accessed"] is False
+    assert data["audio_processed"] is False
+    assert data["writes_state"] is False
+    assert not state.exists()
+
+
 def test_voice_ingest_audio_requires_approval_without_runtime(tmp_path, monkeypatch, capsys):
     audio = tmp_path / "sample.wav"
     model = tmp_path / "model.bin"
