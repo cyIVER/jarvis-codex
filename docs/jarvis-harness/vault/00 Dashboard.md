@@ -130,6 +130,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
 - Packaging preflight is read-only; it does not install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 - Release artifact evidence is read-only; it does not build, sign, copy, publish, launch services, mutate Git, or write files.
+- Release readiness checklist is read-only; it aggregates release gates and proposed follow-up commands without running them, writing state, or closing gates.
 - Runtime readiness CLI is non-writing and does not start the server.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
 - Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.
@@ -138,6 +139,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, external reviewer attestation, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

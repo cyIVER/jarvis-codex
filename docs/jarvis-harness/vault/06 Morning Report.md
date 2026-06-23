@@ -224,6 +224,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated runtime-token-gated HUD release evidence metadata recording with no browser artifact path input.
 - Ran final targeted validation: governance PASS, loop readiness PASS, HUD browser evidence-flow smoke, and 305 tests passed.
 - Committed HUD release evidence recording in `f2d050e`.
+- Implemented and validated read-only `jarvis-codex release readiness-checklist --json` to aggregate manifest, artifact evidence, packaging preflight, security review, mobile/Gemini validation plans, and evidence counts into blocked-gate next actions without running them.
+- Ran final targeted validation: governance PASS, loop readiness PASS, and 307 tests passed.
+- Committed release readiness checklist in `2842fa6`.
 
 ## Pending
 
