@@ -31,7 +31,7 @@ The current release is a governed local operating substrate:
 - approval-gated backend swarm role launch and HUD swarm launch controls
 - persistent PTY output projection into searchable runtime events for session replay and transcript evidence
 - mobile operator evidence brief for private iPhone/PWA validation collection, surfaced in the HUD without launching runtime services
-- Gemini Live operator evidence brief for redacted network-validation collection
+- Gemini Live operator evidence brief for redacted network-validation collection, surfaced in the HUD without OAuth, WebSockets, network probes, or cloud-spend authority
 - Nango/Gemini Live integration plan for future governed credential and ephemeral-token design
 - packaging/signing operator evidence brief for signed artifact and publication review
 - external security reviewer evidence brief for accepted attestation collection

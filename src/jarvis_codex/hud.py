@@ -734,6 +734,7 @@ HUD_HTML = """<!doctype html>
                 <div id="readiness-gaps" class="log">Readiness summary pending.</div>
                 <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
                 <div id="mobile-evidence-panel" class="log">Mobile evidence brief pending. No runtime is launched from this panel.</div>
+                <div id="gemini-evidence-panel" class="log">Gemini evidence brief pending. No OAuth, WebSocket, or network probe is launched from this panel.</div>
                 <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
                 <div id="release-acceptance-brief-panel" class="log">Release acceptance brief pending. Proposed commands are display-only.</div>
                 <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
@@ -852,6 +853,7 @@ HUD_JS = r"""(() => {
   const mobileAccessStatus = document.getElementById("mobile-access-status");
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const mobileEvidencePanel = document.getElementById("mobile-evidence-panel");
+  const geminiEvidencePanel = document.getElementById("gemini-evidence-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
   const releaseAcceptanceBriefPanel = document.getElementById("release-acceptance-brief-panel");
@@ -1037,6 +1039,7 @@ HUD_JS = r"""(() => {
       request("telemetry.codeburn_status");
       request("runtime.readiness");
       request("mobile.evidence_brief");
+      request("gemini.evidence_brief");
       request("release.gate_status");
       request("release.gate_acceptance_brief");
       request("release.readiness_checklist");
@@ -1199,6 +1202,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.release_evidence_command && frame.result.target_url) {
         renderMobileEvidenceBrief(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.release_evidence_command && frame.result.recommended_path) {
+        renderGeminiEvidenceBrief(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -1644,6 +1652,7 @@ HUD_JS = r"""(() => {
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
     request("mobile.evidence_brief");
+    request("gemini.evidence_brief");
     request("release.gate_status");
     request("release.gate_acceptance_brief");
     request("release.readiness_checklist");
@@ -2125,6 +2134,27 @@ HUD_JS = r"""(() => {
       </section>
     `;
     log(`Mobile evidence brief loaded for ${brief.target_url || "unknown target"}. It does not prove iPhone validation or close the gate.`);
+  }
+
+  function renderGeminiEvidenceBrief(brief) {
+    const evidence = Array.isArray(brief.required_operator_evidence) ? brief.required_operator_evidence : [];
+    const unsafe = Array.isArray(brief.unsafe_actions) ? brief.unsafe_actions : [];
+    const authModes = Array.isArray(brief.auth_modes_present) && brief.auth_modes_present.length
+      ? brief.auth_modes_present.join(", ")
+      : "none";
+    geminiEvidencePanel.innerHTML = `
+      <section class="approval-item">
+        <strong>${escapeHtml(brief.label || "Gemini evidence brief")}</strong>
+        <div>Status: ${escapeHtml(brief.status || "unknown")} | Auth signals: ${escapeHtml(authModes)}</div>
+        <div>Recommended path: ${escapeHtml(brief.recommended_path || "")}</div>
+        <div>Network test proposal: <code>${escapeHtml(brief.network_test_command || "")}</code></div>
+        <div>Release evidence command: <code>${escapeHtml(brief.release_evidence_command || "")}</code></div>
+        <div>Required evidence: ${escapeHtml(evidence.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>Unsafe actions not authorized: ${escapeHtml(unsafe.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>No OAuth flow started, no WebSocket opened, no network probe ran, no secret was exposed, no cloud spend was approved, and the Gemini gate remains open.</div>
+      </section>
+    `;
+    log(`Gemini evidence brief loaded: ${brief.status || "unknown"}. It does not prove Gemini Live validation or close the gate.`);
   }
 
   function renderReleaseGateStatus(status) {

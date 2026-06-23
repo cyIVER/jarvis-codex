@@ -70,6 +70,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
+    assert "gemini.evidence_brief" in data["result"]["capabilities"]
     assert "mobile.evidence_brief" in data["result"]["capabilities"]
     assert "release.gate_status" in data["result"]["capabilities"]
     assert "release.gate_acceptance_brief" in data["result"]["capabilities"]
@@ -1410,6 +1411,33 @@ def test_runtime_mobile_evidence_brief_is_read_only_and_non_executing(tmp_path):
     assert data["release_gate_closed"] is False
     assert "actual_mobile_device_validation" in data["release_evidence_command"]
     assert any("screenshot of iPhone Safari" in item for item in data["required_operator_evidence"])
+    assert not state.exists()
+
+
+def test_runtime_gemini_evidence_brief_is_read_only_and_non_executing(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("gemini.evidence_brief", request_id="req_1"))
+
+    data = response.json()["result"]
+    assert data["label"] == "Gemini Live operator evidence brief"
+    assert data["status"] in {"NEEDS_CREDENTIALS", "READY_FOR_OPERATOR_TEST"}
+    assert data["writes_state"] is False
+    assert data["network_probe_performed"] is False
+    assert data["oauth_flow_started"] is False
+    assert data["websocket_opened"] is False
+    assert data["service_launch_performed"] is False
+    assert data["execution_authority"] is False
+    assert data["secret_values_exposed"] is False
+    assert data["cloud_spend_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert "networked_gemini_live_validation" in data["release_evidence_command"]
+    assert any("cloud spend" in action for action in data["unsafe_actions"])
     assert not state.exists()
 
 

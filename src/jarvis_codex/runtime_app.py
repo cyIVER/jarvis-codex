@@ -18,6 +18,7 @@ from .approval import ApprovalError, ApprovalService
 from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
+from .gemini import build_gemini_live_evidence_brief
 from .hud import HUD_CSP, HUD_HTML, HUD_ICON_SVG, HUD_JS, HUD_MANIFEST, HUD_SERVICE_WORKER
 from .mobile import build_mobile_evidence_brief, discover_mobile_hosts
 from .packaging import build_packaging_preflight
@@ -476,6 +477,7 @@ def _dispatch_request(
                     "approval.request",
                     "approval.respond",
                     "event.subscribe",
+                    "gemini.evidence_brief",
                     "message.list",
                     "message.search",
                     "mobile.evidence_brief",
@@ -544,6 +546,9 @@ def _dispatch_request(
         except ValueError as exc:
             return make_error_response(request_id, code="invalid_mobile_brief", message=str(exc), retryable=False)
         return make_response(request_id, brief.to_dict())
+
+    if method == "gemini.evidence_brief":
+        return make_response(request_id, build_gemini_live_evidence_brief().to_dict())
 
     if method == "release.gate_status":
         release_state = JarvisState(state_dir) if state_dir is not None else None
