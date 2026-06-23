@@ -100,8 +100,11 @@ pattern: product-readiness-triage
 - [x] PM-031 - Loop budget-policy verifier
   Loop action: hardened `loop verify --json` to check loop-budget manual cadence, token cap, kill switches, and escalation rules.
   Human decision: this improves local loop governance evidence without adding broad loop skills or changing the Phase 1 governance baseline.
-- [ ] PM-032 - Next product slice
-  Loop action: pending prioritization between actual iPhone private-network validation evidence, approved Gemini Live network validation, Electron signing/distribution flow, external security reviewer attestation, and unattended/background scheduling policy.
+- [x] PM-032 - Unattended loop policy report
+  Loop action: added read-only `loop unattended-policy --json` to summarize bounded foreground schedule limits, budget evidence, stop controls, escalation rules, and approval requirements without starting loops or writing state.
+  Human decision: unattended/background operation remains an open release gate; this report is policy evidence only and does not approve daemons, background schedulers, arbitrary commands, or gate closure.
+- [ ] PM-033 - Next product slice
+  Loop action: pending prioritization between actual iPhone private-network validation evidence, approved Gemini Live network validation, Electron signing/distribution flow, external security reviewer attestation, and accepted unattended/background scheduling evidence.
   Human decision: not selected yet.
 
 ## Watch List
@@ -133,3 +136,4 @@ Run log: 2026-06-23 | findings: operator evidence recording needed a HUD path | 
 Run log: 2026-06-23 | findings: release gates were spread across separate commands | actions: added read-only release readiness checklist and HUD Release Plan panel | escalations: 0
 Run log: 2026-06-23 | findings: loop verifier checked budget presence but not budget policy | actions: added loop-budget policy marker checks for cadence, token cap, kill switches, and escalation rules | escalations: 0
 Run log: 2026-06-23 | findings: product readiness artifacts lagged committed platform state | actions: reconciled acceptance matrix and loop state with current validated surfaces | escalations: 0
+Run log: 2026-06-23 | findings: unattended loop scheduling gate lacked a compact policy evidence command | actions: added read-only unattended loop policy report and linked it from release readiness | escalations: 0

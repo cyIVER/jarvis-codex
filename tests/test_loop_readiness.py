@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.loop_readiness import validate_loop_readiness
+from jarvis_codex.loop_readiness import build_unattended_loop_policy, validate_loop_readiness
 
 
 def write(path: Path, text: str = "ok") -> None:
@@ -39,6 +39,44 @@ def test_loop_readiness_passes_for_minimal_governed_repo(tmp_path):
     assert result["execution_authority"] is False
     assert result["writes_files"] is False
     assert result["failures"] == 0
+
+
+def test_unattended_loop_policy_is_read_only_and_keeps_release_gate_open(tmp_path):
+    write_minimal_loop_repo(tmp_path)
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    policy = build_unattended_loop_policy(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    assert policy["status"] == "ready-for-human-policy-review"
+    assert policy["writes_files"] is False
+    assert policy["writes_state"] is False
+    assert policy["execution_authority"] is False
+    assert policy["arbitrary_command_execution"] is False
+    assert policy["service_launch_performed"] is False
+    assert policy["daemon_started"] is False
+    assert policy["scheduler_backgrounded"] is False
+    assert policy["network_probe_performed"] is False
+    assert policy["git_mutation_performed"] is False
+    assert policy["worktrunk_mutation_performed"] is False
+    assert policy["release_gate_closed"] is False
+    assert policy["approved_for_unattended_operation"] is False
+    assert policy["background_scheduler_implemented"] is False
+    assert policy["bounded_foreground_schedule_available"] is True
+    assert "unattended_loop_scheduling" in policy["remaining_release_gates"]
+    assert "--allow-validation" in policy["bounded_foreground_schedule_command"]
+    assert "accepted kill switches" in policy["required_policy_evidence"]
+    assert "launch daemons" in policy["unsafe_actions_not_authorized"]
+    assert before == after
+
+
+def test_unattended_loop_policy_reports_readiness_failures(tmp_path):
+    policy = build_unattended_loop_policy(tmp_path)
+
+    assert policy["status"] == "needs-readiness-fixes"
+    assert policy["readiness_summary"]["status"] == "FAIL"
+    assert policy["readiness_summary"]["failures"] > 0
+    assert policy["release_gate_closed"] is False
 
 
 def test_loop_readiness_fails_when_required_surfaces_are_missing(tmp_path):

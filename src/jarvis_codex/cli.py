@@ -11,7 +11,7 @@ from .gemini import build_gemini_feasibility, build_gemini_live_validation_plan
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
-from .loop_readiness import validate_loop_readiness
+from .loop_readiness import build_unattended_loop_policy, validate_loop_readiness
 from .mobile import build_mobile_preflight, build_mobile_validation_plan, discover_mobile_hosts
 from .packaging import build_packaging_preflight
 from .release import (
@@ -156,6 +156,9 @@ def main() -> int:
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
     loop_verify.add_argument("--root", default=".", help="Repository root to inspect")
     loop_verify.add_argument("--json", action="store_true", help="Print loop readiness as JSON")
+    loop_policy = loop_sub.add_parser("unattended-policy", help="Print a read-only unattended-loop policy report")
+    loop_policy.add_argument("--root", default=".", help="Repository root to inspect")
+    loop_policy.add_argument("--json", action="store_true", help="Print unattended-loop policy as JSON")
     loop_run_once = loop_sub.add_parser("run-once", help="Run one bounded autonomous loop iteration")
     loop_run_once.add_argument("--root", default=".", help="Repository root to inspect")
     loop_run_once.add_argument("--json", action="store_true", help="Print loop run result as JSON")
@@ -334,6 +337,10 @@ def main() -> int:
             result = validate_loop_readiness(Path(args.root))
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["status"] == "PASS" else 1
+        if args.loop_command == "unattended-policy":
+            result = build_unattended_loop_policy(Path(args.root))
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["status"] == "ready-for-human-policy-review" else 1
         if args.loop_command == "run-once":
             if not args.allow_validation:
                 parser.error("loop run-once requires --allow-validation")

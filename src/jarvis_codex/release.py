@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .gemini import build_gemini_live_validation_plan
+from .loop_readiness import build_unattended_loop_policy
 from .mobile import build_mobile_validation_plan
 from .packaging import build_packaging_preflight
 from .state import RELEASE_EVIDENCE_GATES
@@ -314,6 +315,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     gate_status = build_release_gate_status(evidence_records)
     mobile_validation = build_mobile_validation_plan().to_dict()
     gemini_validation = build_gemini_live_validation_plan().to_dict()
+    unattended_policy = build_unattended_loop_policy(root)
 
     gate_lookup = {gate["gate"]: gate for gate in gate_status["gates"]}
     checklist_items = [
@@ -387,21 +389,14 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             gate_lookup,
             "unattended_loop_scheduling",
             "Keep unattended scheduling blocked until an explicit scheduler, budget, stop, and human-observable run policy is approved.",
-            "jarvis-codex loop verify --json",
-            [
-                "approved bounded schedule policy",
-                "budget and stop criteria evidence",
-                "human-visible run log and failure escalation evidence",
-            ],
+            "jarvis-codex loop unattended-policy --json",
+            unattended_policy["required_policy_evidence"],
             [
                 "do not launch daemons or background schedulers from this checklist command",
                 "do not run autonomous loops without the explicit --allow-validation gate",
                 "do not remove human stop or review points",
             ],
-            [
-                "loop verify is read-only evidence only",
-                "foreground loop runs remain bounded and approval-gated",
-            ],
+            unattended_policy["notes"],
         ),
     ]
 
@@ -434,6 +429,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "security_review_plan_status": security_review["status"],
             "mobile_validation_plan_status": mobile_validation["status"],
             "gemini_validation_plan_status": gemini_validation["status"],
+            "unattended_loop_policy_status": unattended_policy["status"],
             "open_gate_count": gate_status["open_gate_count"],
         },
         "recommended_read_only_commands": [
@@ -445,6 +441,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "jarvis-codex mobile discover --json",
             "jarvis-codex gemini feasibility --json",
             "jarvis-codex loop verify --json",
+            "jarvis-codex loop unattended-policy --json",
         ],
         "unsafe_actions_not_authorized": [
             "install packages",

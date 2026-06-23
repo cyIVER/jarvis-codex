@@ -30,6 +30,7 @@ The current release is a governed local operating substrate:
 - approval-gated backend swarm role launch and HUD swarm launch controls
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
+- read-only unattended loop policy report for budget, stop, escalation, and human-observable run requirements
 - voice ingress through transcript files, approved local executable STT adapters, and HUD controls for approved browser-audio transcription
 - approval-gated autonomous loop planning artifacts
 - local-only Remotion review asset scaffold
@@ -42,7 +43,7 @@ The current release is a governed local operating substrate:
 | Explicit planning queues prevent accidental execution better than free-form displayed commands. | Low | Queue entries include non-execution authority language, safe handoff output, and tests. | Keep command runners out of scope until a separate runner PRD is approved. |
 | Governance validator plus doctor summary will catch project-local agent/skill drift. | Low | Validator passes with 156 checks; doctor is opt-in and read-only. | Add checks only when trial runs reveal routing noise. |
 | GitHub-side validation catches drift outside the local shell. | Low | CI workflow runs Python tests, project-local governance validation, and Remotion typecheck/audit without rendering or publishing artifacts. | Observe the first remote run after push and tighten only if it finds environment drift. |
-| Local loop readiness can be checked without adding new governance skills. | Low | `jarvis-codex loop verify --json` checks loop state, CI, budget policy markers, safety, and forbidden runtime markers without writing files. | Keep project-local skill expansion deferred until governance policy explicitly includes it. |
+| Local loop readiness can be checked without adding new governance skills. | Low | `jarvis-codex loop verify --json` checks loop state, CI, budget policy markers, safety, and forbidden runtime markers without writing files. `jarvis-codex loop unattended-policy --json` summarizes the bounded schedule policy, stop controls, and remaining approval gates without writing files or starting loops. | Keep project-local skill expansion deferred until governance policy explicitly includes it. |
 | Voice ingress can start without always-on listeners. | Low | Transcript capture exists, `voice discover --json` now reports `READY` for the local whisper.cpp cache, `voice probe --audio-file ... --model ... --stt-command ... --json` passed against the JFK sample without state writes, `voice ingest --audio-file ... --model ... --stt-command ... --allow-audio-processing --json` captured a sample transcript into `/tmp` state, `scripts/whisper-cpp-stt-adapter.py` wraps local `whisper.cpp`, runtime `model_id` resolution avoids arbitrary client model paths, and HUD controls can request approval for the latest captured browser-audio chunk before local STT transcription. | Keep always-on microphone listeners, cloud STT, and Codex App Server bridges separate from the proven local approval-gated STT paths. |
 | Local Remotion review assets improve review and handoff quality without adding hosted risk. | Low | Typecheck, render, audit, scaffold tests, and the read-only release manifest pass. | Review generated asset with the operator before any copy, publication, or tracked release bundle. |
 | Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Low | Read-only lane tests pass, docs say mutation is approval-gated, `jarvis-codex lane list --json` plus `lane score --json` expose review-only CLI output, and an isolated real-worktree fixture covers multiple worktrees. | Exercise manually on operator-selected real worktrees before any mutation PRD. |
@@ -57,7 +58,7 @@ The current release is a governed local operating substrate:
 | 4 | Worktrunk lane CLI review | Read-only `lane list --json` and `lane score --json` are implemented and covered by an isolated real-worktree fixture; mutation remains out of scope. | High | Manual operator review on real worktrees can happen before considering any mutation PRD. |
 | 5 | Release artifact packaging | Read-only manifest, artifact evidence, open-gate status, and release readiness checklist are implemented across core docs, loop state, plan viewer, voice ingress, whisper.cpp runbook, local runtime, safe handoff, Worktrunk lane PRD, and generated assets; publication is explicitly not ready without approval. | High | Keep release review surfaces as review-only until the operator approves a specific artifact copy/publish/signing step. |
 | 6 | GitHub CI and review templates | CI and templates are present and validation-only. | High | Watch the first remote CI result after push; do not add publish/release jobs without approval. |
-| 7 | Loop readiness verifier | Local JSON verifier is implemented without adding new project-local skills or agents. | High | Keep loop-triage and loop-verifier skills deferred until the governance baseline is intentionally expanded. |
+| 7 | Loop readiness and unattended policy verifier | Local JSON verifier and unattended policy report are implemented without adding new project-local skills or agents. | High | Keep loop-triage and loop-verifier skills deferred until the governance baseline is intentionally expanded; do not enable background scheduling without accepted operator policy evidence. |
 | 8 | Voice ingress and Codex App Server bridge | File-based STT is implemented and locally exercised with cached `whisper.cpp` v1.9.1, `ggml-tiny.en.bin`, readiness discovery, readiness probe, and one approved sample transcription into temp state; runtime `model_id` resolution and HUD approval controls cover browser-audio transcription through the approved local path. Microphone listeners, cloud STT, and Codex App Server bridge remain higher-risk runtime phases. | High | Keep always-on capture, cloud STT, and bridge work behind separate approval gates. |
 
 ## Release Acceptance Criteria
@@ -77,6 +78,7 @@ The current release is a governed local operating substrate:
 - `tests/test_state.py`, `tests/test_cli.py`, and `tests/test_release.py` cover state-only release evidence recording, open-gate status summaries, release readiness checklist aggregation, state-local artifact hashing, and no automatic gate closure.
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier, budget-policy markers, and runtime-authority marker checks.
+- `jarvis-codex loop unattended-policy --json` reports foreground schedule limits, stop controls, approval gates, and no daemon/background authority.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
 - `tests/test_whisper_cpp_adapter.py` covers the included `whisper.cpp` adapter wrapper, including `--check-only`, with a fake local binary.
 - Global architecture validation has zero errors.
@@ -85,7 +87,7 @@ The current release is a governed local operating substrate:
 
 - Whether future PM loop commits should be pushed immediately after validation or batched for release review.
 - Whether generated Remotion PNG/MP4 files should be copied to a release artifact location or remain local ignored outputs after operator review.
-- Whether the next package should collect actual iPhone private-network validation evidence, run approved Gemini Live network validation, complete Electron signing/distribution planning, obtain external security reviewer attestation, or design unattended/background scheduling policy.
+- Whether the next package should collect actual iPhone private-network validation evidence, run approved Gemini Live network validation, complete Electron signing/distribution planning, obtain external security reviewer attestation, or accept/enable any unattended/background scheduling evidence.
 - Whether project-local `skills.config` should remain deferred until more routing evidence appears.
 
 ## Recommendation

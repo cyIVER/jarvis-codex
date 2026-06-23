@@ -24,6 +24,7 @@ Implemented and validated in the local FastAPI runtime:
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
 - Read-only loop readiness verification through `jarvis-codex loop verify --json`; it checks loop state, CI wiring, budget policy markers, safety surfaces, and forbidden runtime-authority markers without writing files.
+- Read-only unattended loop policy reporting through `jarvis-codex loop unattended-policy --json`; it summarizes budget, stop, escalation, foreground schedule, and approval requirements without writing files, starting a scheduler, or closing the unattended release gate.
 - Foreground bounded loop scheduling through `jarvis-codex loop schedule --allow-validation --json`; it runs only fixed `run-once` iterations, caps iterations and interval length, writes schedule evidence under the selected `--state`, and starts no daemon.
 - HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through the runtime policy gate.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
@@ -78,7 +79,7 @@ The following remain future or incomplete production gates:
 - Electron desktop app signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- Higher-level unattended or background loop scheduling beyond bounded foreground `loop schedule`.
+- Higher-level unattended or background loop operation beyond bounded foreground `loop schedule` and read-only policy reporting.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
@@ -98,6 +99,7 @@ The following remain future or incomplete production gates:
 - Loop lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as autonomous execution, agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
 - Bounded `loop run-once` does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
 - Bounded `loop schedule` does not start a daemon, background itself, accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
+- `loop unattended-policy` is read-only policy evidence. It does not start loops, write state, approve unattended operation, or close the `unattended_loop_scheduling` release gate.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.

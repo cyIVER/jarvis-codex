@@ -283,3 +283,79 @@ def validate_loop_readiness(root: Path) -> dict[str, Any]:
         "failure_details": [check.__dict__ for check in failures],
         "checks": [check.__dict__ for check in checks],
     }
+
+
+def build_unattended_loop_policy(root: Path) -> dict[str, Any]:
+    """Summarize unattended-loop policy readiness without starting loops or writing state."""
+    root = root.resolve()
+    readiness = validate_loop_readiness(root)
+    readiness_passed = readiness["status"] == "PASS"
+    return {
+        "label": "Jarvis Codex unattended loop policy",
+        "status": "ready-for-human-policy-review" if readiness_passed else "needs-readiness-fixes",
+        "root": str(root),
+        "writes_files": False,
+        "writes_state": False,
+        "execution_authority": False,
+        "arbitrary_command_execution": False,
+        "service_launch_performed": False,
+        "daemon_started": False,
+        "scheduler_backgrounded": False,
+        "network_probe_performed": False,
+        "git_mutation_performed": False,
+        "worktrunk_mutation_performed": False,
+        "release_gate_closed": False,
+        "human_acceptance_required": True,
+        "approved_for_unattended_operation": False,
+        "background_scheduler_implemented": False,
+        "bounded_foreground_schedule_available": True,
+        "bounded_foreground_schedule_command": (
+            "jarvis-codex --state <state-dir> loop schedule "
+            "--allow-validation --max-iterations <1-12> --interval-seconds <0-3600> --json"
+        ),
+        "read_only_verification_command": "jarvis-codex loop verify --json",
+        "required_policy_evidence": [
+            "accepted loop-budget manual/operator-requested cadence",
+            "accepted token cap per loop cycle",
+            "accepted kill switches",
+            "accepted escalation rules",
+            "human-visible run log location and review cadence",
+            "explicit decision on whether unattended/background scheduling may be enabled",
+        ],
+        "operator_stop_controls": [
+            "do not run as a daemon or background service",
+            "keep foreground schedule capped to 12 iterations or fewer",
+            "keep interval_seconds between 0 and 3600",
+            "stop after any validation failure and inspect recorded evidence",
+        ],
+        "approval_required_before": [
+            "starting any daemon or background scheduler",
+            "expanding beyond fixed validators/readiness collectors",
+            "running arbitrary commands",
+            "launching services, agents, PTYs, Worktrunk, or Git mutation from loop policy",
+            "treating loop evidence as release gate closure",
+        ],
+        "unsafe_actions_not_authorized": [
+            "launch daemons",
+            "run background schedulers",
+            "execute arbitrary commands",
+            "start services",
+            "probe networks",
+            "mutate Git",
+            "mutate Worktrunk",
+            "close release gates",
+        ],
+        "remaining_release_gates": ["unattended_loop_scheduling"],
+        "readiness_summary": {
+            "status": readiness["status"],
+            "checks_passed": readiness["checks_passed"],
+            "failures": readiness["failures"],
+            "execution_authority": readiness["execution_authority"],
+            "writes_files": readiness["writes_files"],
+        },
+        "notes": [
+            "This policy report is read-only evidence.",
+            "The existing loop schedule command is foreground and bounded.",
+            "This report does not authorize unattended operation or close the unattended_loop_scheduling release gate.",
+        ],
+    }

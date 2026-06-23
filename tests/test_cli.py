@@ -911,6 +911,35 @@ def test_loop_schedule_json_records_bounded_foreground_execution(tmp_path, monke
     assert data["scheduler_backgrounded"] is False
 
 
+def test_loop_unattended_policy_json_is_read_only(monkeypatch, capsys):
+    def fake_policy(root):
+        return {
+            "label": "Jarvis Codex unattended loop policy",
+            "status": "ready-for-human-policy-review",
+            "root": str(root),
+            "writes_files": False,
+            "writes_state": False,
+            "execution_authority": False,
+            "daemon_started": False,
+            "scheduler_backgrounded": False,
+            "release_gate_closed": False,
+        }
+
+    monkeypatch.setattr(cli, "build_unattended_loop_policy", fake_policy)
+
+    code = run_cli(monkeypatch, ["loop", "unattended-policy", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "ready-for-human-policy-review"
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["daemon_started"] is False
+    assert data["scheduler_backgrounded"] is False
+    assert data["release_gate_closed"] is False
+
+
 def test_loop_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "verify"])
 

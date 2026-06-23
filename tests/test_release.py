@@ -18,14 +18,21 @@ def write(path: Path, text: str = "ok") -> None:
 
 def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp_path):
     write(tmp_path / "README.md")
-    write(tmp_path / "STATE.md")
+    write(tmp_path / "STATE.md", "loop_status: active\nlevel: L1\n")
     write(tmp_path / "LOOP.md")
-    write(tmp_path / "loop-budget.md")
+    write(
+        tmp_path / "loop-budget.md",
+        "Default cadence: manual/operator-requested\n"
+        "Suggested token cap per loop cycle: 120k\n"
+        "## Kill Switches\n"
+        "## Escalation Rules\n",
+    )
     write(tmp_path / "loop-run-log.md")
     write(tmp_path / "docs/PRODUCT_READINESS.md")
+    write(tmp_path / "docs/safety.md")
     write(tmp_path / "docs/PLAN_VIEWER.md")
     write(tmp_path / "docs/REMOTION_REVIEW.md")
-    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md", "jarvis-codex release manifest --json\n")
     write(tmp_path / "docs/RUNTIME_GATES.md")
     write(tmp_path / "docs/VOICE_INGRESS.md")
     write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
@@ -122,12 +129,18 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "README.md")
     write(tmp_path / "STATE.md")
     write(tmp_path / "LOOP.md")
-    write(tmp_path / "loop-budget.md")
+    write(
+        tmp_path / "loop-budget.md",
+        "Default cadence: manual/operator-requested\n"
+        "Suggested token cap per loop cycle: 120k\n"
+        "## Kill Switches\n"
+        "## Escalation Rules\n",
+    )
     write(tmp_path / "loop-run-log.md")
     write(tmp_path / "docs/PRODUCT_READINESS.md")
     write(tmp_path / "docs/PLAN_VIEWER.md")
     write(tmp_path / "docs/REMOTION_REVIEW.md")
-    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md", "jarvis-codex release manifest --json\n")
     write(tmp_path / "docs/RUNTIME_GATES.md")
     write(tmp_path / "docs/VOICE_INGRESS.md")
     write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
@@ -263,14 +276,21 @@ def test_release_gate_status_summarizes_evidence_without_closing_gates():
 
 def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp_path):
     write(tmp_path / "README.md")
-    write(tmp_path / "STATE.md")
+    write(tmp_path / "STATE.md", "loop_status: active\nlevel: L1\n")
     write(tmp_path / "LOOP.md")
-    write(tmp_path / "loop-budget.md")
+    write(
+        tmp_path / "loop-budget.md",
+        "Default cadence: manual/operator-requested\n"
+        "Suggested token cap per loop cycle: 120k\n"
+        "## Kill Switches\n"
+        "## Escalation Rules\n",
+    )
     write(tmp_path / "loop-run-log.md")
     write(tmp_path / "docs/PRODUCT_READINESS.md")
+    write(tmp_path / "docs/safety.md")
     write(tmp_path / "docs/PLAN_VIEWER.md")
     write(tmp_path / "docs/REMOTION_REVIEW.md")
-    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md", "jarvis-codex release manifest --json\n")
     write(tmp_path / "docs/RUNTIME_GATES.md")
     write(tmp_path / "docs/VOICE_INGRESS.md")
     write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
@@ -302,6 +322,10 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     write(tmp_path / "tools/plan-viewer/index.html")
     write(tmp_path / "tools/electron-hud/assets/icon.png", "icon")
     write(tmp_path / "video/remotion/.gitignore", "out/*\n!out/.gitkeep\n")
+    write(
+        tmp_path / ".github/workflows/ci.yml",
+        "permissions:\n  contents: read\nsteps:\n  - run: uv run pytest\n  - run: python3 scripts/validate-jarvis-codex-phase1.py\n",
+    )
     before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
 
     checklist = build_release_readiness_checklist(
@@ -320,6 +344,7 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
 
     after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
     external = next(item for item in checklist["checklist"] if item["gate"] == "external_security_review")
+    unattended = next(item for item in checklist["checklist"] if item["gate"] == "unattended_loop_scheduling")
     assert checklist["status"] == "blocked"
     assert checklist["writes_files"] is False
     assert checklist["writes_state"] is False
@@ -336,9 +361,15 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert "actual_mobile_device_validation" in checklist["blocked_by"]
     assert "networked_gemini_live_validation" in checklist["blocked_by"]
     assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
+    assert "jarvis-codex loop unattended-policy --json" in checklist["recommended_read_only_commands"]
+    assert checklist["summary"]["unattended_loop_policy_status"] == "ready-for-human-policy-review"
     assert "launch runtime services" in checklist["unsafe_actions_not_authorized"]
     assert external["evidence_count"] == 1
     assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False
     assert any("human attestation artifact" in note for note in external["notes"])
+    assert unattended["read_only_command"] == "jarvis-codex loop unattended-policy --json"
+    assert unattended["release_gate_closed"] is False
+    assert "accepted kill switches" in unattended["required_evidence"]
+    assert any("does not authorize unattended operation" in note for note in unattended["notes"])
     assert before == after

@@ -16,7 +16,7 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 | Mobile | Mobile HUD access plan, private URL discovery, viewport checks, and preflight evidence are available. | Mobile viewport, private-network planning, and runtime readiness tests. | Actual iPhone private-network validation remains an open release gate. |
 | Voice | File-based local STT and approved browser-audio transcription controls work through local adapters. | Mock provider, local adapter, whisper.cpp wrapper, runtime, and HUD tests. | Microphone capture, audio storage, and transcription remain separately approved steps. |
 | Swarm | Operator can plan swarm lanes, record lifecycle, and launch approved role-labeled PTY panes. | Swarm planner, lifecycle, launch, runtime, and HUD tests. | `swarm.launch` requires exact scoped approval, HUD token, and policy clearance; no Worktrunk or Git mutation. |
-| Loop | Bounded run-once and foreground schedule execute fixed validators/readiness collectors and write local evidence. | Loop readiness and autonomous-loop tests. | No daemon/background scheduling, arbitrary commands, agent fanout, or unattended mutation. |
+| Loop | Bounded run-once and foreground schedule execute fixed validators/readiness collectors and write local evidence; unattended policy is reportable. | Loop readiness, unattended policy, and autonomous-loop tests. | No daemon/background scheduling, arbitrary commands, agent fanout, or unattended mutation. |
 | Release review | Manifest, artifact evidence, gate status, readiness checklist, external security packet, and evidence ledger are available. | Release, CLI, runtime, HUD, and browser smoke tests. | Review-only; no signing, copying, publishing, gate closure, or external acceptance. |
 | Codeburn | Usage snapshots are captured at phase boundaries. | CLI smoke and readiness note checks. | Missing telemetry should be reported as a warning, not treated as release proof. |
 | AG review | High-risk phases receive read-only AG challenge review when useful. | Readiness note evidence and explicit challenge passes. | AG output is advisory; Codex remains responsible for edits and verification. |
@@ -42,7 +42,7 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 - Actual iPhone private-network validation has not been run with accepted evidence.
 - Electron/release artifacts are local and unsigned unless a separate signing/distribution gate is approved.
 - External security reviewer attestation has not been accepted.
-- Unattended/background scheduling remains unimplemented and should stay gated.
+- Unattended/background operation remains gated beyond the read-only policy report.
 - Cloud realtime remains unavailable through OAuth-only assumptions.
 - Local TTS quality is below target.
 - Mobile HUD is functional but less cinematic than desktop.
