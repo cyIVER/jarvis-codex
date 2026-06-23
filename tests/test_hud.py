@@ -102,6 +102,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="mobile-evidence-panel"' in response.text
     assert 'id="gemini-evidence-panel"' in response.text
     assert 'id="packaging-evidence-panel"' in response.text
+    assert 'id="security-evidence-panel"' in response.text
     assert 'id="release-gate-panel"' in response.text
     assert 'id="release-acceptance-brief-panel"' in response.text
     assert 'id="release-checklist-panel"' in response.text
@@ -116,6 +117,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert "Mobile evidence brief pending" in response.text
     assert "Gemini evidence brief pending" in response.text
     assert "Packaging evidence brief pending" in response.text
+    assert "External security evidence brief pending" in response.text
     assert "Release acceptance brief pending" in response.text
     assert "Gate acceptance requires an existing evidence id" in response.text
     assert "Record Evidence Metadata" in response.text
@@ -247,6 +249,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("mobile.evidence_brief")' in response.text
     assert 'request("gemini.evidence_brief")' in response.text
     assert 'request("release.packaging_evidence_brief")' in response.text
+    assert 'request("release.security_evidence_brief")' in response.text
     assert 'request("release.gate_status")' in response.text
     assert 'request("release.gate_acceptance_brief")' in response.text
     assert 'request("release.readiness_checklist")' in response.text
@@ -292,6 +295,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "renderMobileEvidenceBrief(frame.result)" in response.text
     assert "renderGeminiEvidenceBrief(frame.result)" in response.text
     assert "renderPackagingEvidenceBrief(frame.result)" in response.text
+    assert "renderSecurityEvidenceBrief(frame.result)" in response.text
     assert "renderReleaseGateStatus(frame.result)" in response.text
     assert "renderReleaseAcceptanceBrief(frame.result)" in response.text
     assert "renderReleaseChecklist(frame.result)" in response.text
@@ -302,6 +306,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "no WebSocket opened" in response.text
     assert "Packaging evidence brief loaded" in response.text
     assert "No install, package build, signing, copy, upload, publish" in response.text
+    assert "External security evidence brief loaded" in response.text
+    assert "No scanner, service launch, network probe, build, signing" in response.text
     assert "Runtime command proposal" in response.text
     assert "displayed commands are not execution authority" in response.text
     assert "Remaining release gaps" in response.text

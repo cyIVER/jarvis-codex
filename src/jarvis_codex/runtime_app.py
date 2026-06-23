@@ -33,6 +33,7 @@ from .protocol import (
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
 from .release import (
+    build_external_security_evidence_brief,
     build_packaging_signing_evidence_brief,
     build_release_gate_acceptance_brief,
     build_release_gate_status,
@@ -501,6 +502,7 @@ def _dispatch_request(
                     "release.gate_status",
                     "release.packaging_evidence_brief",
                     "release.readiness_checklist",
+                    "release.security_evidence_brief",
                     "profile.list",
                     "profile.set",
                     "prompt.send",
@@ -571,6 +573,10 @@ def _dispatch_request(
     if method == "release.packaging_evidence_brief":
         root = Path(__file__).resolve().parents[2]
         return make_response(request_id, build_packaging_signing_evidence_brief(root))
+
+    if method == "release.security_evidence_brief":
+        root = Path(__file__).resolve().parents[2]
+        return make_response(request_id, build_external_security_evidence_brief(root))
 
     if method == "release.readiness_checklist":
         release_state = JarvisState(state_dir) if state_dir is not None else None
