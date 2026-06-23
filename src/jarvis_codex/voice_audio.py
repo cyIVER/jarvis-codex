@@ -62,6 +62,25 @@ class LocalSttResult:
         }
 
 
+@dataclass(frozen=True)
+class LocalTtsResult:
+    text: str
+    audio_file: Path
+    command: str
+    returncode: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "text": self.text,
+            "audio_file": str(self.audio_file),
+            "command": self.command,
+            "returncode": self.returncode,
+            "audio_processed": True,
+            "external_services": False,
+            "execution_authority": False,
+        }
+
+
 class VoiceAudioBuffer:
     def __init__(self, state_dir: Path) -> None:
         self.root = state_dir / "runtime" / "audio"
@@ -103,6 +122,11 @@ class VoiceAudioBuffer:
             bytes_written=len(chunk),
             final=final,
         )
+
+    def tts_output_path(self, *, session_id: str, suffix: str = ".wav") -> Path:
+        safe_session = _safe_name(session_id or "hud")
+        safe_suffix = suffix if suffix.startswith(".") and re.fullmatch(r"\.[A-Za-z0-9]+", suffix) else ".wav"
+        return self.root / safe_session / f"tts_{uuid.uuid4().hex[:16]}{safe_suffix}"
 
 
 def _safe_name(value: str) -> str:
@@ -165,5 +189,51 @@ def transcribe_with_local_adapter(
         audio_file=audio,
         model_path=model,
         command=stt_command,
+        returncode=result.returncode,
+    )
+
+
+def synthesize_with_local_adapter(
+    *,
+    text: str,
+    output_file: Path,
+    tts_command: str,
+    timeout_seconds: int = 120,
+) -> LocalTtsResult:
+    speech_text = text.strip()
+    if not speech_text:
+        raise VoiceAudioError("tts text is required")
+    output = output_file.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        command = shlex.split(tts_command)
+    except ValueError as exc:
+        raise VoiceAudioError(f"invalid tts command: {exc}") from exc
+    if not command:
+        raise VoiceAudioError("tts command is required")
+
+    try:
+        result = subprocess.run(
+            [*command, "--output-file", str(output)],
+            input=speech_text,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise VoiceAudioError(f"tts adapter not found: {exc.filename}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise VoiceAudioError(f"tts adapter timed out after {timeout_seconds} seconds") from exc
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise VoiceAudioError(f"tts adapter failed with {result.returncode}: {stderr}")
+    if not output.is_file() or output.stat().st_size == 0:
+        raise VoiceAudioError("tts adapter did not write audio output")
+    return LocalTtsResult(
+        text=speech_text,
+        audio_file=output,
+        command=tts_command,
         returncode=result.returncode,
     )

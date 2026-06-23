@@ -44,6 +44,16 @@ Implemented behavior:
 - The speech text is derived from the non-writing `runtime.readiness` response.
 - Browser output is not command authority and does not run a local TTS adapter.
 
+### Local Adapter Lane
+
+Implemented behavior:
+
+- `voice.synthesize_audio` runs a server-configured local TTS adapter only after a matching approval and HUD runtime token.
+- The approval scope binds to the requested text SHA-256.
+- The runtime owns the output path under its audio directory.
+- Client-supplied adapter commands and output paths are ignored.
+- The resulting `voice.audio_synthesized` event is audio processing state only; it is not command authority.
+
 ## Turn State Machine
 
 States:

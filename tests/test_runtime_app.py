@@ -1,5 +1,6 @@
 import time
 import base64
+import hashlib
 import sys
 from pathlib import Path
 
@@ -74,6 +75,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
+    assert "voice.synthesize_audio" in data["result"]["capabilities"]
 
 
 def test_runtime_session_create_writes_event_store(tmp_path):
@@ -1455,6 +1457,42 @@ def _approve_voice_transcription(client: TestClient, audio: Path, model: Path) -
     return str(approval["id"])
 
 
+def _approve_voice_synthesis(client: TestClient, text: str) -> str:
+    text_sha256 = hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-voice",
+                "summary": "Synthesize local speech",
+                "operation": "voice.synthesize_audio",
+                "risk": "medium",
+                "scope": {
+                    "source": "voice.synthesize_audio",
+                    "text_sha256": text_sha256,
+                },
+            },
+            request_id="tts_approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": _runtime_token(client),
+            },
+            request_id="tts_approval_resp",
+        ),
+    )
+    return str(approval["id"])
+
+
 def test_runtime_voice_transcribe_audio_requires_explicit_approval(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -1661,6 +1699,149 @@ def test_runtime_voice_transcribe_audio_rejects_paths_outside_runtime_roots(tmp_
     assert response.status_code == 200
     assert response.json()["error"]["code"] == "invalid_audio_path"
     assert app.state.event_store.approval(approval_id)["status"] == "approved"
+
+
+def test_runtime_voice_synthesize_audio_requires_explicit_approval(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.synthesize_audio",
+            {"session_id": "session-voice", "text": "Systems online."},
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()
+    assert response.status_code == 200
+    assert data["error"]["code"] == "approval_required"
+    assert data["error"]["approval_required"] is True
+    assert data["error"]["details"]["required_approval_scope"] == "voice.synthesize_audio"
+
+
+def test_runtime_voice_synthesize_audio_writes_audio_event(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    adapter = tmp_path / "fake_tts.py"
+    text = "Systems are online."
+    adapter.write_text(
+        "import argparse, pathlib, sys\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--output-file')\n"
+        "args = parser.parse_args()\n"
+        "pathlib.Path(args.output_file).write_bytes(('audio:' + sys.stdin.read()).encode())\n",
+        encoding="utf-8",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+    approval_id = _approve_voice_synthesis(client, text)
+    monkeypatch.setenv("JARVIS_LOCAL_TTS_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.synthesize_audio",
+            {
+                "session_id": "session-voice",
+                "text": text,
+                "tts_command": "python3 /tmp/malicious_client_supplied_tts.py",
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    payload = data["event"]["payload"]
+    audio_path = Path(data["synthesis"]["audio_file"])
+    assert response.status_code == 200
+    assert data["characters"] == len(text)
+    assert data["audio_processed"] is True
+    assert data["external_services"] is False
+    assert data["execution_authority"] is False
+    assert data["routed_as_command"] is False
+    assert audio_path.is_file()
+    assert audio_path.read_bytes() == b"audio:Systems are online."
+    assert str(audio_path).startswith(str((state / "runtime" / "audio").resolve()))
+    assert payload["text_sha256"] == hashlib.sha256(text.encode("utf-8")).hexdigest()
+    assert payload["provider"] == "local-tts-adapter"
+    assert payload["audio_processed"] is True
+    assert payload["external_services"] is False
+    assert payload["execution_authority"] is False
+    assert app.state.event_store.approval(approval_id)["status"] == "used"
+
+
+def test_runtime_voice_synthesize_audio_requires_server_configured_adapter(tmp_path, monkeypatch):
+    text = "Systems are online."
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    approval_id = _approve_voice_synthesis(client, text)
+    monkeypatch.delenv("JARVIS_LOCAL_TTS_COMMAND", raising=False)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.synthesize_audio",
+            {
+                "session_id": "session-voice",
+                "text": text,
+                "approval_id": approval_id,
+                "runtime_token": _runtime_token(client),
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_audio_chunk"
+    assert "JARVIS_LOCAL_TTS_COMMAND" in response.json()["error"]["message"]
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
+
+
+def test_runtime_voice_synthesize_audio_requires_runtime_token(tmp_path, monkeypatch):
+    adapter = tmp_path / "fake_tts.py"
+    text = "Systems are online."
+    adapter.write_text("pass\n", encoding="utf-8")
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    approval_id = _approve_voice_synthesis(client, text)
+    monkeypatch.setenv("JARVIS_LOCAL_TTS_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.synthesize_audio",
+            {
+                "session_id": "session-voice",
+                "text": text,
+                "approval_id": approval_id,
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "unauthorized"
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
+
+
+def test_runtime_voice_synthesize_audio_rejects_blank_text(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.synthesize_audio",
+            {"session_id": "session-voice", "text": " "},
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_tts_text"
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):

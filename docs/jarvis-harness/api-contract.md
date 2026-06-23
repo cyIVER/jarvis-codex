@@ -104,9 +104,12 @@ Voice:
 - `voice.provider_status`
 - `voice.audio_chunk`
 - `voice.transcribe_audio`
+- `voice.synthesize_audio`
 - `voice.intent_propose`
 
 `voice.transcribe_audio` requires a matching approved audio-processing approval id, the runtime HUD token, a server-configured STT adapter command, an audio file under the runtime audio directory, and a model path under the runtime model directory.
+
+`voice.synthesize_audio` requires a matching approved audio-processing approval id bound to the requested text SHA-256, the runtime HUD token, and a server-configured TTS adapter command. The runtime chooses the output path under its audio directory; clients cannot supply adapter commands or output paths.
 
 Loop and swarm:
 

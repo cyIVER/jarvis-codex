@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 import queue
 import secrets
@@ -27,7 +28,7 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
-from .voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
+from .voice_audio import VoiceAudioBuffer, VoiceAudioError, synthesize_with_local_adapter, transcribe_with_local_adapter
 from .voice_intent import propose_voice_intent
 
 POLICY_PROFILE_DETAILS = {
@@ -54,6 +55,7 @@ POLICY_PROFILE_DETAILS = {
 }
 POLICY_PROFILES = set(POLICY_PROFILE_DETAILS)
 LOCAL_STT_COMMAND_ENV = "JARVIS_LOCAL_STT_COMMAND"
+LOCAL_TTS_COMMAND_ENV = "JARVIS_LOCAL_TTS_COMMAND"
 PLANNED_METHODS = {
     "loop.pause",
     "loop.resume",
@@ -353,6 +355,7 @@ def _dispatch_request(
                     "voice.provider_status",
                     "voice.audio_chunk",
                     "voice.transcribe_audio",
+                    "voice.synthesize_audio",
                     "voice.intent_propose",
                     "voice.start",
                     "voice.stop",
@@ -954,6 +957,11 @@ def _dispatch_request(
                         "privacy": "local",
                         "note": "Saved audio may be transcribed only with a matching approval id and server-configured local STT command.",
                     },
+                    "local_tts_adapter": {
+                        "status": "approval-gated",
+                        "privacy": "local",
+                        "note": "Speech audio may be synthesized only with a matching approval id and server-configured local TTS command.",
+                    },
                     "gemini_realtime": {
                         "status": "not_configured",
                         "privacy": "cloud",
@@ -1165,6 +1173,74 @@ def _dispatch_request(
             },
         )
 
+    if method == "voice.synthesize_audio":
+        text = str(params.get("text") or "").strip()
+        approval_id = str(params.get("approval_id") or "")
+        if not text:
+            return make_error_response(request_id, code="invalid_tts_text", message="speech synthesis text is required")
+        text_sha256 = _text_sha256(text)
+        if not _approval_allows_audio_synthesis(store, approval_id, text_sha256):
+            return make_error_response(
+                request_id,
+                code="approval_required",
+                message="local speech synthesis requires a matching approved audio processing approval",
+                retryable=False,
+                approval_required=True,
+                details={"required_approval_scope": "voice.synthesize_audio", "text_sha256": text_sha256},
+            )
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="approved speech synthesis requires the HUD runtime token",
+                retryable=False,
+            )
+        tts_command = _local_tts_command()
+        session_id = str(params.get("session_id") or "hud")
+        output_file = voice_audio.tts_output_path(session_id=session_id, suffix=str(params.get("suffix") or ".wav"))
+        consumed = approval_service.consume(
+            approval_id=approval_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason="voice.synthesize_audio processed approved speech text",
+        )
+        event_broadcaster.publish(consumed.event)
+        synthesis = synthesize_with_local_adapter(
+            text=text,
+            output_file=output_file,
+            tts_command=tts_command,
+            timeout_seconds=int(params.get("timeout_seconds") or 120),
+        )
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="voice.audio_synthesized",
+            payload={
+                "text_sha256": text_sha256,
+                "provider": str(params.get("provider") or "local-tts-adapter"),
+                "audio_file": str(synthesis.audio_file),
+                "execution_authority": False,
+                "routed_as_command": False,
+                "audio_processed": True,
+                "external_services": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "event": _stored_event_to_dict(event),
+                "characters": len(synthesis.text),
+                "synthesis": synthesis.to_dict(),
+                "execution_authority": False,
+                "routed_as_command": False,
+                "audio_processed": True,
+                "external_services": False,
+            },
+        )
+
     if method in PLANNED_METHODS:
         return make_error_response(
             request_id,
@@ -1276,6 +1352,18 @@ def _approval_allows_audio_transcription(
     )
 
 
+def _approval_allows_audio_synthesis(store: JarvisEventStore, approval_id: str, text_sha256: str) -> bool:
+    if not approval_id.strip() or not text_sha256:
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    if str(approval.get("operation") or "") != "voice.synthesize_audio":
+        return False
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    return scope.get("source") == "voice.synthesize_audio" and scope.get("text_sha256") == text_sha256
+
+
 def _normalize_command(command: str) -> str:
     return " ".join(command.strip().split())
 
@@ -1299,6 +1387,18 @@ def _local_stt_command() -> str:
     if not command:
         raise VoiceAudioError(f"{LOCAL_STT_COMMAND_ENV} is not configured")
     return command
+
+
+def _local_tts_command() -> str:
+    command = os.environ.get(LOCAL_TTS_COMMAND_ENV, "").strip()
+    if not command:
+        raise VoiceAudioError(f"{LOCAL_TTS_COMMAND_ENV} is not configured")
+    return command
+
+
+def _text_sha256(text: str) -> str:
+    normalized = text.strip()
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest() if normalized else ""
 
 
 def _valid_runtime_token(params: dict[str, Any], runtime_token: str | None) -> bool:

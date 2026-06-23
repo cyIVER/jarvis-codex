@@ -21,6 +21,13 @@ Current implemented browser lane:
 - The HUD can speak the runtime readiness summary with browser-managed `speechSynthesis` after a user click.
 - Browser speech output does not run a local TTS command, grant execution authority, or approve tool use.
 
+Current implemented local TTS lane:
+
+- `voice.synthesize_audio` can run a server-configured local TTS adapter only after a matching approval and HUD runtime token.
+- Approval is bound to the requested text SHA-256.
+- The runtime chooses the output path under its audio directory; clients cannot supply adapter commands or output paths.
+- Local TTS output is audio processing only and does not grant command execution authority.
+
 ## UX Model
 
 Use click-to-arm voice:
@@ -52,7 +59,7 @@ Local fallback pipeline:
 
 The local fallback may be slower than cloud realtime but must be private and auditable.
 
-The current browser-managed speech output is a UX affordance, not the local TTS adapter. The local adapter remains separately gated because it would execute a runtime-side command.
+The browser-managed speech output is a UX affordance. The local adapter is separately gated because it executes a runtime-side command.
 
 ## Gemini OAuth Constraint
 

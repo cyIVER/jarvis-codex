@@ -28,6 +28,7 @@ Implemented and validated in the local FastAPI runtime:
 - Browser click-to-arm microphone flow with browser STT where available.
 - Browser-managed spoken runtime status through `speechSynthesis` after a user click.
 - Local audio chunk storage and approval-gated local STT adapter execution.
+- Approval-gated local TTS adapter execution with server-configured command, runtime token, text-hash approval binding, and runtime-owned output paths.
 - Voice intent proposals that do not execute commands.
 - Plan-viewer route safety for display-only plan context.
 - Session listing, session lookup, HUD session selection, and explicit HUD session creation.
@@ -42,7 +43,6 @@ The following remain future or incomplete production gates:
 - Electron desktop app packaging.
 - Full mobile device validation over Tailscale or WireGuard.
 - Gemini realtime OAuth feasibility and cloud voice provider integration.
-- Local TTS adapter.
 - Dynamic `/loop` and `/swarm` command surfaces.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
@@ -63,6 +63,7 @@ The following remain future or incomplete production gates:
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
 - Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and a runtime-owned model path; clients cannot supply adapter commands through RPC.
+- Local TTS synthesis requires a matching approved audio-processing approval id bound to the requested text SHA-256, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_TTS_COMMAND`, and a runtime-owned output path; clients cannot supply adapter commands or output paths through RPC.
 - The runtime WebSocket must reject cross-origin browser clients.
 - Runtime PTYs do not execute through a shell. Shell pipelines and shell operators are not supported execution semantics in the current supervisor.
 - The PWA service worker must not cache `/rpc`, `/ws`, or non-GET requests.

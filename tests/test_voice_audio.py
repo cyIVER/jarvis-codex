@@ -3,7 +3,12 @@ import sys
 
 import pytest
 
-from jarvis_codex.voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
+from jarvis_codex.voice_audio import (
+    VoiceAudioBuffer,
+    VoiceAudioError,
+    synthesize_with_local_adapter,
+    transcribe_with_local_adapter,
+)
 
 
 def test_voice_audio_buffer_appends_base64_chunks(tmp_path):
@@ -103,5 +108,61 @@ def test_transcribe_with_local_adapter_surfaces_adapter_failures(tmp_path):
             audio_file=audio,
             model_path=model,
             stt_command=f"{sys.executable} {adapter}",
+            timeout_seconds=5,
+        )
+
+
+def test_synthesize_with_local_adapter_invokes_command_without_shell(tmp_path):
+    output = tmp_path / "speech.wav"
+    adapter = tmp_path / "fake_tts.py"
+    adapter.write_text(
+        "import argparse, pathlib, sys\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--output-file')\n"
+        "args = parser.parse_args()\n"
+        "text = sys.stdin.read()\n"
+        "pathlib.Path(args.output_file).write_bytes(('audio:' + text).encode())\n",
+        encoding="utf-8",
+    )
+
+    result = synthesize_with_local_adapter(
+        text="Systems are online.",
+        output_file=output,
+        tts_command=f"{sys.executable} {adapter}",
+        timeout_seconds=5,
+    )
+
+    assert output.read_bytes() == b"audio:Systems are online."
+    assert result.text == "Systems are online."
+    assert result.audio_file == output.resolve()
+    assert result.to_dict()["audio_processed"] is True
+    assert result.to_dict()["external_services"] is False
+    assert result.to_dict()["execution_authority"] is False
+
+
+def test_synthesize_with_local_adapter_rejects_missing_output(tmp_path):
+    output = tmp_path / "missing.wav"
+    adapter = tmp_path / "empty_tts.py"
+    adapter.write_text("pass\n", encoding="utf-8")
+
+    with pytest.raises(VoiceAudioError, match="did not write audio output"):
+        synthesize_with_local_adapter(
+            text="say this",
+            output_file=output,
+            tts_command=f"{sys.executable} {adapter}",
+            timeout_seconds=5,
+        )
+
+
+def test_synthesize_with_local_adapter_surfaces_adapter_failures(tmp_path):
+    output = tmp_path / "speech.wav"
+    adapter = tmp_path / "failing_tts.py"
+    adapter.write_text("import sys\nprint('failed', file=sys.stderr)\nsys.exit(23)\n", encoding="utf-8")
+
+    with pytest.raises(VoiceAudioError, match="tts adapter failed with 23"):
+        synthesize_with_local_adapter(
+            text="say this",
+            output_file=output,
+            tts_command=f"{sys.executable} {adapter}",
             timeout_seconds=5,
         )
