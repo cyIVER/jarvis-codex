@@ -320,6 +320,50 @@ def test_release_security_review_plan_json_is_read_only_summary(monkeypatch, cap
     assert data["external_security_review_required"] is True
 
 
+def test_release_security_evidence_brief_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_brief(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis external security review evidence brief",
+            "status": "READY_FOR_EXTERNAL_REVIEW",
+            "writes_files": False,
+            "services_started": False,
+            "network_probe_performed": False,
+            "scanner_run_performed": False,
+            "package_build_performed": False,
+            "signing_performed": False,
+            "artifact_copy_performed": False,
+            "publication_performed": False,
+            "execution_authority": False,
+            "external_review_completed": False,
+            "release_gate_closed": False,
+            "release_evidence_command": "jarvis-codex --state <state-dir> release evidence add --gate external_security_review --json",
+        }
+
+    monkeypatch.setattr(cli, "build_external_security_evidence_brief", fake_brief)
+
+    code = run_cli(monkeypatch, ["release", "security-evidence-brief", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["label"] == "Jarvis external security review evidence brief"
+    assert data["writes_files"] is False
+    assert data["services_started"] is False
+    assert data["network_probe_performed"] is False
+    assert data["scanner_run_performed"] is False
+    assert data["package_build_performed"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["publication_performed"] is False
+    assert data["execution_authority"] is False
+    assert data["external_review_completed"] is False
+    assert data["release_gate_closed"] is False
+    assert "external_security_review" in data["release_evidence_command"]
+
+
 def test_release_evidence_add_records_metadata_without_closing_gate(tmp_path, monkeypatch, capsys):
     state = tmp_path / "state"
     artifact_dir = state / "release"

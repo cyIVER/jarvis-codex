@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from jarvis_codex.release import (
+    build_external_security_evidence_brief,
     build_external_security_review_plan,
     build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
@@ -279,6 +280,33 @@ def test_external_security_review_plan_is_read_only_and_keeps_gate_open(tmp_path
     assert before == after
 
 
+def test_external_security_evidence_brief_is_read_only_and_keeps_gate_open(tmp_path):
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    brief = build_external_security_evidence_brief(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    assert brief["label"] == "Jarvis external security review evidence brief"
+    assert brief["status"] == "READY_FOR_EXTERNAL_REVIEW"
+    assert brief["security_review_plan_status"] == "ready-for-external-review"
+    assert brief["writes_files"] is False
+    assert brief["services_started"] is False
+    assert brief["network_probe_performed"] is False
+    assert brief["scanner_run_performed"] is False
+    assert brief["package_build_performed"] is False
+    assert brief["signing_performed"] is False
+    assert brief["artifact_copy_performed"] is False
+    assert brief["publication_performed"] is False
+    assert brief["execution_authority"] is False
+    assert brief["external_review_completed"] is False
+    assert brief["release_gate_closed"] is False
+    assert brief["requires_human_acceptance"] is True
+    assert "external_security_review" in brief["release_evidence_command"]
+    assert any("human external reviewer" in criterion for criterion in brief["pass_criteria"])
+    assert any("do not run scanners" in action for action in brief["unsafe_actions"])
+    assert before == after
+
+
 def test_release_gate_status_summarizes_evidence_without_closing_gates():
     status = build_release_gate_status(
         [
@@ -405,6 +433,7 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert "jarvis-codex gemini evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex release packaging-evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
+    assert "jarvis-codex release security-evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex loop unattended-policy --json" in checklist["recommended_read_only_commands"]
     assert checklist["summary"]["unattended_loop_policy_status"] == "ready-for-human-policy-review"
     assert "launch runtime services" in checklist["unsafe_actions_not_authorized"]
@@ -416,10 +445,11 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert electron["release_gate_closed"] is False
     assert release_packaging["read_only_command"] == "jarvis-codex release packaging-evidence-brief --json"
     assert release_packaging["release_gate_closed"] is False
+    assert external["read_only_command"] == "jarvis-codex release security-evidence-brief --json"
     assert external["evidence_count"] == 1
     assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False
-    assert any("human attestation artifact" in note for note in external["notes"])
+    assert any("accepted attestation artifact" in item for item in external["required_evidence"])
     assert unattended["read_only_command"] == "jarvis-codex loop unattended-policy --json"
     assert unattended["release_gate_closed"] is False
     assert "accepted kill switches" in unattended["required_evidence"]

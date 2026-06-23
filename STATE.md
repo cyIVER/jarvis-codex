@@ -112,8 +112,11 @@ pattern: product-readiness-triage
 - [x] PM-035 - Packaging/signing operator evidence brief
   Loop action: added read-only `release packaging-evidence-brief --json` to package packaging preflight, artifact evidence, signing/publication evidence requirements, and release-evidence recording instructions.
   Human decision: the brief does not run npm, build packages, sign artifacts, copy outputs, publish artifacts, access signing credentials, write files, or close packaging gates.
-- [ ] PM-036 - Next product slice
-  Loop action: pending prioritization between actual iPhone private-network validation, approved Gemini Live network test execution, signing/distribution execution, external security reviewer attestation, and accepted unattended/background scheduling evidence.
+- [x] PM-036 - External security reviewer evidence brief
+  Loop action: added read-only `release security-evidence-brief --json` to package reviewer scope, standards, findings/remediation requirements, accepted-attestation requirements, and release-evidence recording instructions.
+  Human decision: the brief does not run scanners, launch services, probe networks, build packages, sign artifacts, copy outputs, publish artifacts, write files, replace human reviewer sign-off, or close `external_security_review`.
+- [ ] PM-037 - Next product slice
+  Loop action: pending prioritization between actual iPhone private-network validation, approved Gemini Live network test execution, signing/distribution execution, accepted external security attestation, and accepted unattended/background scheduling evidence.
   Human decision: not selected yet.
 
 ## Watch List
@@ -149,3 +152,4 @@ Run log: 2026-06-23 | findings: unattended loop scheduling gate lacked a compact
 Run log: 2026-06-23 | findings: actual iPhone validation still needed an operator-ready evidence packet | actions: added read-only mobile evidence brief with release-evidence recording instructions | escalations: 0
 Run log: 2026-06-23 | findings: networked Gemini Live validation still needed an operator-ready redaction and evidence packet | actions: added read-only Gemini evidence brief with release-evidence recording instructions | escalations: 0
 Run log: 2026-06-23 | findings: packaging and signing gates still needed an operator-ready evidence packet | actions: added read-only packaging/signing evidence brief with release-evidence recording instructions | escalations: 0
+Run log: 2026-06-23 | findings: external security review still needed an operator-ready accepted-attestation evidence packet | actions: added read-only external security evidence brief with release-evidence recording instructions | escalations: 0

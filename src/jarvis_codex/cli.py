@@ -15,6 +15,7 @@ from .loop_readiness import build_unattended_loop_policy, validate_loop_readines
 from .mobile import build_mobile_evidence_brief, build_mobile_preflight, build_mobile_validation_plan, discover_mobile_hosts
 from .packaging import build_packaging_preflight
 from .release import (
+    build_external_security_evidence_brief,
     build_external_security_review_plan,
     build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
@@ -106,6 +107,9 @@ def main() -> int:
     release_security = release_sub.add_parser("security-review-plan", help="Print a read-only external security review packet")
     release_security.add_argument("--root", default=".", help="Repository root to inspect")
     release_security.add_argument("--json", action="store_true", help="Print security review plan as JSON")
+    release_security_brief = release_sub.add_parser("security-evidence-brief", help="Print a read-only external security review evidence brief")
+    release_security_brief.add_argument("--root", default=".", help="Repository root to inspect")
+    release_security_brief.add_argument("--json", action="store_true", help="Print security evidence brief as JSON")
     release_evidence_state = release_sub.add_parser("evidence", help="Record or list operator-supplied release-gate evidence")
     release_evidence_sub = release_evidence_state.add_subparsers(dest="release_evidence_command", required=True)
     release_evidence_add = release_evidence_sub.add_parser("add", help="Record release-gate evidence metadata without closing the gate")
@@ -296,6 +300,9 @@ def main() -> int:
             return 0
         if args.release_command == "security-review-plan":
             print(json.dumps(build_external_security_review_plan(Path(args.root)), indent=2, sort_keys=True))
+            return 0
+        if args.release_command == "security-evidence-brief":
+            print(json.dumps(build_external_security_evidence_brief(Path(args.root)), indent=2, sort_keys=True))
             return 0
         if args.release_command == "evidence":
             if args.release_evidence_command == "add":

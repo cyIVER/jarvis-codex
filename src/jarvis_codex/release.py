@@ -357,6 +357,80 @@ def build_external_security_review_plan(root: Path) -> dict[str, Any]:
     }
 
 
+def build_external_security_evidence_brief(root: Path) -> dict[str, Any]:
+    """Build a read-only operator brief for external reviewer attestation evidence."""
+    root = root.resolve()
+    plan = build_external_security_review_plan(root)
+    release_evidence_command = (
+        "jarvis-codex --state <state-dir> release evidence add "
+        "--gate external_security_review "
+        "--summary \"External security reviewer attestation accepted with findings and remediation status\" "
+        "--reviewer <external-reviewer> --json"
+    )
+    return {
+        "label": "Jarvis external security review evidence brief",
+        "status": "READY_FOR_EXTERNAL_REVIEW",
+        "root": str(root),
+        "security_review_plan_status": plan["status"],
+        "review_plan_command": "jarvis-codex release security-review-plan --json",
+        "release_evidence_command": release_evidence_command,
+        "standards": plan["standards"],
+        "review_surfaces": plan["review_surfaces"],
+        "required_operator_evidence": [
+            "external reviewer identity, role, and independence note",
+            "reviewed artifact or commit range",
+            "standards or methodology used",
+            "findings list with severity and affected paths",
+            "remediation status or explicit accepted-risk notes",
+            "reviewer sign-off, hold recommendation, or release-blocking finding",
+            "accepted attestation artifact stored under <state-dir>/release/ if an artifact is recorded",
+        ],
+        "operator_steps": [
+            "Generate the security-review-plan packet first.",
+            "Send the packet, commit range, and validation evidence to a human external reviewer.",
+            "Receive findings and a sign-off or hold recommendation from the reviewer.",
+            "Implement and revalidate any accepted fixes before recording release evidence.",
+            "Store any attestation artifact under <state-dir>/release/ before hashing it with release evidence add.",
+            "Record release evidence metadata only after the operator accepts the reviewer attestation.",
+        ],
+        "pass_criteria": [
+            "human external reviewer performed the review",
+            "review scope includes runtime, HUD, PTY/policy, voice/local ML, mobile/PWA, Electron/release, loop/swarm surfaces",
+            "findings are recorded with severity, affected paths, and remediation or accepted-risk status",
+            "release evidence references the accepted reviewer attestation",
+            "passing tests and internal fixes are not treated as external review sign-off",
+        ],
+        "fail_criteria": [
+            "review was performed only by the implementation agent",
+            "scanner output or passing tests are treated as human external reviewer sign-off",
+            "review scope omits runtime authority, browser HUD, PTY, local audio, mobile, Electron, release, or loop surfaces",
+            "critical findings are unresolved without accepted-risk approval",
+            "release evidence records are treated as automatic gate closure",
+        ],
+        "unsafe_actions": [
+            "do not run scanners from this brief",
+            "do not launch services from this brief",
+            "do not probe networks from this brief",
+            "do not build, sign, copy, publish, or upload artifacts from this brief",
+            "do not treat tests passing or internal fixes as external reviewer sign-off",
+            "do not close the external_security_review gate from this brief",
+        ],
+        "warnings": plan["remaining_release_gates"],
+        "writes_files": False,
+        "services_started": False,
+        "network_probe_performed": False,
+        "scanner_run_performed": False,
+        "package_build_performed": False,
+        "signing_performed": False,
+        "artifact_copy_performed": False,
+        "publication_performed": False,
+        "execution_authority": False,
+        "external_review_completed": False,
+        "release_gate_closed": False,
+        "requires_human_acceptance": True,
+    }
+
+
 def build_release_gate_status(evidence_records: list[dict[str, Any]]) -> dict[str, Any]:
     """Summarize release-gate evidence without closing gates."""
     records_by_gate: dict[str, list[dict[str, Any]]] = {gate: [] for gate in sorted(RELEASE_EVIDENCE_GATES)}
@@ -403,6 +477,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     packaging_preflight = build_packaging_preflight(root).to_dict()
     packaging_brief = build_packaging_signing_evidence_brief(root)
     security_review = build_external_security_review_plan(root)
+    security_brief = build_external_security_evidence_brief(root)
     gate_status = build_release_gate_status(evidence_records)
     mobile_validation = build_mobile_validation_plan().to_dict()
     gemini_validation = build_gemini_live_validation_plan().to_dict()
@@ -451,14 +526,10 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             gate_lookup,
             "external_security_review",
             "Send the external security review packet to a human reviewer and record the accepted attestation as evidence.",
-            "jarvis-codex release security-review-plan --json",
-            security_review["reviewer_deliverables"],
-            [
-                "do not run scanners, launch services, or probe networks from this checklist command",
-                "do not treat passing tests or internal fixes as external reviewer sign-off",
-                "do not close this gate without a human external reviewer artifact or accepted attestation",
-            ],
-            security_review["remaining_release_gates"],
+            "jarvis-codex release security-evidence-brief --json",
+            security_brief["required_operator_evidence"],
+            security_brief["unsafe_actions"],
+            [f"current security evidence brief status: {security_brief['status']}"],
         ),
         _release_checklist_item(
             gate_lookup,
@@ -513,6 +584,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "jarvis-codex release packaging-preflight --json",
             "jarvis-codex release packaging-evidence-brief --json",
             "jarvis-codex release security-review-plan --json",
+            "jarvis-codex release security-evidence-brief --json",
             "jarvis-codex --state <state-dir> release gate-status --json",
             "jarvis-codex mobile discover --json",
             "jarvis-codex mobile evidence-brief --host <private-host> --json",
