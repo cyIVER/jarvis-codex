@@ -189,6 +189,7 @@ This note backs the morning HTML dashboard.
 - Added HUD controls for requesting transcription approval on the latest captured local audio chunk and running approved local STT with a safe `model_id`.
 - Refreshed Codeburn snapshot: month `$656.11`, 6918 calls.
 - Added non-writing mobile access evidence to `runtime.readiness` and the HUD, including the recommended private URL and display-only serve/preflight/validation command proposals.
+- Committed and pushed HUD mobile access readiness in `1acb844`.
 
 ## Pending
 
