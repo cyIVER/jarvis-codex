@@ -24,11 +24,13 @@ This note backs the morning HTML dashboard.
 - Implemented and pushed SQLite event store and ACP protocol frames in `5442ab5`.
 - Implemented and pushed policy classifier slice in `faa97b3`.
 - Implemented and validated runtime FastAPI app slice with HTTP RPC, WebSocket RPC, session creation, policy classification, and explicit planned-method responses.
+- Committed and pushed runtime API skeleton in `6a9d518`.
+- Implemented and validated managed PTY supervision with policy-gated spawn, input, resize, kill, cleanup, and runtime RPC wiring.
 
 ## Pending
 
-- Commit and push runtime FastAPI app slice.
-- Continue managed PTY adapter planning and implementation.
+- Commit and push managed PTY supervision.
+- Continue event streaming and approval lifecycle implementation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

@@ -221,7 +221,7 @@
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 1</strong>Runtime Core</div>
+        <div class="ring-text"><strong>PHASE 2</strong>Managed PTYs</div>
       </div>
     </header>
 
@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$122.41</div>
-          <div class="note">Latest overnight Codeburn snapshot: 1060 calls today, $492.34 month.</div>
+          <div class="value">$495.24</div>
+          <div class="note">Latest Codeburn month snapshot: 5497 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">SQLite event store, ACP protocol frames, policy classifier, and FastAPI RPC runtime slice are green.</div>
+          <div class="note">Event store, protocol, policy classifier, FastAPI runtime, and PTY supervision are green.</div>
         </div>
       </div>
     </section>
@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Phase 0 specs pushed as <code>5bcd036</code>; event/protocol as <code>5442ab5</code>; policy as <code>faa97b3</code>.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>.</li>
         </ul>
       </div>
       <div>
@@ -293,8 +293,8 @@
       <div class="timeline">
         <div class="step"><strong>Phase 0</strong><span>Spec writeout, Obsidian vault, morning dashboard, validation, commit, push.</span></div>
         <div class="step"><strong>Phase 1</strong><span>SQLite event store, ACP protocol, policy classifier, and FastAPI runtime RPC skeleton.</span></div>
-        <div class="step"><strong>Phase 2</strong><span>Managed PTYs for Codex, AG, shell, and Codeburn, with streaming frames and approval events.</span></div>
-        <div class="step"><strong>Phase 3</strong><span>Policy profiles, approvals, hardline blocklist, safety tests.</span></div>
+        <div class="step"><strong>Phase 2</strong><span>Managed PTY supervisor and runtime RPC wiring are validated; stream multiplexing remains next.</span></div>
+        <div class="step"><strong>Phase 3</strong><span>Approval lifecycle, policy profiles, approval events, and safety tests.</span></div>
         <div class="step"><strong>Phase 4</strong><span>Voice mode with Gemini OAuth feasibility and local fallback.</span></div>
         <div class="step"><strong>Phase 5</strong><span>Dynamic swarm, delivery loop, AG adversaries, Codeburn telemetry.</span></div>
         <div class="step"><strong>Phase 6</strong><span>Private-network iPhone PWA.</span></div>

@@ -1,3 +1,5 @@
+import time
+
 from fastapi.testclient import TestClient
 
 from jarvis_codex.protocol import make_request
@@ -94,13 +96,121 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    response = client.post("/rpc", json=make_request("pty.create", request_id="req_1"))
+    response = client.post("/rpc", json=make_request("pty.restart", request_id="req_1"))
 
     assert response.status_code == 200
     data = response.json()
     assert data["type"] == "response"
     assert data["error"]["code"] == "not_implemented"
     assert "planned but not implemented" in data["error"]["message"]
+
+
+def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": "python3 -c \"print('runtime pty')\"", "profile": "dev-loop"},
+            request_id="req_1",
+        ),
+    )
+
+    try:
+        assert response.status_code == 200
+        data = response.json()
+        channel_id = data["result"]["channel_id"]
+        app.state.pty_supervisor.get(channel_id).wait(timeout=2)
+        deadline = time.time() + 2
+        text = ""
+        while time.time() < deadline and "runtime pty" not in text:
+            text += "".join(chunk.chunk for chunk in app.state.pty_supervisor.drain_output(channel_id))
+            time.sleep(0.02)
+    finally:
+        app.state.pty_supervisor.close_all()
+
+    assert data["type"] == "response"
+    assert data["result"]["policy"]["status"] == "allow"
+    assert "runtime pty" in text
+
+
+def test_runtime_pty_create_surfaces_policy_blocks(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": "git reset --hard HEAD", "profile": "dev-loop"},
+            request_id="req_1",
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == "policy_blocked"
+    assert data["error"]["policy_blocked"] is True
+
+
+def test_runtime_pty_create_surfaces_approval_requirements(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": "python3 -c \"print('runtime pty')\"", "profile": "observe"},
+            request_id="req_1",
+        ),
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == "approval_required"
+    assert data["error"]["approval_required"] is True
+
+
+def test_runtime_pty_input_resize_and_kill(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/rpc",
+        json=make_request("pty.create", {"command": "cat", "profile": "observe"}, request_id="req_1"),
+    )
+    channel_id = create_response.json()["result"]["channel_id"]
+
+    try:
+        input_response = client.post(
+            "/rpc",
+            json=make_request(
+                "pty.input",
+                {"channel_id": channel_id, "text": "hello runtime\n"},
+                request_id="req_2",
+            ),
+        )
+        resize_response = client.post(
+            "/rpc",
+            json=make_request(
+                "pty.resize",
+                {"channel_id": channel_id, "rows": 24, "cols": 80},
+                request_id="req_3",
+            ),
+        )
+        kill_response = client.post(
+            "/rpc",
+            json=make_request("pty.kill", {"channel_id": channel_id}, request_id="req_4"),
+        )
+    finally:
+        app.state.pty_supervisor.close_all()
+
+    assert input_response.json()["result"]["accepted"] is True
+    assert resize_response.json()["result"]["rows"] == 24
+    assert isinstance(kill_response.json()["result"]["returncode"], int)
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):

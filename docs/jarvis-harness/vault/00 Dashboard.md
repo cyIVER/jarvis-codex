@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 00:35 EDT
+updated: 2026-06-23 00:58 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -19,7 +19,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Spec slice committed and pushed as `5bcd036`.
 - Runtime event store and protocol frames committed and pushed as `5442ab5`.
 - Policy classifier committed and pushed as `faa97b3`.
-- Runtime FastAPI app slice is validated and awaiting commit.
+- Runtime FastAPI app slice committed and pushed as `6a9d518`.
+- Managed PTY supervision is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -40,6 +41,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Commit and push the runtime app slice.
-2. Continue into managed PTY adapter design and implementation.
+1. Commit and push managed PTY supervision.
+2. Continue into event streaming and approval lifecycle.
 3. Keep voice/STT feasibility and HUD design tied to the runtime API contract.

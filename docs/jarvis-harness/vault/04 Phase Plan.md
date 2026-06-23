@@ -36,16 +36,25 @@ Completed:
 - ACP-style protocol frame utilities.
 - Runtime policy classifier with hardline block, approval, and allow decisions.
 - FastAPI runtime app with `/health`, `/rpc`, WebSocket RPC, session creation, command classification, and planned-method stubs.
+- Policy-gated PTY supervisor with create, input, resize, kill, cleanup, and runtime RPC wiring.
 
 In progress:
 
-- Managed PTY adapter design.
+- Event streaming and approval lifecycle design.
 
 ## Phase 2 Managed PTYs
+
+Status: implementation started.
 
 Deliver:
 
 - Runtime-supervised Codex, AG, shell, and Codeburn panes.
+
+Completed:
+
+- PTY supervisor module.
+- Runtime RPC wiring for `pty.create`, `pty.input`, `pty.resize`, and `pty.kill`.
+- Policy block and approval-required responses before process spawn.
 
 ## Phase 3 Permissions
 
