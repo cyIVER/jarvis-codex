@@ -52,11 +52,12 @@ This note backs the morning HTML dashboard.
 - Implemented and validated HUD approval list with approve/reject controls.
 - Committed and pushed HUD approval response controls in `4ce3839`.
 - Implemented approved PTY launch controls that keep launch separate from approval and call the runtime approval-matched `pty.create` path.
+- Committed and pushed approved PTY launch controls in `b6f5fbf`.
 
 ## Pending
 
-- Validate and commit approved pane launch UX.
 - Continue session resume controls.
+- Add mobile/PWA shell affordances.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
