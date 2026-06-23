@@ -151,6 +151,96 @@ def build_release_artifact_evidence(root: Path) -> dict[str, Any]:
     }
 
 
+def build_packaging_signing_evidence_brief(root: Path) -> dict[str, Any]:
+    """Build a read-only operator brief for packaging, signing, artifact review, and release evidence."""
+    root = root.resolve()
+    preflight = build_packaging_preflight(root).to_dict()
+    artifact_evidence = build_release_artifact_evidence(root)
+    present_local_artifacts = artifact_evidence["present_local_artifacts"]
+    release_evidence_commands = [
+        (
+            "jarvis-codex --state <state-dir> release evidence add "
+            "--gate electron_packaging_and_signing "
+            "--summary \"Electron package/signing review completed with signed artifact hashes and redacted signing notes\" "
+            "--reviewer operator --json"
+        ),
+        (
+            "jarvis-codex --state <state-dir> release evidence add "
+            "--gate release_packaging_and_signing "
+            "--summary \"Release artifact packaging/signing review completed with publication approval notes\" "
+            "--reviewer operator --json"
+        ),
+    ]
+    required_operator_evidence = [
+        "approved packaging target list and platform scope",
+        "isolated release worktree or clean checkout note",
+        "dependency install/build/make command approvals with exact commands and outputs",
+        "signing credential readiness note with no secret values",
+        "signed artifact hashes, sizes, and platform target list",
+        "artifact security or malware review result",
+        "explicit copy, upload, or publication approval if distribution is requested",
+    ]
+    return {
+        "label": "Jarvis packaging and signing operator evidence brief",
+        "status": "READY_FOR_OPERATOR_REVIEW" if preflight["status"] == "READY_FOR_APPROVAL" else "NEEDS_SETUP",
+        "root": str(root),
+        "packaging_preflight_status": preflight["status"],
+        "artifact_evidence_status": artifact_evidence["status"],
+        "present_local_artifacts": present_local_artifacts,
+        "local_artifacts_are_release_candidates": artifact_evidence["local_artifacts_are_release_candidates"],
+        "preflight_command": "jarvis-codex release packaging-preflight --json",
+        "artifact_evidence_command": "jarvis-codex release artifact-evidence --json",
+        "release_evidence_commands": release_evidence_commands,
+        "recommended_commands": preflight["recommended_commands"],
+        "required_operator_evidence": required_operator_evidence,
+        "operator_steps": [
+            "Run packaging-preflight and artifact-evidence first.",
+            "Review local ignored artifacts as evidence only; do not treat them as release candidates.",
+            "Approve each install, package, make, signing, copy, upload, or publish command separately before execution.",
+            "Run package/build/signing work only in an approved isolated release worktree or clean checkout.",
+            "Capture signed artifact hashes and security review notes with secret values redacted.",
+            "Store any accepted evidence artifact under <state-dir>/release/ before hashing it with release evidence add.",
+            "Record release evidence metadata only after a human accepts the signed artifact and publication evidence.",
+        ],
+        "pass_criteria": [
+            "all packaging, signing, copy, upload, and publish commands were separately approved before execution",
+            "signed artifacts have recorded hashes, sizes, and target platforms",
+            "signing secrets are not committed, logged, printed, or copied into release evidence",
+            "local ignored artifacts are either regenerated in an approved release context or explicitly rejected for publication",
+            "operator explicitly accepts publication scope before any distribution",
+        ],
+        "fail_criteria": [
+            "npm install, package, make, signing, copy, upload, or publish ran without explicit approval",
+            "signing secrets appear in stdout, logs, docs, state, or artifacts",
+            "ignored local artifacts are treated as release candidates without human approval",
+            "artifact security review or malware review is skipped",
+            "release evidence records are treated as automatic gate closure",
+        ],
+        "unsafe_actions": [
+            "do not run npm install, npm run package, npm run make, signing, copy, upload, or publish from this brief",
+            "do not access signing credentials from this brief",
+            "do not copy ignored local artifacts into release output from this brief",
+            "do not publish, upload, or distribute artifacts from this brief",
+            "do not treat this brief as packaging proof, signing proof, publication approval, or gate closure",
+        ],
+        "warnings": [
+            *preflight["warnings"],
+            *artifact_evidence["remaining_release_gates"],
+        ],
+        "install_performed": False,
+        "package_build_performed": False,
+        "signing_performed": False,
+        "artifact_copy_performed": False,
+        "publication_performed": False,
+        "service_launch_performed": False,
+        "writes_files": False,
+        "execution_authority": False,
+        "publication_ready": False,
+        "release_gate_closed": False,
+        "requires_human_acceptance": True,
+    }
+
+
 def build_external_security_review_plan(root: Path) -> dict[str, Any]:
     """Build a read-only external security review packet plan."""
     root = root.resolve()
@@ -311,6 +401,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     manifest = build_release_manifest(root)
     artifact_evidence = build_release_artifact_evidence(root)
     packaging_preflight = build_packaging_preflight(root).to_dict()
+    packaging_brief = build_packaging_signing_evidence_brief(root)
     security_review = build_external_security_review_plan(root)
     gate_status = build_release_gate_status(evidence_records)
     mobile_validation = build_mobile_validation_plan().to_dict()
@@ -342,36 +433,19 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             gate_lookup,
             "electron_packaging_and_signing",
             "Review Electron packaging readiness, then separately approve any install, build, make, or signing command.",
-            "jarvis-codex release packaging-preflight --json",
-            [
-                "reviewed Electron dependency lockfile and builder configuration",
-                "operator-approved package/build command transcript",
-                "signing credential readiness note with no secret values",
-                "signed artifact hash and platform target list after a separately approved packaging run",
-            ],
-            [
-                "do not run npm install from this checklist command",
-                "do not run npm run package or npm run make from this checklist command",
-                "do not sign artifacts or access signing secrets from this checklist command",
-            ],
-            packaging_preflight["remaining_gates"],
+            "jarvis-codex release packaging-evidence-brief --json",
+            packaging_brief["required_operator_evidence"],
+            packaging_brief["unsafe_actions"],
+            [f"current packaging evidence brief status: {packaging_brief['status']}"],
         ),
         _release_checklist_item(
             gate_lookup,
             "release_packaging_and_signing",
             "Review release artifact evidence and approve any artifact copy, signing, publication, or upload separately.",
-            "jarvis-codex release artifact-evidence --json",
-            [
-                "artifact evidence manifest with size and SHA-256",
-                "operator-selected release target and distribution note",
-                "explicit publication approval after signing and security review",
-            ],
-            [
-                "do not copy artifacts from this checklist command",
-                "do not publish or upload artifacts from this checklist command",
-                "do not treat ignored local dist artifacts as release candidates",
-            ],
-            artifact_evidence["remaining_release_gates"],
+            "jarvis-codex release packaging-evidence-brief --json",
+            packaging_brief["required_operator_evidence"],
+            packaging_brief["unsafe_actions"],
+            [f"current packaging evidence brief status: {packaging_brief['status']}"],
         ),
         _release_checklist_item(
             gate_lookup,
@@ -437,6 +511,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "jarvis-codex release manifest --json",
             "jarvis-codex release artifact-evidence --json",
             "jarvis-codex release packaging-preflight --json",
+            "jarvis-codex release packaging-evidence-brief --json",
             "jarvis-codex release security-review-plan --json",
             "jarvis-codex --state <state-dir> release gate-status --json",
             "jarvis-codex mobile discover --json",

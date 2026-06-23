@@ -219,6 +219,47 @@ def test_release_packaging_preflight_json_is_read_only_summary(monkeypatch, caps
     assert data["approval_required"] is True
 
 
+def test_release_packaging_evidence_brief_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_brief(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis packaging and signing operator evidence brief",
+            "status": "READY_FOR_OPERATOR_REVIEW",
+            "install_performed": False,
+            "package_build_performed": False,
+            "signing_performed": False,
+            "artifact_copy_performed": False,
+            "publication_performed": False,
+            "writes_files": False,
+            "execution_authority": False,
+            "publication_ready": False,
+            "release_gate_closed": False,
+            "release_evidence_commands": [
+                "jarvis-codex --state <state-dir> release evidence add --gate electron_packaging_and_signing --json"
+            ],
+        }
+
+    monkeypatch.setattr(cli, "build_packaging_signing_evidence_brief", fake_brief)
+
+    code = run_cli(monkeypatch, ["release", "packaging-evidence-brief", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["label"] == "Jarvis packaging and signing operator evidence brief"
+    assert data["package_build_performed"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["publication_performed"] is False
+    assert data["writes_files"] is False
+    assert data["execution_authority"] is False
+    assert data["publication_ready"] is False
+    assert data["release_gate_closed"] is False
+    assert "electron_packaging_and_signing" in data["release_evidence_commands"][0]
+
+
 def test_release_artifact_evidence_json_is_read_only_summary(monkeypatch, capsys):
     seen = {}
 

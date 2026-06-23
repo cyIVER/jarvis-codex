@@ -16,6 +16,7 @@ from .mobile import build_mobile_evidence_brief, build_mobile_preflight, build_m
 from .packaging import build_packaging_preflight
 from .release import (
     build_external_security_review_plan,
+    build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
     build_release_gate_status,
     build_release_manifest,
@@ -96,6 +97,9 @@ def main() -> int:
     release_packaging = release_sub.add_parser("packaging-preflight", help="Print a read-only release packaging preflight")
     release_packaging.add_argument("--root", default=".", help="Repository root to inspect")
     release_packaging.add_argument("--json", action="store_true", help="Print packaging preflight as JSON")
+    release_packaging_brief = release_sub.add_parser("packaging-evidence-brief", help="Print a read-only packaging and signing evidence brief")
+    release_packaging_brief.add_argument("--root", default=".", help="Repository root to inspect")
+    release_packaging_brief.add_argument("--json", action="store_true", help="Print packaging evidence brief as JSON")
     release_evidence = release_sub.add_parser("artifact-evidence", help="Print read-only release artifact hashes and sizes")
     release_evidence.add_argument("--root", default=".", help="Repository root to inspect")
     release_evidence.add_argument("--json", action="store_true", help="Print artifact evidence as JSON")
@@ -283,6 +287,9 @@ def main() -> int:
             return 0
         if args.release_command == "packaging-preflight":
             print(json.dumps(build_packaging_preflight(Path(args.root)).to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.release_command == "packaging-evidence-brief":
+            print(json.dumps(build_packaging_signing_evidence_brief(Path(args.root)), indent=2, sort_keys=True))
             return 0
         if args.release_command == "artifact-evidence":
             print(json.dumps(build_release_artifact_evidence(Path(args.root)), indent=2, sort_keys=True))

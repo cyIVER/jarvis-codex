@@ -30,6 +30,7 @@ The current release is a governed local operating substrate:
 - approval-gated backend swarm role launch and HUD swarm launch controls
 - mobile operator evidence brief for private iPhone/PWA validation collection
 - Gemini Live operator evidence brief for redacted network-validation collection
+- packaging/signing operator evidence brief for signed artifact and publication review
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
 - read-only unattended loop policy report for budget, stop, escalation, and human-observable run requirements
@@ -51,6 +52,7 @@ The current release is a governed local operating substrate:
 | Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Low | Read-only lane tests pass, docs say mutation is approval-gated, `jarvis-codex lane list --json` plus `lane score --json` expose review-only CLI output, and an isolated real-worktree fixture covers multiple worktrees. | Exercise manually on operator-selected real worktrees before any mutation PRD. |
 | Actual iPhone validation needs operator evidence, not another automated probe. | Low | `jarvis-codex mobile evidence-brief --json` packages the target URL, serve command, evidence checklist, and release evidence command without serving, probing, browsing, writing state, or closing the gate. | Run the brief against the operator-selected private host, collect screenshots/notes on the iPhone, and record accepted evidence under the release evidence ledger. |
 | Networked Gemini Live validation needs operator evidence, not an implicit cloud call. | Low | `jarvis-codex gemini evidence-brief --json` packages feasibility checks, approval-gated network-test expectations, redacted evidence requirements, and release evidence command without OAuth, WebSockets, network probes, service launch, state writes, cloud-spend authority, or gate closure. | Run an approved minimal Gemini Live adapter test only after reviewing credentials, billing/quota posture, redaction, and exact command scope. |
+| Packaging and signing needs accepted operator evidence, not local ignored artifacts. | Low | `jarvis-codex release packaging-evidence-brief --json` packages packaging preflight, artifact evidence, signing/publication evidence requirements, and release evidence commands without install, build, signing, copy, publish, state write, or gate closure. | Use the brief before any approved packaging/signing run; do not distribute local ignored artifacts as release candidates. |
 
 ## Prioritized Backlog
 
@@ -66,6 +68,7 @@ The current release is a governed local operating substrate:
 | 8 | Voice ingress and Codex App Server bridge | File-based STT is implemented and locally exercised with cached `whisper.cpp` v1.9.1, `ggml-tiny.en.bin`, readiness discovery, readiness probe, and one approved sample transcription into temp state; runtime `model_id` resolution and HUD approval controls cover browser-audio transcription through the approved local path. Microphone listeners, cloud STT, and Codex App Server bridge remain higher-risk runtime phases. | High | Keep always-on capture, cloud STT, and bridge work behind separate approval gates. |
 | 9 | Mobile operator evidence collection | The read-only evidence brief now packages the mobile validation plan into operator-ready proof steps. | High | Use the brief during the actual iPhone test; do not close the release gate until a human accepts the evidence. |
 | 10 | Gemini Live operator evidence collection | The read-only evidence brief now packages credential, billing, redaction, network-test, fallback, and release-ledger requirements into operator-ready proof steps. | High | Do not run OAuth, WebSockets, or cloud tests until the exact command and evidence plan are approved. |
+| 11 | Packaging/signing operator evidence collection | The read-only evidence brief now packages Electron packaging, release artifact, signing, security-review, and publication evidence into operator-ready proof steps. | High | Do not run npm, signing, copy, upload, or publish commands until each exact command is separately approved. |
 
 ## Release Acceptance Criteria
 
@@ -87,6 +90,7 @@ The current release is a governed local operating substrate:
 - `jarvis-codex loop unattended-policy --json` reports foreground schedule limits, stop controls, approval gates, and no daemon/background authority.
 - `tests/test_mobile.py` covers mobile host classification, private-network preflight, validation planning, and evidence-brief safety boundaries.
 - `tests/test_gemini.py` covers Gemini credential-signal feasibility, validation planning, and evidence-brief safety boundaries without exposing secrets or opening network connections.
+- `tests/test_release.py` covers packaging/signing evidence-brief safety boundaries and release checklist routing without closing packaging gates.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
 - `tests/test_whisper_cpp_adapter.py` covers the included `whisper.cpp` adapter wrapper, including `--check-only`, with a fake local binary.
 - Global architecture validation has zero errors.

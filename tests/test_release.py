@@ -4,6 +4,7 @@ from pathlib import Path
 
 from jarvis_codex.release import (
     build_external_security_review_plan,
+    build_packaging_signing_evidence_brief,
     build_release_artifact_evidence,
     build_release_gate_status,
     build_release_manifest,
@@ -214,6 +215,42 @@ def test_release_artifact_evidence_reports_missing_icon_source(tmp_path):
     assert evidence["present_local_artifacts"] == []
 
 
+def test_packaging_signing_evidence_brief_is_read_only_and_keeps_gates_open(tmp_path):
+    write(tmp_path / "tools/electron-hud/package.json", '{"devDependencies":{"electron":"42.4.1","electron-builder":"26.15.3"},"scripts":{"package":"electron-builder --dir --config electron-builder.json","make":"electron-builder --config electron-builder.json --publish never"}}')
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+    write(tmp_path / "tools/electron-hud/node_modules/.keep")
+    write(tmp_path / "tools/electron-hud/electron-builder.json", '{"directories":{"buildResources":"assets"},"icon":"icon.png"}')
+    write(tmp_path / "tools/electron-hud/assets/icon.png", "icon-source")
+    write(tmp_path / "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud", "binary")
+    write(tmp_path / "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage", "appimage")
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    brief = build_packaging_signing_evidence_brief(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    assert brief["label"] == "Jarvis packaging and signing operator evidence brief"
+    assert brief["status"] == "READY_FOR_OPERATOR_REVIEW"
+    assert brief["packaging_preflight_status"] == "READY_FOR_APPROVAL"
+    assert brief["artifact_evidence_status"] == "ready-for-review"
+    assert "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage" in brief["present_local_artifacts"]
+    assert brief["local_artifacts_are_release_candidates"] is False
+    assert brief["install_performed"] is False
+    assert brief["package_build_performed"] is False
+    assert brief["signing_performed"] is False
+    assert brief["artifact_copy_performed"] is False
+    assert brief["publication_performed"] is False
+    assert brief["service_launch_performed"] is False
+    assert brief["writes_files"] is False
+    assert brief["execution_authority"] is False
+    assert brief["publication_ready"] is False
+    assert brief["release_gate_closed"] is False
+    assert brief["requires_human_acceptance"] is True
+    assert any("electron_packaging_and_signing" in command for command in brief["release_evidence_commands"])
+    assert any("release_packaging_and_signing" in command for command in brief["release_evidence_commands"])
+    assert any("do not run npm install" in action for action in brief["unsafe_actions"])
+    assert before == after
+
+
 def test_external_security_review_plan_is_read_only_and_keeps_gate_open(tmp_path):
     before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
 
@@ -345,6 +382,8 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
     mobile = next(item for item in checklist["checklist"] if item["gate"] == "actual_mobile_device_validation")
     gemini = next(item for item in checklist["checklist"] if item["gate"] == "networked_gemini_live_validation")
+    electron = next(item for item in checklist["checklist"] if item["gate"] == "electron_packaging_and_signing")
+    release_packaging = next(item for item in checklist["checklist"] if item["gate"] == "release_packaging_and_signing")
     external = next(item for item in checklist["checklist"] if item["gate"] == "external_security_review")
     unattended = next(item for item in checklist["checklist"] if item["gate"] == "unattended_loop_scheduling")
     assert checklist["status"] == "blocked"
@@ -364,6 +403,7 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert "networked_gemini_live_validation" in checklist["blocked_by"]
     assert "jarvis-codex mobile evidence-brief --host <private-host> --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex gemini evidence-brief --json" in checklist["recommended_read_only_commands"]
+    assert "jarvis-codex release packaging-evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex loop unattended-policy --json" in checklist["recommended_read_only_commands"]
     assert checklist["summary"]["unattended_loop_policy_status"] == "ready-for-human-policy-review"
@@ -372,6 +412,10 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert mobile["release_gate_closed"] is False
     assert "gemini evidence-brief" in gemini["read_only_command"]
     assert gemini["release_gate_closed"] is False
+    assert electron["read_only_command"] == "jarvis-codex release packaging-evidence-brief --json"
+    assert electron["release_gate_closed"] is False
+    assert release_packaging["read_only_command"] == "jarvis-codex release packaging-evidence-brief --json"
+    assert release_packaging["release_gate_closed"] is False
     assert external["evidence_count"] == 1
     assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False
