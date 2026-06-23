@@ -96,7 +96,12 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 187 tests passed.
 - Ran AG challenge review for `swarm.plan`; no planning-to-execution authority leak was found.
 - Ran HUD browser smoke for swarm plan recording and semantic-history rendering.
-- Refreshed Codeburn snapshot: month `$577.58`, 6252 calls.
+- Implemented and validated state-only command proposal recording in runtime and HUD.
+- Committed and pushed state-only command proposal recording in `ed9e22e`.
+- Ran final integrated validation: governance PASS, 189 tests passed.
+- Ran AG challenge review for `command.propose`; no approval or execution authority leak was found.
+- Ran HUD browser smoke for command proposal recording and semantic-history rendering.
+- Refreshed Codeburn snapshot: month `$579.97`, 6278 calls.
 
 ## Pending
 

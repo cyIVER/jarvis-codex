@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:28 EDT
+updated: 2026-06-23 02:33 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -55,7 +55,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only session resume committed and pushed as `9d581a4`.
 - Read-only semantic history search committed and pushed as `e8ca6e4`.
 - Planning-only swarm plan recording committed and pushed as `f315583`.
-- Current Codeburn snapshot: month `$577.58`, 6252 calls.
+- State-only command proposal recording committed and pushed as `ed9e22e`.
+- Current Codeburn snapshot: month `$579.97`, 6278 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -80,6 +81,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Session resume is read-only context rehydration; it does not write state or grant approval authority.
 - History search is read-only semantic lookup over the event store; blank or missing state returns no results without writes.
 - Swarm plans are semantic planning records only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
+- Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
