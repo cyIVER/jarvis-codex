@@ -14,7 +14,7 @@ from .loop_readiness import validate_loop_readiness
 from .mobile import build_mobile_preflight, build_mobile_validation_plan
 from .packaging import build_packaging_preflight
 from .release import build_release_manifest
-from .runtime_app import create_app
+from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
 from .voice import ingest_audio_file, ingest_transcript_file, probe_audio_file
@@ -96,6 +96,8 @@ def main() -> int:
         action="store_true",
         help="Allow binding outside loopback for explicitly approved private-network use",
     )
+    runtime_readiness = runtime_sub.add_parser("readiness", help="Print the non-writing runtime readiness summary")
+    runtime_readiness.add_argument("--json", action="store_true", help="Print runtime readiness as JSON")
     mobile = sub.add_parser("mobile", help="Review private-network mobile access without probing or serving")
     mobile_sub = mobile.add_subparsers(dest="mobile_command", required=True)
     mobile_preflight = mobile_sub.add_parser("preflight", help="Print a read-only mobile PWA access preflight")
@@ -215,6 +217,11 @@ def main() -> int:
             print(json.dumps(build_packaging_preflight(Path(args.root)).to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "runtime":
+        if args.runtime_command == "readiness":
+            if not args.json:
+                parser.error("runtime readiness is JSON-only; pass --json")
+            print(json.dumps(build_runtime_readiness(), indent=2, sort_keys=True))
+            return 0
         if args.runtime_command == "serve":
             if not args.allow_non_loopback and not _is_loopback_host(args.host):
                 parser.error("runtime serve binds to loopback by default; pass --allow-non-loopback for private-network use")

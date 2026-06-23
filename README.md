@@ -39,6 +39,7 @@ jarvis-codex release manifest --json      # review release artifacts without pac
 jarvis-codex release packaging-preflight --json
 jarvis-codex loop verify --json           # verify loop readiness without mutation
 jarvis-codex runtime serve                # serve the runtime HUD on 127.0.0.1:8765
+jarvis-codex runtime readiness --json     # print current runtime readiness without serving
 jarvis-codex mobile preflight --json      # classify private-network iPhone/PWA access without probing
 jarvis-codex mobile validation-plan --json # prepare iPhone/PWA test evidence without serving
 jarvis-codex gemini feasibility --json    # inspect Gemini Live auth readiness without connecting

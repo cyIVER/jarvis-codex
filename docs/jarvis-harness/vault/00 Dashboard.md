@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 04:18 EDT
+updated: 2026-06-23 04:30 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -71,7 +71,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only mobile validation planner committed and pushed as `6acfb68`.
 - Read-only Gemini Live validation planner committed and pushed as `e546350`.
 - Electron HUD package-lock committed and pushed as `5577838`.
-- Current Codeburn snapshot: month `$617.25`, 6595 calls.
+- Runtime readiness CLI is implemented and awaiting commit.
+- Current Codeburn snapshot: month `$620.36`, 6619 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -108,6 +109,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
 - Packaging preflight is read-only; it does not install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
+- Runtime readiness CLI is non-writing and does not start the server.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
 - Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.
 - Electron security model must keep shell execution in runtime, not renderer.

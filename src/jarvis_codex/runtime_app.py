@@ -63,6 +63,43 @@ PLANNED_METHODS = {
 }
 
 
+def build_runtime_readiness() -> dict[str, Any]:
+    """Return current harness readiness without touching runtime state."""
+    return {
+        "status": "foundation-ready",
+        "production_complete": False,
+        "writes_state": False,
+        "checks": {
+            "policy_profiles": sorted(POLICY_PROFILES),
+            "pwa_assets": True,
+            "approval_replay_protection": True,
+            "approval_runtime_token": True,
+            "websocket_origin_validation": True,
+            "stt_runtime_path_constraints": True,
+            "voice_execution_authority": False,
+            "codeburn_shell": False,
+            "swarm_lifecycle_records": True,
+            "loop_lifecycle_records": True,
+            "electron_hud_scaffold": True,
+            "electron_lockfile": True,
+            "mobile_preflight": True,
+            "mobile_validation_plan": True,
+            "gemini_feasibility": True,
+            "gemini_validation_plan": True,
+            "packaging_preflight": True,
+        },
+        "remaining_gaps": [
+            "electron_dependency_install_package_sign_flow",
+            "iphone_private_network_validation",
+            "approved_gemini_live_network_test",
+            "actual_swarm_agent_launch",
+            "actual_loop_execution",
+            "signed_release_artifacts",
+            "external_security_review",
+        ],
+    }
+
+
 def create_app(state_dir: Path) -> FastAPI:
     app = FastAPI(title="Jarvis Runtime", version="0.1.0")
     store = JarvisEventStore(state_dir / "runtime" / "jarvis.db")
@@ -369,37 +406,7 @@ def _dispatch_request(
         )
 
     if method == "runtime.readiness":
-        return make_response(
-            request_id,
-            {
-                "status": "foundation-ready",
-                "production_complete": False,
-                "writes_state": False,
-                "checks": {
-                    "policy_profiles": sorted(POLICY_PROFILES),
-                    "pwa_assets": True,
-                    "approval_replay_protection": True,
-                    "approval_runtime_token": True,
-                    "websocket_origin_validation": True,
-                    "stt_runtime_path_constraints": True,
-                    "voice_execution_authority": False,
-                    "codeburn_shell": False,
-                    "swarm_lifecycle_records": True,
-                    "electron_hud_scaffold": True,
-                    "mobile_preflight": True,
-                    "gemini_feasibility": True,
-                    "loop_lifecycle_records": True,
-                },
-                "remaining_gaps": [
-                    "electron_packaging_and_signing",
-                    "iphone_private_network_validation",
-                    "networked_gemini_live_validation",
-                    "actual_swarm_agent_launch",
-                    "actual_loop_execution",
-                    "release_packaging",
-                ],
-            },
-        )
+        return make_response(request_id, build_runtime_readiness())
 
     if method == "telemetry.codeburn_status":
         return make_response(request_id, {"codeburn": read_codeburn_status().to_dict()})

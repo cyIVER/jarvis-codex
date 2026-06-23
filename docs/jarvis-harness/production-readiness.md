@@ -38,6 +38,7 @@ Implemented and validated in the local FastAPI runtime:
 - Fixed no-shell Codeburn telemetry adapter exposed through runtime RPC.
 - Private-network PWA shell assets: manifest, SVG icon, service worker, and mobile viewport support.
 - Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
+- Non-writing `jarvis-codex runtime readiness --json` CLI summary that exposes the same operator readiness surface without starting the runtime server.
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Electron HUD dependency lockfile generated with lifecycle scripts disabled and no `node_modules` installation.
@@ -105,7 +106,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-245 passed
+247 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

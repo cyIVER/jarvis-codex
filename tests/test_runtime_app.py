@@ -1040,11 +1040,15 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
     assert data["checks"]["electron_hud_scaffold"] is True
+    assert data["checks"]["electron_lockfile"] is True
     assert data["checks"]["mobile_preflight"] is True
+    assert data["checks"]["mobile_validation_plan"] is True
     assert data["checks"]["gemini_feasibility"] is True
+    assert data["checks"]["gemini_validation_plan"] is True
     assert data["checks"]["loop_lifecycle_records"] is True
-    assert "electron_packaging_and_signing" in data["remaining_gaps"]
-    assert "networked_gemini_live_validation" in data["remaining_gaps"]
+    assert data["checks"]["packaging_preflight"] is True
+    assert "electron_dependency_install_package_sign_flow" in data["remaining_gaps"]
+    assert "approved_gemini_live_network_test" in data["remaining_gaps"]
     assert "actual_loop_execution" in data["remaining_gaps"]
     assert not state.exists()
 

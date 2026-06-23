@@ -158,9 +158,12 @@ This note backs the morning HTML dashboard.
 - Ran AG Gemini validation-plan safety review; no OAuth, WebSocket, network-probe, adapter-launch, state-write, secret-exposure, spend-authority, or fallback-boundary issue was found.
 - Generated the Electron HUD package lock with lifecycle scripts disabled, no audit/fund run, no `node_modules`, no packaging, no signing, no artifact copy, and no service launch.
 - Updated packaging preflight to drop the lock-generation gate when the lockfile is present while preserving install/package/signing gates.
+- Committed and pushed Electron HUD dependency lockfile in `5577838`.
 - Ran final integrated validation: governance PASS, 245 tests passed.
 - Ran AG Electron lock boundary review; no install, package, sign, artifact-copy, service-launch, or implied-authority issue was found.
-- Refreshed Codeburn snapshot: month `$617.25`, 6595 calls.
+- Implemented and validated non-writing `jarvis-codex runtime readiness --json`, backed by the same readiness summary as the runtime RPC without starting the server.
+- Ran final integrated validation: governance PASS, 247 tests passed.
+- Refreshed Codeburn snapshot: month `$620.36`, 6619 calls.
 
 ## Pending
 

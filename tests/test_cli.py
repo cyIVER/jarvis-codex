@@ -298,6 +298,38 @@ def test_runtime_serve_allows_non_loopback_when_explicitly_requested(tmp_path, m
     assert calls["app"] == "runtime-app"
 
 
+def test_runtime_readiness_json_is_non_writing_summary(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "build_runtime_readiness",
+        lambda: {
+            "status": "foundation-ready",
+            "production_complete": False,
+            "writes_state": False,
+            "checks": {"electron_lockfile": True},
+            "remaining_gaps": ["actual_loop_execution"],
+        },
+    )
+
+    code = run_cli(monkeypatch, ["runtime", "readiness", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "foundation-ready"
+    assert data["writes_state"] is False
+    assert data["checks"]["electron_lockfile"] is True
+    assert "actual_loop_execution" in data["remaining_gaps"]
+
+
+def test_runtime_readiness_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "runtime", "readiness"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
 def test_mobile_preflight_json_is_read_only_summary(monkeypatch, capsys):
     code = run_cli(monkeypatch, ["mobile", "preflight", "--host", "100.99.88.77", "--port", "8765", "--json"])
 
