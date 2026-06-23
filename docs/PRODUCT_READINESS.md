@@ -34,7 +34,7 @@ The current release is a governed local operating substrate:
 | Explicit planning queues prevent accidental execution better than free-form displayed commands. | Low | Queue entries include non-execution authority language, safe handoff output, and tests. | Keep command runners out of scope until a separate runner PRD is approved. |
 | Governance validator plus doctor summary will catch project-local agent/skill drift. | Low | Validator passes with 156 checks; doctor is opt-in and read-only. | Add checks only when trial runs reveal routing noise. |
 | Local Remotion review assets improve review and handoff quality without adding hosted risk. | Medium | Typecheck, render, audit, and scaffold tests pass. | Review generated asset with the operator and decide whether it belongs in release artifacts. |
-| Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Medium | Read-only lane tests pass and docs say mutation is approval-gated. | Exercise lane scoring against multiple real worktrees before adding lane CLI commands. |
+| Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Medium | Read-only lane tests pass, docs say mutation is approval-gated, and `docs/WORKTRUNK_LANE_CLI_PRD.md` scopes a read-only first CLI slice. | Exercise read-only lane CLI design against multiple real worktrees before adding mutation commands. |
 
 ## Prioritized Backlog
 
@@ -43,7 +43,7 @@ The current release is a governed local operating substrate:
 | 1 | End-to-end local workflow rehearsal | Proves the platform works as a user-facing loop, not just components. | High | Run capture, approval, handoff, plan viewer, doctor, and Remotion review as one scripted checklist. |
 | 2 | Safe handoff / execution gateway design | Converts planning queue into controlled action proposals without weakening governance. | Medium | Read-only queue handoff is implemented; do not add a runner without a separate PRD. |
 | 3 | Plan viewer browser smoke automation | Existing package/static tests are now backed by a headless Chromium render smoke. | High | Keep browser smoke in the dev test suite; do not add browser-launching automation to production commands. |
-| 4 | Worktrunk lane CLI design | Lane scoring exists, but CLI mutation must remain gated. | Medium | Write PRD/acceptance criteria before adding `lane` subcommands. |
+| 4 | Worktrunk lane CLI design | Lane scoring exists, and the CLI design now separates read-only review from mutation. | Medium | Implement only the PRD's read-only `lane list` and `lane score` slice if CLI exposure is still useful. |
 | 5 | Voice ingress and Codex App Server bridge | Important product direction, but higher runtime and approval risk. | Low | Keep as discovery until state, queue, and handoff loop is proven. |
 
 ## Release Acceptance Criteria
@@ -56,15 +56,16 @@ The current release is a governed local operating substrate:
 - Remotion `npm run typecheck`, `npm audit --audit-level=high`, `npm run still`, and `npm run render` pass.
 - `tests/test_workflow_rehearsal.py` proves the local loop can capture state, record memory, request approval, write a handoff, report governance through doctor, select plan steps, approve a planning queue, and render continuity from temp state.
 - `tests/test_static_plan_viewer_browser.py` renders the static viewer in headless Chromium without using `--open` or executing displayed commands.
+- `tests/test_worktrunk_lane_cli_prd.py` keeps the lane CLI PRD read-only-first and mutation-gated.
 - Global architecture validation has zero errors.
 
 ## Unresolved Product Decisions
 
-- Whether to push local commits to `origin/main` after validation.
+- Whether future PM loop commits should be pushed immediately after validation or batched for release review.
 - Whether generated Remotion PNG/MP4 files should be copied to a release artifact location or remain local ignored outputs.
-- Whether the next package should be Worktrunk lane CLI design, voice ingress discovery, or release artifact packaging.
+- Whether the next package should implement the read-only Worktrunk lane CLI slice, start voice ingress discovery, or package release artifacts.
 - Whether project-local `skills.config` should remain deferred until more routing evidence appears.
 
 ## Recommendation
 
-Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, and the static plan viewer has headless browser smoke coverage.
+Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, the static plan viewer has headless browser smoke coverage, and the Worktrunk lane CLI design is documented as read-only-first.
