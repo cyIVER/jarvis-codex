@@ -26,6 +26,28 @@ class MobilePreflight:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class MobileValidationPlan:
+    label: str
+    status: str
+    target_url: str
+    host_class: str
+    iphone_reachable_candidate: bool
+    network_probe_performed: bool
+    service_launch_performed: bool
+    writes_state: bool
+    execution_authority: bool
+    required_operator_evidence: list[str]
+    device_test_steps: list[str]
+    pass_criteria: list[str]
+    fail_criteria: list[str]
+    unsafe_actions: list[str]
+    warnings: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def build_mobile_preflight(host: str = "127.0.0.1", port: int = 8765, scheme: str = "http") -> MobilePreflight:
     normalized_host = host.strip() or "127.0.0.1"
     normalized_scheme = scheme.strip().lower() or "http"
@@ -71,6 +93,68 @@ def build_mobile_preflight(host: str = "127.0.0.1", port: int = 8765, scheme: st
             "Confirm microphone permission requires a user click.",
             "Confirm approvals show operation, risk, and scope before approve or reject.",
             "Confirm the service worker does not cache /rpc, /ws, or non-GET requests.",
+        ],
+        warnings=warnings,
+    )
+
+
+def build_mobile_validation_plan(host: str = "127.0.0.1", port: int = 8765, scheme: str = "http") -> MobileValidationPlan:
+    """Prepare a private-network iPhone/PWA validation plan without serving, probing, or writing state."""
+    preflight = build_mobile_preflight(host, port, scheme)
+    warnings = list(preflight.warnings)
+    if not preflight.iphone_reachable_candidate:
+        warnings.append("Target URL is not classified as iPhone-reachable; choose a private LAN, Tailscale, or WireGuard address.")
+    if preflight.public_exposure_risk:
+        warnings.append("Do not validate mobile access on a public host without a separate security review.")
+
+    status = "READY_FOR_OPERATOR_TEST" if preflight.iphone_reachable_candidate and not preflight.public_exposure_risk else "NEEDS_PRIVATE_TARGET"
+
+    return MobileValidationPlan(
+        label="Jarvis mobile PWA validation plan",
+        status=status,
+        target_url=preflight.url,
+        host_class=preflight.host_class,
+        iphone_reachable_candidate=preflight.iphone_reachable_candidate,
+        network_probe_performed=False,
+        service_launch_performed=False,
+        writes_state=False,
+        execution_authority=False,
+        required_operator_evidence=[
+            "screenshot of iPhone Safari loading the Jarvis HUD URL",
+            "confirmation that the PWA install prompt or standalone launch works if tested",
+            "confirmation that microphone permission appears only after tapping the microphone control",
+            "screenshot or note showing approval cards expose operation, risk, and scope",
+            "note that the runtime was served only on an approved private-network address",
+        ],
+        device_test_steps=[
+            "Run mobile preflight first and confirm the target is private-network or VPN scoped.",
+            "Start the runtime only after approving the exact serve command and bind address.",
+            "Open the target URL from iPhone Safari on the same private network or VPN.",
+            "Verify the HUD loads without mixed-content or certificate warnings that hide controls.",
+            "Tap the microphone control and confirm microphone permission is user-initiated.",
+            "Submit a text prompt and confirm it records a semantic prompt without command execution.",
+            "Review a pending approval and confirm approve/reject controls remain explicit and scoped.",
+            "Stop the runtime when validation is complete.",
+        ],
+        pass_criteria=[
+            "iPhone reaches the HUD over the approved private-network URL",
+            "microphone permission requires a user click",
+            "voice/text prompt submission does not execute shell commands",
+            "approval cards show operation, risk, and scope before approval",
+            "service worker does not cache /rpc, /ws, or non-GET requests",
+        ],
+        fail_criteria=[
+            "runtime is reachable from a public address",
+            "microphone permission is requested before user interaction",
+            "displayed commands execute from the browser",
+            "approval state can be changed without explicit approve/reject action",
+            "runtime was served on a non-loopback address without operator approval",
+        ],
+        unsafe_actions=[
+            "do not launch the runtime from this validation-plan command",
+            "do not probe the network from this validation-plan command",
+            "do not open browser or iPhone URLs from this validation-plan command",
+            "do not treat checklist completion as approval for git, Worktrunk, local ML, Docker, service, or daemon commands",
         ],
         warnings=warnings,
     )

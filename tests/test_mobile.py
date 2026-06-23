@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from jarvis_codex.mobile import build_mobile_preflight, classify_mobile_host
+from jarvis_codex.mobile import build_mobile_preflight, build_mobile_validation_plan, classify_mobile_host
 
 
 def test_mobile_preflight_keeps_loopback_safe_but_not_iphone_reachable() -> None:
@@ -52,3 +52,38 @@ def test_mobile_preflight_validates_scheme_and_port() -> None:
         build_mobile_preflight("127.0.0.1", 8765, "ftp")
     with pytest.raises(ValueError, match="port"):
         build_mobile_preflight("127.0.0.1", 0)
+
+
+def test_mobile_validation_plan_is_read_only_for_private_network_target() -> None:
+    plan = build_mobile_validation_plan("192.168.1.20", 8765)
+
+    assert plan.status == "READY_FOR_OPERATOR_TEST"
+    assert plan.target_url == "http://192.168.1.20:8765"
+    assert plan.host_class == "private-lan"
+    assert plan.iphone_reachable_candidate is True
+    assert plan.network_probe_performed is False
+    assert plan.service_launch_performed is False
+    assert plan.writes_state is False
+    assert plan.execution_authority is False
+    assert any("microphone permission" in step for step in plan.device_test_steps)
+    assert any("operation, risk, and scope" in criterion for criterion in plan.pass_criteria)
+
+
+def test_mobile_validation_plan_requires_private_target_for_loopback() -> None:
+    plan = build_mobile_validation_plan()
+
+    assert plan.status == "NEEDS_PRIVATE_TARGET"
+    assert plan.host_class == "loopback"
+    assert plan.iphone_reachable_candidate is False
+    assert any("not reachable from an iPhone" in warning for warning in plan.warnings)
+    assert any("private LAN, Tailscale, or WireGuard" in warning for warning in plan.warnings)
+
+
+def test_mobile_validation_plan_rejects_public_exposure_as_ready_target() -> None:
+    plan = build_mobile_validation_plan("8.8.8.8", 8765)
+
+    assert plan.status == "NEEDS_PRIVATE_TARGET"
+    assert plan.host_class == "public"
+    assert plan.iphone_reachable_candidate is False
+    assert any("public host" in warning for warning in plan.warnings)
+    assert any("do not probe the network" in action for action in plan.unsafe_actions)

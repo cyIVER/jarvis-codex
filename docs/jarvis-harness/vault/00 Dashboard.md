@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:40 EDT
+updated: 2026-06-23 03:55 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -68,7 +68,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Approval-gated loop lifecycle records committed and pushed as `5414bf4`.
 - HUD loop lifecycle controls committed and pushed as `f9f240e`.
 - Read-only release packaging preflight committed and pushed as `b9dcfb1`.
-- Current Codeburn snapshot: month `$610.38`, 6527 calls.
+- Read-only mobile validation planner is implemented and awaiting commit.
+- Current Codeburn snapshot: month `$612.41`, 6550 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -99,6 +100,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - HUD swarm lifecycle controls request approvals and record approved lifecycle state only; they do not auto-approve or execute.
 - Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
+- Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
@@ -109,6 +111,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: approved Electron dependency lock/install, actual iPhone private-network validation, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Electron dependency lock/install, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

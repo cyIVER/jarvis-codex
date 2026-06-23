@@ -11,7 +11,7 @@ from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
-from .mobile import build_mobile_preflight
+from .mobile import build_mobile_preflight, build_mobile_validation_plan
 from .packaging import build_packaging_preflight
 from .release import build_release_manifest
 from .runtime_app import create_app
@@ -103,6 +103,11 @@ def main() -> int:
     mobile_preflight.add_argument("--port", type=int, default=8765, help="Runtime port")
     mobile_preflight.add_argument("--scheme", default="http", choices=["http", "https"], help="Runtime URL scheme")
     mobile_preflight.add_argument("--json", action="store_true", help="Print mobile preflight as JSON")
+    mobile_validation = mobile_sub.add_parser("validation-plan", help="Print a read-only iPhone/PWA validation plan")
+    mobile_validation.add_argument("--host", default="127.0.0.1", help="Runtime host or private-network address to validate")
+    mobile_validation.add_argument("--port", type=int, default=8765, help="Runtime port")
+    mobile_validation.add_argument("--scheme", default="http", choices=["http", "https"], help="Runtime URL scheme")
+    mobile_validation.add_argument("--json", action="store_true", help="Print mobile validation plan as JSON")
     gemini = sub.add_parser("gemini", help="Review Gemini Live feasibility without connecting to Gemini")
     gemini_sub = gemini.add_subparsers(dest="gemini_command", required=True)
     gemini_feasibility = gemini_sub.add_parser("feasibility", help="Print a read-only Gemini Live auth feasibility report")
@@ -218,6 +223,9 @@ def main() -> int:
             parser.error("mobile commands are JSON-only in this read-only first implementation; pass --json")
         if args.mobile_command == "preflight":
             print(json.dumps(build_mobile_preflight(args.host, args.port, args.scheme).to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.mobile_command == "validation-plan":
+            print(json.dumps(build_mobile_validation_plan(args.host, args.port, args.scheme).to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "gemini":
         if not args.json:
