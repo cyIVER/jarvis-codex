@@ -227,6 +227,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated read-only `jarvis-codex release readiness-checklist --json` to aggregate manifest, artifact evidence, packaging preflight, security review, mobile/Gemini validation plans, and evidence counts into blocked-gate next actions without running them.
 - Ran final targeted validation: governance PASS, loop readiness PASS, and 307 tests passed.
 - Committed release readiness checklist in `2842fa6`.
+- Implemented and validated `release.readiness_checklist` runtime RPC plus HUD Release Plan panel.
+- Ran final targeted validation: governance PASS, loop readiness PASS, HUD browser checklist smoke, and 308 tests passed.
+- Committed HUD release checklist surface in `830f057`.
 
 ## Pending
 

@@ -131,6 +131,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Packaging preflight is read-only; it does not install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 - Release artifact evidence is read-only; it does not build, sign, copy, publish, launch services, mutate Git, or write files.
 - Release readiness checklist is read-only; it aggregates release gates and proposed follow-up commands without running them, writing state, or closing gates.
+- HUD release plan panel is read-only; it displays release readiness checklist commands without running validations or closing gates.
 - Runtime readiness CLI is non-writing and does not start the server.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
 - Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.
