@@ -200,6 +200,77 @@ def test_release_commands_require_json(monkeypatch):
     assert exc_info.value.code == 2
 
 
+def test_runtime_serve_defaults_to_loopback_and_temp_state(tmp_path, monkeypatch):
+    calls = {}
+
+    def fake_create_app(state):
+        calls["state"] = state
+        return "runtime-app"
+
+    def fake_uvicorn_run(app, host, port, log_level):
+        calls["app"] = app
+        calls["host"] = host
+        calls["port"] = port
+        calls["log_level"] = log_level
+
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+    monkeypatch.setattr(cli.uvicorn, "run", fake_uvicorn_run)
+
+    code = run_cli(monkeypatch, ["--state", str(tmp_path / "state"), "runtime", "serve", "--port", "9999"])
+
+    assert code == 0
+    assert calls == {
+        "state": tmp_path / "state",
+        "app": "runtime-app",
+        "host": "127.0.0.1",
+        "port": 9999,
+        "log_level": "info",
+    }
+    assert not (tmp_path / "state").exists()
+
+
+def test_runtime_serve_rejects_non_loopback_without_explicit_flag(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "runtime", "serve", "--host", "0.0.0.0"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_runtime_serve_allows_non_loopback_when_explicitly_requested(tmp_path, monkeypatch):
+    calls = {}
+
+    def fake_create_app(state):
+        calls["state"] = state
+        return "runtime-app"
+
+    def fake_uvicorn_run(app, host, port, log_level):
+        calls.update({"app": app, "host": host, "port": port, "log_level": log_level})
+
+    monkeypatch.setattr(cli, "create_app", fake_create_app)
+    monkeypatch.setattr(cli.uvicorn, "run", fake_uvicorn_run)
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "runtime",
+            "serve",
+            "--host",
+            "0.0.0.0",
+            "--allow-non-loopback",
+        ],
+    )
+
+    assert code == 0
+    assert calls["host"] == "0.0.0.0"
+    assert calls["port"] == 8765
+    assert calls["state"] == tmp_path / "state"
+    assert calls["app"] == "runtime-app"
+
+
 def test_loop_verify_json_returns_read_only_status(monkeypatch, capsys):
     seen = {}
 

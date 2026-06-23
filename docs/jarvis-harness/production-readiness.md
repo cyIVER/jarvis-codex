@@ -35,6 +35,7 @@ Implemented and validated in the local FastAPI runtime:
 - Fixed no-shell Codeburn telemetry adapter exposed through runtime RPC.
 - Private-network PWA shell assets: manifest, SVG icon, service worker, and mobile viewport support.
 - Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
+- Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 
 ## Not Yet Production-Complete
 
@@ -68,6 +69,7 @@ The following remain future or incomplete production gates:
 - Runtime PTYs do not execute through a shell. Shell pipelines and shell operators are not supported execution semantics in the current supervisor.
 - The PWA service worker must not cache `/rpc`, `/ws`, or non-GET requests.
 - Public internet exposure is not part of v1.
+- Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
 
 ## Required Local Validation
 

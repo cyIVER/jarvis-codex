@@ -4,11 +4,14 @@ import argparse
 import json
 from pathlib import Path
 
+import uvicorn
+
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
 from .release import build_release_manifest
+from .runtime_app import create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
 from .voice import ingest_audio_file, ingest_transcript_file, probe_audio_file
@@ -77,6 +80,16 @@ def main() -> int:
     release_manifest = release_sub.add_parser("manifest", help="Print a read-only release artifact manifest")
     release_manifest.add_argument("--root", default=".", help="Repository root to inspect")
     release_manifest.add_argument("--json", action="store_true", help="Print release manifest as JSON")
+    runtime = sub.add_parser("runtime", help="Run the local Jarvis runtime")
+    runtime_sub = runtime.add_subparsers(dest="runtime_command", required=True)
+    runtime_serve = runtime_sub.add_parser("serve", help="Serve the runtime HUD on loopback by default")
+    runtime_serve.add_argument("--host", default="127.0.0.1", help="Bind host; non-loopback requires --allow-non-loopback")
+    runtime_serve.add_argument("--port", type=int, default=8765, help="Bind port")
+    runtime_serve.add_argument(
+        "--allow-non-loopback",
+        action="store_true",
+        help="Allow binding outside loopback for explicitly approved private-network use",
+    )
     loop = sub.add_parser("loop", help="Review autonomous loop readiness without mutation")
     loop_sub = loop.add_subparsers(dest="loop_command", required=True)
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
@@ -174,6 +187,12 @@ def main() -> int:
         if args.release_command == "manifest":
             print(json.dumps(build_release_manifest(Path(args.root)), indent=2, sort_keys=True))
             return 0
+    if args.command == "runtime":
+        if args.runtime_command == "serve":
+            if not args.allow_non_loopback and not _is_loopback_host(args.host):
+                parser.error("runtime serve binds to loopback by default; pass --allow-non-loopback for private-network use")
+            uvicorn.run(create_app(Path(args.state)), host=args.host, port=args.port, log_level="info")
+            return 0
     if args.command == "loop":
         if not args.json:
             parser.error("loop commands are JSON-only in this read-only first implementation; pass --json")
@@ -191,6 +210,10 @@ def main() -> int:
         print(json.dumps(data, indent=2, sort_keys=True))
         return 0
     return 2
+
+
+def _is_loopback_host(host: str) -> bool:
+    return host in {"127.0.0.1", "localhost", "::1"}
 
 
 if __name__ == "__main__":

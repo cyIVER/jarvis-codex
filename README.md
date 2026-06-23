@@ -37,10 +37,13 @@ jarvis-codex lane list --json             # inspect Worktrunk lane readiness wit
 jarvis-codex lane score --repo . --branch main --json
 jarvis-codex release manifest --json      # review release artifacts without packaging
 jarvis-codex loop verify --json           # verify loop readiness without mutation
+jarvis-codex runtime serve                # serve the runtime HUD on 127.0.0.1:8765
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector
 ```
+
+`jarvis-codex runtime serve` binds to loopback by default. Non-loopback binding for private-network use requires `--allow-non-loopback` and should be treated as an explicit operator decision.
 
 ## Safety Boundary
 

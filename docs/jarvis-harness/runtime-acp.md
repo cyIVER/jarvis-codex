@@ -10,6 +10,8 @@ Jarvis runtime owns session control, ACP-style messaging, PTY supervision, voice
 - Keep Electron, PWA, CLI, and future editor integrations as clients of the same runtime.
 - Do not let UI clients execute shell commands directly.
 
+`jarvis-codex runtime serve` is the operator entrypoint for the local HUD runtime. It binds to `127.0.0.1:8765` by default. Binding to a non-loopback host requires `--allow-non-loopback` and is intended only for explicitly approved private-network use.
+
 ## ACP-Style Protocol
 
 Jarvis uses ACP-style JSON-RPC for all runtime interactions.
