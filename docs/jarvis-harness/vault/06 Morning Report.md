@@ -58,11 +58,12 @@ This note backs the morning HTML dashboard.
 - Implemented live Codeburn telemetry via a fixed no-shell runtime adapter and HUD status metric.
 - Committed and pushed live Codeburn telemetry in `fa1d8b1`.
 - Implemented private-network PWA shell affordances: manifest, SVG icon, service worker, and HUD PWA status metric.
+- Committed and pushed private-network PWA shell affordances in `b70ad56`.
 
 ## Pending
 
-- Validate and commit mobile/PWA shell affordances.
 - Add production readiness runbook updates.
+- Run final integrated smoke checks.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
