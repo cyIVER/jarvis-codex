@@ -62,11 +62,12 @@ This note backs the morning HTML dashboard.
 - Added production readiness runbook covering implemented surface, remaining release gaps, safety invariants, validation, browser smoke checks, and mobile gates.
 - Ran AG challenge review against runtime/HUD/readiness files.
 - Implemented safety hardening for AG findings: one-shot approvals, server-configured STT adapter, narrowed dev-loop execution, and telemetry-only Codeburn HUD path.
+- Committed and pushed AG-triggered runtime safety hardening in `89b09fc`.
+- Ran final integrated validation: governance PASS, 158 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
 
 ## Pending
 
-- Validate and commit AG-triggered safety hardening and readiness updates.
-- Run final integrated smoke checks.
+- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm command surfaces, and release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
