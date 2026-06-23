@@ -79,8 +79,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed runtime semantic message history in `efe573e`.
 - Implemented and validated HUD semantic session history rendering backed by `message.list`.
 - Committed and pushed HUD semantic session history in `3e46529`.
-- Ran final integrated validation: governance PASS, 167 tests passed.
-- Refreshed Codeburn snapshot: month `$559.72`, 6085 calls.
+- Implemented and validated state-only session archive lifecycle and HUD archive controls.
+- Committed and pushed state-only session archive controls in `49f6fe9`.
+- Ran final integrated validation: governance PASS, 170 tests passed.
+- Refreshed Codeburn snapshot: month `$562.04`, 6114 calls.
 
 ## Pending
 
