@@ -50,7 +50,7 @@ def test_doctor_default_compact_output_has_no_governance(tmp_path, monkeypatch, 
         "state_root": str(state),
     }
     assert "codex_governance" not in data
-    assert (state / "inbox" / ".gitkeep").exists()
+    assert not state.exists()
 
 
 def test_doctor_governance_adds_compact_summary(tmp_path, monkeypatch, capsys):
@@ -70,6 +70,7 @@ def test_doctor_governance_adds_compact_summary(tmp_path, monkeypatch, capsys):
         "writes_reports": False,
         "not_test_replacement": True,
     }
+    assert not state.exists()
 
 
 def test_doctor_governance_failure_returns_nonzero_and_visible_failure(tmp_path, monkeypatch, capsys):
@@ -88,3 +89,4 @@ def test_doctor_governance_failure_returns_nonzero_and_visible_failure(tmp_path,
     assert governance["status"] == "FAIL"
     assert governance["failures"] == 1
     assert governance["failure_details"] == ["fixture governance failure"]
+    assert not state.exists()

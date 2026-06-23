@@ -102,7 +102,6 @@ class JarvisState:
         return path
 
     def doctor(self) -> dict[str, Any]:
-        self.init()
         return {
             "state_root": str(self.root),
             "episodes": len(list(self.inbox.glob("*.json"))),
