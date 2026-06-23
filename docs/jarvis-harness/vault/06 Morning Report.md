@@ -136,11 +136,15 @@ This note backs the morning HTML dashboard.
 - Committed and pushed read-only Gemini Live feasibility check in `cdc112a`.
 - Ran final integrated validation: governance PASS, 225 tests passed.
 - Ran AG Gemini feasibility safety review; no read-only boundary issue was found.
-- Refreshed Codeburn snapshot: month `$602.97`, 6475 calls.
+- Implemented and validated approval-gated loop lifecycle records for `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop`. These consume scoped approvals and write state only; they do not launch agents, PTYs, Worktrunk, shell commands, or runtime workflows.
+- Committed and pushed approval-gated loop lifecycle records in `5414bf4`.
+- Ran final integrated validation: governance PASS, 228 tests passed.
+- Ran AG loop lifecycle safety review; no execution-authority issue was found.
+- Refreshed Codeburn snapshot: month `$605.32`, 6495 calls.
 
 ## Pending
 
-- Remaining production gaps: Electron packaging, actual iPhone private-network validation, networked Gemini Live validation, actual swarm agent launch design, loop command surfaces, and release packaging.
+- Remaining production gaps: Electron packaging, actual iPhone private-network validation, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, and release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
