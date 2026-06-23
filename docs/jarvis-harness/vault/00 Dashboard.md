@@ -70,7 +70,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only release packaging preflight committed and pushed as `b9dcfb1`.
 - Read-only mobile validation planner committed and pushed as `6acfb68`.
 - Read-only Gemini Live validation planner committed and pushed as `e546350`.
-- Electron HUD package-lock is generated and awaiting commit.
+- Electron HUD package-lock committed and pushed as `5577838`.
 - Current Codeburn snapshot: month `$617.25`, 6595 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
