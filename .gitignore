@@ -11,3 +11,5 @@ state/**/*.json
 state/**/*.md
 !state/**/.gitkeep
 plans/**/.plan-url
+.codex/backups/
+.codex/blackboard/
