@@ -11,9 +11,20 @@ def write(path: Path, text: str = "ok") -> None:
 
 
 def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp_path):
+    write(tmp_path / "README.md")
+    write(tmp_path / "STATE.md")
+    write(tmp_path / "LOOP.md")
+    write(tmp_path / "loop-budget.md")
+    write(tmp_path / "loop-run-log.md")
     write(tmp_path / "docs/PRODUCT_READINESS.md")
     write(tmp_path / "docs/PLAN_VIEWER.md")
     write(tmp_path / "docs/REMOTION_REVIEW.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RUNTIME_GATES.md")
+    write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
+    write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
+    write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")
     write(tmp_path / "tools/plan-viewer/index.html")
     write(tmp_path / "video/remotion/.gitignore", "out/*\n!out/.gitkeep\n")
     write(tmp_path / "video/remotion/out/jarvis-codex-plan.png")
@@ -30,7 +41,11 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert manifest["execution_authority"] is False
     assert manifest["writes_files"] is False
     assert manifest["artifact_copy_performed"] is False
+    assert manifest["publication_ready"] is False
+    assert manifest["publication_requires_approval"] is True
     assert manifest["generated_assets_require_approval"] is True
+    assert "docs/VOICE_INGRESS.md" in manifest["release_candidates_present"]
+    assert "docs/SAFE_HANDOFF_GATEWAY_PRD.md" in manifest["release_candidates_present"]
     assert all(item["release_candidate"] is False for item in generated)
     assert all(item["requires_approval"] is True for item in generated)
     assert before == after
@@ -47,9 +62,20 @@ def test_release_manifest_reports_missing_required_review_surfaces(tmp_path):
 
 
 def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
+    write(tmp_path / "README.md")
+    write(tmp_path / "STATE.md")
+    write(tmp_path / "LOOP.md")
+    write(tmp_path / "loop-budget.md")
+    write(tmp_path / "loop-run-log.md")
     write(tmp_path / "docs/PRODUCT_READINESS.md")
     write(tmp_path / "docs/PLAN_VIEWER.md")
     write(tmp_path / "docs/REMOTION_REVIEW.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RUNTIME_GATES.md")
+    write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
+    write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
+    write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")
     write(tmp_path / "tools/plan-viewer/index.html")
     write(tmp_path / "video/remotion/.gitignore", "")
 

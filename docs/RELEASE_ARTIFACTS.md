@@ -12,12 +12,25 @@ The command inspects expected local review surfaces and generated review assets.
 
 ## Included Review Surfaces
 
+- `README.md`
+- `STATE.md`
+- `LOOP.md`
+- `loop-budget.md`
+- `loop-run-log.md`
 - `docs/PRODUCT_READINESS.md`
 - `docs/PLAN_VIEWER.md`
 - `docs/REMOTION_REVIEW.md`
+- `docs/RELEASE_ARTIFACTS.md`
+- `docs/RUNTIME_GATES.md`
+- `docs/VOICE_INGRESS.md`
+- `docs/LOCAL_ML_RUNTIME.md`
+- `docs/SAFE_HANDOFF_GATEWAY_PRD.md`
+- `docs/WORKTRUNK_LANE_CLI_PRD.md`
 - `tools/plan-viewer/index.html`
 
 These files are release candidates for documenting and reviewing the local governed workflow.
+
+The manifest reports `publication_ready: false` until an operator approves a specific packaging or publication action. A ready-for-review manifest is review evidence, not release authority.
 
 ## Generated Assets
 

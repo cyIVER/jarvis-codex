@@ -46,8 +46,11 @@ pattern: product-readiness-triage
 - [x] PM-013 - STT readiness probe
   Loop action: added `voice probe --json` and `whisper-cpp-stt-adapter.py --check-only` so local STT wiring can be verified without processing audio or writing state.
   Human decision: real transcription still requires operator-selected `whisper-cli`, a local ggml model, and explicit `--allow-audio-processing`.
-- [ ] PM-014 - Next product slice
-  Loop action: pending prioritization between real local STT transcription exercise, release publication planning, and broader release readiness review.
+- [x] PM-014 - Expanded release readiness manifest
+  Loop action: expanded the read-only release manifest to cover core docs, loop state, voice ingress, local runtime, safe handoff, Worktrunk lane PRD, and explicit publication approval status.
+  Human decision: publication, artifact copying, release uploads, and generated asset promotion still require separate approval.
+- [ ] PM-015 - Next product slice
+  Loop action: pending prioritization between real local STT transcription exercise, operator release review, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List

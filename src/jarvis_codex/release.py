@@ -33,6 +33,46 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
     artifacts = [
         _artifact(
             root,
+            "README.md",
+            "operator-readme",
+            True,
+            False,
+            "Primary operator entrypoint for local governed workflows.",
+        ),
+        _artifact(
+            root,
+            "STATE.md",
+            "loop-state",
+            True,
+            False,
+            "Current loop status, completed slices, and open product decisions.",
+        ),
+        _artifact(
+            root,
+            "LOOP.md",
+            "loop-contract",
+            True,
+            False,
+            "Autonomous loop operating contract and safety gates.",
+        ),
+        _artifact(
+            root,
+            "loop-budget.md",
+            "loop-budget",
+            True,
+            False,
+            "Loop budget and scope constraints.",
+        ),
+        _artifact(
+            root,
+            "loop-run-log.md",
+            "loop-run-log",
+            True,
+            False,
+            "Append-only local loop validation history.",
+        ),
+        _artifact(
+            root,
             "docs/PRODUCT_READINESS.md",
             "release-readiness-doc",
             True,
@@ -54,6 +94,54 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             True,
             False,
             "Documents Remotion as local-only review asset generation.",
+        ),
+        _artifact(
+            root,
+            "docs/RELEASE_ARTIFACTS.md",
+            "release-policy-doc",
+            True,
+            False,
+            "Documents release manifest behavior and non-authority boundaries.",
+        ),
+        _artifact(
+            root,
+            "docs/RUNTIME_GATES.md",
+            "runtime-gate-doc",
+            True,
+            False,
+            "Documents runtime, Worktrunk, git, and governance approval boundaries.",
+        ),
+        _artifact(
+            root,
+            "docs/VOICE_INGRESS.md",
+            "voice-ingress-doc",
+            True,
+            False,
+            "Documents transcript capture, STT readiness probes, and approved local STT.",
+        ),
+        _artifact(
+            root,
+            "docs/LOCAL_ML_RUNTIME.md",
+            "local-runtime-doc",
+            True,
+            False,
+            "Documents local ML adapter boundaries and approval gates.",
+        ),
+        _artifact(
+            root,
+            "docs/SAFE_HANDOFF_GATEWAY_PRD.md",
+            "safe-handoff-prd",
+            True,
+            False,
+            "Defines safe handoff gateway requirements before any future runner.",
+        ),
+        _artifact(
+            root,
+            "docs/WORKTRUNK_LANE_CLI_PRD.md",
+            "worktrunk-lane-prd",
+            True,
+            False,
+            "Defines read-only lane CLI behavior and mutation guardrails.",
         ),
         _artifact(
             root,
@@ -98,6 +186,7 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
     status = "ready-for-review" if not missing else "needs-review"
     if warnings:
         status = "needs-review"
+    release_candidates_present = [artifact.path for artifact in artifacts if artifact.release_candidate and artifact.status == "present"]
 
     return {
         "label": "Jarvis Codex release artifact manifest",
@@ -106,8 +195,11 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         "execution_authority": False,
         "writes_files": False,
         "artifact_copy_performed": False,
+        "publication_ready": False,
+        "publication_requires_approval": True,
         "generated_assets_require_approval": True,
         "generated_assets_present": generated_assets_present,
+        "release_candidates_present": release_candidates_present,
         "missing_release_candidates": missing,
         "warnings": warnings,
         "required_validation": [
