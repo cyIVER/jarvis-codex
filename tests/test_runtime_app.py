@@ -1047,7 +1047,11 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["gemini_validation_plan"] is True
     assert data["checks"]["loop_lifecycle_records"] is True
     assert data["checks"]["packaging_preflight"] is True
-    assert "electron_package_sign_flow" in data["remaining_gaps"]
+    if data["checks"]["electron_package_artifact"]:
+        assert "electron_sign_and_distribution_flow" in data["remaining_gaps"]
+        assert "electron_package_sign_flow" not in data["remaining_gaps"]
+    else:
+        assert "electron_package_sign_flow" in data["remaining_gaps"]
     assert "approved_gemini_live_network_test" in data["remaining_gaps"]
     assert "actual_loop_execution" in data["remaining_gaps"]
     assert not state.exists()

@@ -21,6 +21,8 @@ class PackagingPreflight:
     electron_builder_version: str | None
     electron_builder_config_present: bool
     packaging_scripts_present: bool
+    package_artifact_present: bool
+    package_artifact_paths: list[str]
     signing_signal_present: bool
     install_performed: bool
     package_build_performed: bool
@@ -46,6 +48,7 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     package_lock = electron_dir / "package-lock.json"
     node_modules = electron_dir / "node_modules"
     builder_config = electron_dir / "electron-builder.json"
+    package_artifact_paths = _package_artifacts(electron_dir)
 
     package_data = _package_data(package_json)
     electron_version = _dev_dependency_version(package_data, "electron")
@@ -92,10 +95,14 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     if not node_modules.exists():
         recommended_commands.append("npm install")
         remaining_gates.append("approve dependency installation before creating node_modules")
+    if package_build_ready and not package_artifact_paths:
+        recommended_commands.append("npm run package")
     if package_build_ready:
-        recommended_commands.extend(["npm run package", "npm run make"])
+        recommended_commands.append("npm run make")
     else:
         remaining_gates.append("add reviewed Electron Builder dependency, config, and package/make scripts")
+    if package_artifact_paths:
+        remaining_gates.append("review local package artifact before make/sign/distribution")
     remaining_gates.extend(
         [
             "choose Windows/macOS/Linux artifact targets",
@@ -117,6 +124,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         electron_builder_version=electron_builder_version,
         electron_builder_config_present=builder_config.exists(),
         packaging_scripts_present=packaging_scripts_present,
+        package_artifact_present=bool(package_artifact_paths),
+        package_artifact_paths=package_artifact_paths,
         signing_signal_present=signing_signal_present,
         install_performed=False,
         package_build_performed=False,
@@ -154,3 +163,15 @@ def _has_packaging_scripts(package_data: Mapping[str, Any]) -> bool:
     if not isinstance(scripts, dict):
         return False
     return scripts.get("package") == "electron-builder --dir --config electron-builder.json" and scripts.get("make") == "electron-builder --config electron-builder.json --publish never"
+
+
+def _package_artifacts(electron_dir: Path) -> list[str]:
+    dist = electron_dir / "dist"
+    linux_unpacked = dist / "linux-unpacked"
+    executable = linux_unpacked / "jarvis-codex-electron-hud"
+    paths: list[str] = []
+    if linux_unpacked.is_dir():
+        paths.append("tools/electron-hud/dist/linux-unpacked")
+    if executable.is_file():
+        paths.append("tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud")
+    return paths

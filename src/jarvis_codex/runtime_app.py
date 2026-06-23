@@ -18,6 +18,7 @@ from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
 from .hud import HUD_CSP, HUD_HTML, HUD_ICON_SVG, HUD_JS, HUD_MANIFEST, HUD_SERVICE_WORKER
+from .packaging import build_packaging_preflight
 from .policy import classify_command
 from .protocol import (
     ProtocolError,
@@ -63,8 +64,23 @@ PLANNED_METHODS = {
 }
 
 
-def build_runtime_readiness() -> dict[str, Any]:
+def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
     """Return current harness readiness without touching runtime state."""
+    root = Path(__file__).resolve().parents[2] if repo_root is None else repo_root
+    packaging_preflight = build_packaging_preflight(root)
+    electron_package_artifact = packaging_preflight.package_artifact_present
+    remaining_gaps = [
+        "iphone_private_network_validation",
+        "approved_gemini_live_network_test",
+        "actual_swarm_agent_launch",
+        "actual_loop_execution",
+        "signed_release_artifacts",
+        "external_security_review",
+    ]
+    if electron_package_artifact:
+        remaining_gaps.insert(0, "electron_sign_and_distribution_flow")
+    else:
+        remaining_gaps.insert(0, "electron_package_sign_flow")
     return {
         "status": "foundation-ready",
         "production_complete": False,
@@ -87,16 +103,9 @@ def build_runtime_readiness() -> dict[str, Any]:
             "gemini_feasibility": True,
             "gemini_validation_plan": True,
             "packaging_preflight": True,
+            "electron_package_artifact": electron_package_artifact,
         },
-        "remaining_gaps": [
-            "electron_package_sign_flow",
-            "iphone_private_network_validation",
-            "approved_gemini_live_network_test",
-            "actual_swarm_agent_launch",
-            "actual_loop_execution",
-            "signed_release_artifacts",
-            "external_security_review",
-        ],
+        "remaining_gaps": remaining_gaps,
     }
 
 

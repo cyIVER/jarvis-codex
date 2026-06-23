@@ -137,3 +137,21 @@ def test_packaging_preflight_drops_install_gate_when_node_modules_exists(tmp_pat
     assert "approve dependency installation before creating node_modules" not in preflight.remaining_gates
     assert "npm run package" in preflight.recommended_commands
     assert "add reviewed Electron Builder dependency, config, and package/make scripts" not in preflight.remaining_gates
+
+
+def test_packaging_preflight_detects_local_unpacked_artifact(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+    write(tmp_path / "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud")
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert preflight.package_artifact_present is True
+    assert preflight.package_artifact_paths == [
+        "tools/electron-hud/dist/linux-unpacked",
+        "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud",
+    ]
+    assert "npm run package" not in preflight.recommended_commands
+    assert "npm run make" in preflight.recommended_commands
+    assert "review local package artifact before make/sign/distribution" in preflight.remaining_gates

@@ -167,12 +167,13 @@ This note backs the morning HTML dashboard.
 - Installed Electron HUD local dependencies under ignored `tools/electron-hud/node_modules/`; verified `electron --version` reports `v42.4.1`.
 - Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
 - Ran final integrated validation: governance PASS, 248 tests passed.
-- Refreshed Codeburn snapshot: month `$625.53`, 6657 calls.
+- Refreshed Codeburn snapshot: month `$629.82`, 6708 calls.
 - Added Electron Builder `26.15.3`, `electron-builder.json`, and reviewed package/make scripts so packaging preflight can recommend `npm run package` and `npm run make` while keeping package execution, signing, and artifact distribution gated.
+- Ran `npm run package`; Electron Builder produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact. The artifact is not signed, copied, reviewed for distribution, or publication-ready.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approval-gated Electron package execution/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron installer/sign/distribution flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

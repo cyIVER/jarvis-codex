@@ -44,6 +44,7 @@ Implemented and validated in the local FastAPI runtime:
 - Electron HUD dependency lockfile generated separately with lifecycle scripts disabled.
 - Electron HUD local dependencies installed under ignored `tools/electron-hud/node_modules/` for operator validation; `node_modules` is not a release artifact.
 - Electron Builder dependency, `electron-builder.json`, and reviewed `npm run package` / `npm run make` scripts are present for an approval-gated packaging phase.
+- Non-signing Electron package execution was locally validated with `npm run package`; generated artifacts live under ignored `tools/electron-hud/dist/` and are not release artifacts.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
@@ -54,7 +55,7 @@ Implemented and validated in the local FastAPI runtime:
 
 The following remain future or incomplete production gates:
 
-- Electron desktop app package execution, installer generation, signing, and artifact security review.
+- Electron desktop app installer generation, signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
 - Actual loop execution and actual multi-agent launch orchestration.
@@ -90,6 +91,7 @@ The following remain future or incomplete production gates:
 - The Electron lockfile is not proof of an installed or packaged app; dependency installation, package builds, signing, and artifact copy remain separate gated actions.
 - Local Electron `node_modules` is an ignored setup artifact only; package builds, signing, and artifact copy remain separate gated actions.
 - Electron Builder configuration and scripts are reviewed package definitions only; they do not prove a package build ran or approve artifact distribution.
+- Local Electron `dist/` artifacts prove only a non-signing package build ran on this machine; they do not approve installer generation, signing, malware review, artifact copy, or distribution.
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.

@@ -74,7 +74,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime readiness CLI committed and pushed as `2777f1f`.
 - Electron HUD local dependency readiness committed and pushed as `8198500`.
 - Electron Builder config and reviewed package/make scripts are ready for approval-gated packaging validation.
-- Current Codeburn snapshot: month `$625.53`, 6657 calls.
+- Non-signing Electron package execution produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact; signing and distribution remain gated.
+- Current Codeburn snapshot: month `$629.82`, 6708 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -106,6 +107,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
 - Electron package-lock pins dependency resolution only; it does not install dependencies, build packages, sign artifacts, copy outputs, or launch services.
 - Electron Builder config and package/make scripts define the reviewed local packaging path only; they do not prove package execution, signing, distribution, or artifact security review.
+- Local Electron dist artifacts are validation evidence only; they are not signed, copied, reviewed, or distribution-ready release artifacts.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
@@ -120,6 +122,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, approval-gated Electron package execution/sign flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron installer/sign/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

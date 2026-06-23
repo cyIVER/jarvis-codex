@@ -27,12 +27,15 @@ npm run make
 
 These commands write package artifacts under the ignored `tools/electron-hud/dist/` directory. They do not imply signing, distribution approval, runtime launch, or artifact publication.
 
+The non-signing unpacked Linux package path has been locally validated with `npm run package`. The generated `dist/` contents are local evidence only and must remain uncommitted unless a later release-artifact plan explicitly approves them.
+
 Safety boundaries:
 
 - Loads `http://127.0.0.1:8765` by default.
 - `package-lock.json` pins Electron dependency resolution; it does not mean dependencies are installed.
 - `node_modules` is a local setup artifact only and is ignored by git.
 - `electron-builder.json` and the `package`/`make` scripts define a reviewed local packaging path; package execution, signing, and artifact copy remain separate approval-gated actions.
+- Local `dist/` artifacts are validation evidence only; they are not signed release artifacts and are not publication-ready.
 - Non-loopback runtime URLs require `JARVIS_ELECTRON_ALLOW_NON_LOOPBACK=1` and should be treated as an explicit private-network operator decision.
 - Renderer Node integration is disabled.
 - Context isolation and sandboxing are enabled.
