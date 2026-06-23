@@ -91,12 +91,16 @@ This note backs the morning HTML dashboard.
 - Committed and pushed read-only session resume in `9d581a4`.
 - Implemented and validated read-only semantic history search in runtime and HUD.
 - Committed and pushed read-only semantic history search in `e8ca6e4`.
-- Ran final integrated validation: governance PASS, 185 tests passed.
-- Refreshed Codeburn snapshot: month `$574.57`, 6222 calls.
+- Implemented and validated planning-only swarm plan recording in runtime and HUD.
+- Committed and pushed planning-only swarm plan recording in `f315583`.
+- Ran final integrated validation: governance PASS, 187 tests passed.
+- Ran AG challenge review for `swarm.plan`; no planning-to-execution authority leak was found.
+- Ran HUD browser smoke for swarm plan recording and semantic-history rendering.
+- Refreshed Codeburn snapshot: month `$577.58`, 6252 calls.
 
 ## Pending
 
-- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm command surfaces, and release packaging.
+- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, safe swarm start/stop design, and release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:20 EDT
+updated: 2026-06-23 02:28 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -54,7 +54,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - State-only session fork controls committed and pushed as `59b30f8`.
 - Read-only session resume committed and pushed as `9d581a4`.
 - Read-only semantic history search committed and pushed as `e8ca6e4`.
-- Current Codeburn snapshot: month `$574.57`, 6222 calls.
+- Planning-only swarm plan recording committed and pushed as `f315583`.
+- Current Codeburn snapshot: month `$577.58`, 6252 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -78,12 +79,13 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Session forks create lineage state only; they do not launch agents or commands.
 - Session resume is read-only context rehydration; it does not write state or grant approval authority.
 - History search is read-only semantic lookup over the event store; blank or missing state returns no results without writes.
+- Swarm plans are semantic planning records only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
 
 ## Next
 
-1. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm commands, and release packaging.
+1. Continue with remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, safe swarm start/stop design, and release packaging.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
