@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import wave
+from argparse import Namespace
 from dataclasses import dataclass
 
 import pytest
@@ -33,8 +34,8 @@ class FakeGovernanceResult:
         return summary
 
 
-def run_cli(monkeypatch, args):
-    monkeypatch.setattr(sys, "argv", ["jarvis-codex", *args])
+def run_cli(monkeypatch, args, prog="jarvis-codex"):
+    monkeypatch.setattr(sys, "argv", [prog, *args])
     return cli.main()
 
 
@@ -63,6 +64,82 @@ def test_doctor_default_compact_output_has_no_governance(tmp_path, monkeypatch, 
     }
     assert "codex_governance" not in data
     assert not state.exists()
+
+
+def test_jarvis_help_is_operator_manual(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["jarvis", "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "Jarvis operator manual" in output
+    assert "jarvis chat" in output
+    assert "Safety boundaries" in output
+    assert "Voice setup" in output
+    assert "Windows UI" in output
+    assert "./state/runtime/jarvis-runtime.log" in output
+
+
+def test_jarvis_chat_help_documents_push_to_talk(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["jarvis", "chat", "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "push-to-talk" in output
+    assert "--allow-microphone" in output
+    assert "--allow-audio-processing" in output
+    assert "Spoken output uses the assistant's actual response text" in output
+    assert "--terminal-mode" in output
+    assert "Interrupts" in output
+    assert "approvals remain runtime-owned" in output
+
+
+def test_jarvis_ui_help_documents_windows_portable_app(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["jarvis", "ui", "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "Windows portable Electron app" in output
+    assert "JARVIS_RUNTIME_URL=http://127.0.0.1:8765" in output
+    assert "Renderer sandbox" in output
+
+
+def test_jarvis_default_starts_runtime_and_attempts_ui(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    monkeypatch.setattr(
+        cli,
+        "start_runtime",
+        lambda state_dir, repo_root=None: type(
+            "FakeRuntime",
+            (),
+            {"status": "running", "to_dict": lambda self: {"status": "running", "url": "http://127.0.0.1:8765"}},
+        )(),
+    )
+    monkeypatch.setattr(cli, "launch_windows_ui", lambda repo_root, runtime_url: {"status": "missing-electron-app", "launched": False})
+
+    code = run_cli(monkeypatch, ["--state", str(state)], prog="jarvis")
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["runtime"]["status"] == "running"
+    assert data["ui"]["status"] == "missing-electron-app"
+
+
+def test_jarvis_codex_without_command_still_errors(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
 
 
 def test_doctor_governance_adds_compact_summary(tmp_path, monkeypatch, capsys):
@@ -1483,6 +1560,257 @@ def test_voice_ask_streams_jsonl_from_codex_app_server(monkeypatch, capsys):
     assert rows[0]["execution_authority"] is True
     assert rows[1]["event_type"] == "agent_message_delta"
     assert rows[1]["text"] == "ok"
+
+
+def test_jarvis_chat_speaks_actual_response_chunks_and_keeps_terminal_compact(tmp_path, monkeypatch, capsys):
+    class FakeEvent:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    class FakeRecording:
+        audio_file = tmp_path / "recording.wav"
+
+        def to_dict(self):
+            return {"audio_file": str(self.audio_file), "microphone_accessed": True}
+
+    class FakeStt:
+        transcript = "summarize runtime status"
+
+        def to_dict(self):
+            return {"transcript": self.transcript, "audio_processed": True}
+
+    spoken = []
+
+    def fake_run_codex_turn(transcript, *, config, approval_callback):
+        assert transcript == "summarize runtime status"
+        yield FakeEvent({"event_type": "thread_started", "thread_id": "thread-1"})
+        yield FakeEvent(
+            {
+                "event_type": "agent_message_delta",
+                "text": (
+                    "Runtime is healthy and I checked the loopback service. "
+                    "You can verify it with the command below.\n"
+                    "uv run jarvis status --json\n"
+                ),
+            }
+        )
+        yield FakeEvent({"event_type": "turn_completed", "thread_id": "thread-1"})
+
+    monkeypatch.setattr(cli, "record_microphone_once", lambda **kwargs: FakeRecording())
+    monkeypatch.setattr(cli, "transcribe_with_local_adapter", lambda **kwargs: FakeStt())
+    monkeypatch.setattr(cli, "run_codex_turn", fake_run_codex_turn)
+    monkeypatch.setattr(cli, "_start_speech_process", lambda args, text: spoken.append(text) or None)
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "chat",
+            "--record-command",
+            sys.executable,
+            "--model",
+            str(tmp_path / "model.bin"),
+            "--stt-command",
+            sys.executable,
+            "--allow-microphone",
+            "--allow-audio-processing",
+            "--approval-mode",
+            "deny",
+            "--no-daemon-start",
+        ],
+        prog="jarvis",
+    )
+
+    assert code == 0
+    assert spoken
+    assert spoken[-1].startswith("Runtime is healthy")
+    output = capsys.readouterr().out
+    assert "Transcript: summarize runtime status" in output
+    assert "uv run jarvis status --json" in output
+    assert "Runtime is healthy and I checked the loopback service" not in output
+
+
+def test_jarvis_chat_no_speak_keeps_terminal_only(tmp_path, monkeypatch):
+    class FakeEvent:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    class FakeRecording:
+        audio_file = tmp_path / "recording.wav"
+
+        def to_dict(self):
+            return {"audio_file": str(self.audio_file), "microphone_accessed": True}
+
+    class FakeStt:
+        transcript = "hello"
+
+        def to_dict(self):
+            return {"transcript": self.transcript, "audio_processed": True}
+
+    def fail_speaker(args, text):
+        raise AssertionError("speaker should not run")
+
+    monkeypatch.setattr(cli, "record_microphone_once", lambda **kwargs: FakeRecording())
+    monkeypatch.setattr(cli, "transcribe_with_local_adapter", lambda **kwargs: FakeStt())
+    monkeypatch.setattr(
+        cli,
+        "run_codex_turn",
+        lambda transcript, *, config, approval_callback: iter(
+            [
+                FakeEvent({"event_type": "agent_message_delta", "text": "terminal only"}),
+                FakeEvent({"event_type": "turn_completed"}),
+            ]
+        ),
+    )
+    monkeypatch.setattr(cli, "_start_speech_process", fail_speaker)
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "chat",
+            "--record-command",
+            sys.executable,
+            "--model",
+            str(tmp_path / "model.bin"),
+            "--stt-command",
+            sys.executable,
+            "--allow-microphone",
+            "--allow-audio-processing",
+            "--no-speak",
+            "--approval-mode",
+            "deny",
+            "--no-daemon-start",
+        ],
+        prog="jarvis",
+    )
+
+    assert code == 0
+
+
+def test_jarvis_chat_terminal_full_prints_all_assistant_text(tmp_path, monkeypatch, capsys):
+    class FakeEvent:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    class FakeRecording:
+        audio_file = tmp_path / "recording.wav"
+
+        def to_dict(self):
+            return {"audio_file": str(self.audio_file), "microphone_accessed": True}
+
+    class FakeStt:
+        transcript = "hello"
+
+        def to_dict(self):
+            return {"transcript": self.transcript, "audio_processed": True}
+
+    monkeypatch.setattr(cli, "record_microphone_once", lambda **kwargs: FakeRecording())
+    monkeypatch.setattr(cli, "transcribe_with_local_adapter", lambda **kwargs: FakeStt())
+    monkeypatch.setattr(
+        cli,
+        "run_codex_turn",
+        lambda transcript, *, config, approval_callback: iter(
+            [
+                FakeEvent({"event_type": "agent_message_delta", "text": "full terminal response"}),
+                FakeEvent({"event_type": "turn_completed"}),
+            ]
+        ),
+    )
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(tmp_path / "state"),
+            "chat",
+            "--record-command",
+            sys.executable,
+            "--model",
+            str(tmp_path / "model.bin"),
+            "--stt-command",
+            sys.executable,
+            "--allow-microphone",
+            "--allow-audio-processing",
+            "--no-speak",
+            "--terminal-mode",
+            "full",
+            "--approval-mode",
+            "deny",
+            "--no-daemon-start",
+        ],
+        prog="jarvis",
+    )
+
+    assert code == 0
+    assert "full terminal response" in capsys.readouterr().out
+
+
+def test_jarvis_chat_keyboard_interrupt_cancels_without_traceback(monkeypatch, capsys):
+    class FakeEvent:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    def fake_run_codex_turn(transcript, *, config, approval_callback):
+        yield FakeEvent({"event_type": "thread_started", "thread_id": "thread-1"})
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "run_codex_turn", fake_run_codex_turn)
+    args = Namespace(
+        cwd=".",
+        session=None,
+        approval_policy="on-request",
+        sandbox="read-only",
+        codex_model=None,
+        effort=None,
+        no_daemon_start=True,
+        approval_mode="deny",
+        json=False,
+        speak=False,
+        speech_mode="stream",
+        terminal_mode="compact",
+        tts_timeout_seconds=120,
+    )
+
+    code = cli._run_codex_voice_turn(args, "correct this")
+
+    assert code == 130
+    assert "Current answer cancelled." in capsys.readouterr().out
+
+
+def test_jarvis_chat_loop_continues_after_interrupted_answer(monkeypatch, capsys):
+    args = Namespace(loop=True, max_turns=2)
+    transcripts = iter(["first", "correction"])
+    codes = iter([130, 0])
+    seen = []
+
+    monkeypatch.setattr(cli, "_record_chat_transcript", lambda args: next(transcripts))
+
+    def fake_run_turn(args, transcript):
+        seen.append(transcript)
+        return next(codes)
+
+    monkeypatch.setattr(cli, "_run_codex_voice_turn", fake_run_turn)
+
+    code = cli._run_chat_command(args)
+
+    assert code == 0
+    assert seen == ["first", "correction"]
+    assert "Listening for your correction." in capsys.readouterr().out
 
 
 def test_voice_listen_requires_microphone_approval(tmp_path, monkeypatch, capsys):

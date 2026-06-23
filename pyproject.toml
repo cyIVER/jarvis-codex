@@ -20,6 +20,7 @@ dev = [
 ]
 
 [project.scripts]
+jarvis = "jarvis_codex.cli:main"
 jarvis-codex = "jarvis_codex.cli:main"
 jarvis-plan-viewer = "jarvis_codex.plan_viewer:main"
 

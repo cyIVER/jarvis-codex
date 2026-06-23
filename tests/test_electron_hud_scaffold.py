@@ -27,6 +27,13 @@ def test_electron_hud_builder_uses_committed_icon_asset() -> None:
     assert icon.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
+def test_electron_hud_builder_targets_windows_portable_output() -> None:
+    config = json.loads((ELECTRON_HUD / "electron-builder.json").read_text(encoding="utf-8"))
+
+    assert config["win"]["target"] == ["portable"]
+    assert config["win"]["artifactName"] == "Jarvis Codex-${version}-portable.${ext}"
+
+
 def test_electron_main_uses_loopback_default_and_private_network_gate() -> None:
     main = (ELECTRON_HUD / "main.js").read_text(encoding="utf-8")
 

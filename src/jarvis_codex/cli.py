@@ -3,7 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import uvicorn
@@ -33,18 +36,153 @@ from .release import (
     build_release_readiness_checklist,
 )
 from .runtime_app import build_runtime_readiness, create_app
+from .runtime_control import (
+    DEFAULT_RUNTIME_HOST,
+    DEFAULT_RUNTIME_PORT,
+    DEFAULT_RUNTIME_URL,
+    install_wsl_shim,
+    launch_windows_ui,
+    runtime_status,
+    start_runtime,
+    stop_runtime,
+    write_json,
+)
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import RELEASE_EVIDENCE_GATES, JarvisState
 from .voice import discover_local_stt_assets, ingest_audio_file, ingest_transcript_file, probe_audio_file
-from .voice_audio import VoiceAudioError, transcribe_with_local_adapter
+from .voice_audio import VoiceAudioBuffer, VoiceAudioError, synthesize_with_local_adapter, transcribe_with_local_adapter
 from .voice_intent import propose_voice_intent
 from .voice_mic import DEFAULT_RECORD_SECONDS, VoiceMicError, discover_recorder_command, record_microphone_once
 
 
+OPERATOR_MANUAL = """Jarvis operator manual
+
+Common workflows:
+  jarvis                       Start the WSL runtime on 127.0.0.1:8765 and open the Windows desktop UI when available.
+  jarvis chat                  Run an approved foreground push-to-talk voice turn through the WSL runtime authority.
+  jarvis ui                    Start or connect to the runtime, then launch the Windows portable Electron UI.
+  jarvis status                Show loopback runtime health, PID file, and log path.
+  jarvis stop                  Stop only the Jarvis runtime process recorded in the Jarvis PID file.
+  jarvis doctor                Inspect local state; add --governance for project-local Codex governance validation.
+
+Defaults:
+  Runtime URL: http://127.0.0.1:8765
+  State root: ./state
+  Log file:   ./state/runtime/jarvis-runtime.log
+  PID file:   ./state/runtime/jarvis-runtime.pid
+
+Safety boundaries:
+  WSL remains the execution authority for Codex, voice routing, PTYs, approvals, policy checks, and local state.
+  The Windows Electron app is a loopback control surface. It does not execute shell commands.
+  Non-loopback runtime binding still requires the lower-level runtime serve --allow-non-loopback option.
+  jarvis stop uses the PID file created by jarvis and does not scan or kill unrelated processes.
+
+Voice setup:
+  jarvis chat uses the existing foreground mic path. Provide a recorder adapter, a local STT model, and a local STT command.
+  Microphone and audio processing require explicit per-command flags.
+  Interrupt/cancel behavior remains runtime-owned through approval-gated RPC methods and PTY controls.
+
+Windows UI:
+  Build or place the portable app under tools/electron-hud/dist, then run jarvis ui from WSL or jarvis.cmd from Windows.
+  The Electron shell loads only the configured loopback runtime by default and grants microphone permission only to that origin.
+
+Troubleshooting:
+  Use jarvis status to confirm health and PID state.
+  Use jarvis doctor --governance for project-local Codex governance checks.
+  Use jarvis runtime readiness --json for release/readiness context without starting a server.
+  Check ./state/runtime/jarvis-runtime.log for runtime startup output.
+"""
+
+CHAT_MANUAL = """Jarvis chat manual
+
+jarvis chat runs one foreground push-to-talk style voice turn:
+  1. Records local microphone audio through the configured recorder adapter.
+  2. Transcribes locally through the configured STT adapter and model.
+  3. Sends the transcript to Codex app-server with the selected sandbox and approval mode.
+
+Required for microphone use:
+  --record-command            Local recorder command; accepts --output-file and --seconds.
+  --model                     Local STT model path.
+  --stt-command               Local STT adapter command; receives --audio-file and --model.
+  --allow-microphone          Explicit approval for this foreground recording.
+  --allow-audio-processing    Explicit approval for this local transcription.
+
+Defaults and behavior:
+  Recording duration defaults to the project mic default.
+  Approval mode defaults to inline.
+  Sandbox defaults to workspace-write for Codex app-server turns.
+  Spoken output uses the assistant's actual response text in chunks as it arrives.
+  Terminal output is compact by default and reserved for commands, code, paths, approvals, errors, and status.
+  In --loop mode, Ctrl+C during an answer cancels the current turn and records the next correction.
+  Interrupts, PTY cancellation, and approvals remain runtime-owned; the UI is not execution authority.
+  For typed testing without mic access, use jarvis voice ask "message" with the existing lower-level command.
+"""
+
+UI_MANUAL = """Jarvis UI manual
+
+jarvis ui starts or connects to the WSL runtime at http://127.0.0.1:8765, then launches the Windows portable Electron app when it is present.
+
+Expected portable app locations:
+  tools/electron-hud/dist/win-unpacked/Jarvis Codex.exe
+  tools/electron-hud/dist/Jarvis Codex.exe
+
+The app receives JARVIS_RUNTIME_URL=http://127.0.0.1:8765 and loads only loopback by default.
+Renderer sandbox, context isolation, disabled Node integration, blocked external navigation, and origin-scoped microphone permission are required.
+"""
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="jarvis-codex")
+    prog = Path(sys.argv[0]).name or "jarvis"
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Jarvis WSL runtime and local operator controls.",
+        epilog=OPERATOR_MANUAL if prog == "jarvis" else None,
+    )
     parser.add_argument("--state", default="state", help="State directory")
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command")
+
+    chat = sub.add_parser(
+        "chat",
+        help="Run a foreground push-to-talk voice turn",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=CHAT_MANUAL,
+    )
+    chat.add_argument("--seconds", type=int, default=DEFAULT_RECORD_SECONDS, help="Foreground recording duration")
+    chat.add_argument("--record-command", help="Recorder adapter command; accepts --output-file and --seconds")
+    chat.add_argument("--model", help="Path to an explicit local STT model")
+    chat.add_argument("--stt-command", help="Local STT adapter command; receives --audio-file and --model")
+    chat.add_argument("--allow-microphone", action="store_true", help="Approve microphone access for this foreground command")
+    chat.add_argument("--allow-audio-processing", action="store_true", help="Approve local STT processing for this foreground command")
+    chat.add_argument("--timeout-seconds", type=int, default=120, help="Recorder and STT timeout")
+    chat.add_argument("--loop", action="store_true", help="Keep recording turns; Ctrl+C during an answer cancels it and listens again")
+    chat.add_argument("--max-turns", type=int, help="Optional cap for --loop turns")
+    _add_codex_voice_turn_args(chat, include_speech=True)
+
+    ui = sub.add_parser(
+        "ui",
+        help="Start or connect the runtime and launch the Windows desktop UI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=UI_MANUAL,
+    )
+    ui.add_argument("--host", default=DEFAULT_RUNTIME_HOST, help="Runtime host")
+    ui.add_argument("--port", type=int, default=DEFAULT_RUNTIME_PORT, help="Runtime port")
+    ui.add_argument("--no-start", action="store_true", help="Do not start the runtime if it is stopped")
+    ui.add_argument("--json", action="store_true", help="Print launch result as JSON")
+
+    status = sub.add_parser("status", help="Show runtime health, PID, and log location")
+    status.add_argument("--host", default=DEFAULT_RUNTIME_HOST, help="Runtime host")
+    status.add_argument("--port", type=int, default=DEFAULT_RUNTIME_PORT, help="Runtime port")
+    status.add_argument("--json", action="store_true", help="Print runtime status as JSON")
+
+    stop = sub.add_parser("stop", help="Stop the Jarvis runtime process recorded in the PID file")
+    stop.add_argument("--host", default=DEFAULT_RUNTIME_HOST, help="Runtime host")
+    stop.add_argument("--port", type=int, default=DEFAULT_RUNTIME_PORT, help="Runtime port")
+    stop.add_argument("--json", action="store_true", help="Print stop result as JSON")
+
+    install = sub.add_parser("install", help="Install or update the WSL jarvis PATH shim")
+    install.add_argument("--target", help="Shim path; defaults to ~/.local/bin/jarvis")
+    install.add_argument("--json", action="store_true", help="Print install result as JSON")
 
     capture = sub.add_parser("capture", help="Capture a task episode")
     capture.add_argument("text", nargs="+")
@@ -245,6 +383,110 @@ def main() -> int:
 
     args = parser.parse_args()
     state = JarvisState(Path(args.state))
+    repo_root = Path(__file__).resolve().parents[2]
+
+    if args.command is None:
+        if prog != "jarvis":
+            parser.error("the following arguments are required: command")
+        result = start_runtime(Path(args.state), repo_root=repo_root)
+        ui_result = launch_windows_ui(repo_root, runtime_url=DEFAULT_RUNTIME_URL)
+        payload = {"runtime": result.to_dict(), "ui": ui_result}
+        write_json(payload)
+        return 0 if result.status in {"running", "starting"} else 1
+
+    if args.command == "chat":
+        if not args.model:
+            parser.error("jarvis chat requires --model")
+        if not args.stt_command:
+            parser.error("jarvis chat requires --stt-command")
+        record_command = args.record_command or os.environ.get("JARVIS_RECORD_COMMAND")
+        if not record_command:
+            discovery = discover_recorder_command()
+            print(json.dumps(discovery.to_dict(), indent=2, sort_keys=True))
+            return 1
+        args.record_command = record_command
+        args.voice_command = "listen"
+        if not args.allow_microphone:
+            print(
+                json.dumps(
+                    {
+                        "status": "approval-required",
+                        "approval_required": "microphone",
+                        "message": "Microphone recording requires --allow-microphone for this foreground command.",
+                        "microphone_accessed": False,
+                        "audio_processed": False,
+                        "execution_authority": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 1
+        if not args.allow_audio_processing:
+            print(
+                json.dumps(
+                    {
+                        "status": "approval-required",
+                        "approval_required": "audio-processing",
+                        "message": "Local transcription requires --allow-audio-processing for this foreground command.",
+                        "microphone_accessed": False,
+                        "audio_processed": False,
+                        "execution_authority": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 1
+        return _run_chat_command(args)
+
+    if args.command == "ui":
+        runtime = runtime_status(Path(args.state), host=args.host, port=args.port)
+        if runtime.status == "stopped" and not args.no_start:
+            runtime = start_runtime(Path(args.state), host=args.host, port=args.port, repo_root=repo_root)
+        ui_result = launch_windows_ui(repo_root, runtime_url=f"http://{args.host}:{args.port}")
+        payload = {"runtime": runtime.to_dict(), "ui": ui_result}
+        if args.json:
+            write_json(payload)
+        else:
+            print(f"Runtime: {runtime.status} at {runtime.url}")
+            print(f"UI: {ui_result['status']}")
+        return 0 if runtime.status in {"running", "starting"} else 1
+
+    if args.command == "status":
+        result = runtime_status(Path(args.state), host=args.host, port=args.port)
+        if args.json:
+            write_json(result.to_dict())
+        else:
+            print(f"Runtime: {result.status}")
+            print(f"URL: {result.url}")
+            print(f"PID: {result.pid or 'none'}")
+            print(f"Log: {result.log_file}")
+        return 0 if result.status == "running" else 1
+
+    if args.command == "stop":
+        result = stop_runtime(Path(args.state), host=args.host, port=args.port)
+        if args.json:
+            write_json(result.to_dict())
+        else:
+            print(f"Runtime: {result.status}")
+            print(f"PID: {result.pid or 'none'}")
+        return 0 if result.status == "stopped" else 1
+
+    if args.command == "install":
+        target = install_wsl_shim(repo_root, Path(args.target).expanduser() if args.target else None)
+        payload = {
+            "status": "installed",
+            "path": str(target),
+            "add_to_path": str(target.parent),
+            "message": "Ensure ~/.local/bin is on PATH, then run jarvis.",
+        }
+        if args.json:
+            write_json(payload)
+        else:
+            print(f"Installed {target}")
+            print(f"Ensure {target.parent} is on PATH.")
+        return 0
 
     if args.command == "capture":
         episode = state.capture_episode(" ".join(args.text), source=args.source)
@@ -554,7 +796,7 @@ def _is_loopback_host(host: str) -> bool:
     return host in {"127.0.0.1", "localhost", "::1"}
 
 
-def _add_codex_voice_turn_args(command: argparse.ArgumentParser) -> None:
+def _add_codex_voice_turn_args(command: argparse.ArgumentParser, *, include_speech: bool = False) -> None:
     command.add_argument("--session", help="Existing Codex app-server thread id to continue")
     command.add_argument("--cwd", default=".", help="Working directory for the Codex turn")
     command.add_argument(
@@ -579,6 +821,87 @@ def _add_codex_voice_turn_args(command: argparse.ArgumentParser) -> None:
     )
     command.add_argument("--no-daemon-start", action="store_true", help="Use direct app-server stdio instead of trying the managed daemon first")
     command.add_argument("--json", action="store_true", help="Print JSONL backend events")
+    if include_speech:
+        command.add_argument(
+            "--speak",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Speak the assistant response through local TTS when available",
+        )
+        command.add_argument(
+            "--speech-mode",
+            choices=["stream", "full-final"],
+            default="stream",
+            help="stream speaks response chunks as they arrive; full-final speaks after completion",
+        )
+        command.add_argument(
+            "--terminal-mode",
+            choices=["compact", "full", "silent"],
+            default="compact",
+            help="compact prints only high-value text; full prints all assistant text; silent prints only critical events",
+        )
+        command.add_argument(
+            "--tts-command",
+            help="Local TTS adapter command; reads text from stdin and accepts --output-file",
+        )
+        command.add_argument("--tts-timeout-seconds", type=int, default=120, help="Local TTS timeout")
+
+
+def _run_chat_command(args: argparse.Namespace) -> int:
+    if not args.loop:
+        try:
+            transcript = _record_chat_transcript(args)
+        except KeyboardInterrupt:
+            print("\nChat cancelled before transcript was sent.")
+            return 130
+        if transcript is None:
+            return 1
+        return _run_codex_voice_turn(args, transcript)
+
+    max_turns = args.max_turns if args.max_turns and args.max_turns > 0 else None
+    turn_count = 0
+    print("Loop mode active. Press Ctrl+C during an answer to cancel it and record a correction. Press Ctrl+C while recording to exit.")
+    while max_turns is None or turn_count < max_turns:
+        try:
+            transcript = _record_chat_transcript(args)
+        except KeyboardInterrupt:
+            print("\nChat loop stopped.")
+            return 0
+        if transcript is None:
+            return 1
+        code = _run_codex_voice_turn(args, transcript)
+        turn_count += 1
+        if code == 130:
+            print("Listening for your correction.")
+            continue
+        if code != 0:
+            return code
+    return 0
+
+
+def _record_chat_transcript(args: argparse.Namespace) -> str | None:
+    try:
+        recording = record_microphone_once(
+            state_dir=Path(args.state),
+            record_command=args.record_command,
+            seconds=args.seconds,
+            timeout_seconds=args.timeout_seconds,
+        )
+        stt = transcribe_with_local_adapter(
+            audio_file=recording.audio_file,
+            model_path=Path(args.model),
+            stt_command=args.stt_command,
+            timeout_seconds=args.timeout_seconds,
+        )
+    except (VoiceMicError, VoiceAudioError) as exc:
+        print(json.dumps({"status": "failed", "error": str(exc), "execution_authority": False}, indent=2, sort_keys=True))
+        return None
+    if args.json:
+        print(json.dumps({"event_type": "microphone_recorded", **recording.to_dict()}, sort_keys=True))
+        print(json.dumps({"event_type": "transcript_ready", **stt.to_dict()}, sort_keys=True))
+    else:
+        print(f"Transcript: {stt.transcript}")
+    return stt.transcript
 
 
 def _run_codex_voice_turn(args: argparse.Namespace, transcript: str) -> int:
@@ -597,7 +920,10 @@ def _run_codex_voice_turn(args: argparse.Namespace, transcript: str) -> int:
             return False
         return inline_approval_prompt(params)
 
+    speech = _StreamingSpeechController(args)
+    terminal = _ChatTerminalPrinter(args)
     try:
+        assistant_chunks: list[str] = []
         for event in run_codex_turn(transcript, config=config, approval_callback=approval_callback):
             payload = {
                 **event.to_dict(),
@@ -605,11 +931,35 @@ def _run_codex_voice_turn(args: argparse.Namespace, transcript: str) -> int:
                 "approval_mode": args.approval_mode,
                 "execution_authority": True,
             }
+            if payload.get("event_type") == "agent_message_delta":
+                delta = str(payload.get("text") or "")
+                assistant_chunks.append(delta)
+                speech.on_delta(delta)
             if args.json:
                 print(json.dumps(payload, sort_keys=True))
             else:
-                _print_codex_event(payload)
+                terminal.print_event(payload)
+        speech.finish("".join(assistant_chunks))
+        terminal.finish()
         return 0
+    except KeyboardInterrupt:
+        speech.stop()
+        terminal.finish()
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "event_type": "chat_interrupted",
+                        "status": "cancelled",
+                        "message": "Current answer cancelled by operator.",
+                        "execution_authority": False,
+                    },
+                    sort_keys=True,
+                )
+            )
+        else:
+            print("\nCurrent answer cancelled.")
+        return 130
     except (CodexAppServerError, subprocess.CalledProcessError) as exc:
         error = {
             "status": "failed",
@@ -623,6 +973,292 @@ def _run_codex_voice_turn(args: argparse.Namespace, transcript: str) -> int:
         else:
             print(f"Codex app-server failed: {exc}")
         return 1
+
+
+class _StreamingSpeechController:
+    def __init__(self, args: argparse.Namespace) -> None:
+        self.args = args
+        self.enabled = bool(getattr(args, "speak", False))
+        self.mode = str(getattr(args, "speech_mode", "stream") or "stream")
+        self.buffer = ""
+        self.spoken_count = 0
+        self.current_process: subprocess.Popen[str] | None = None
+        self.warned = False
+
+    def on_delta(self, delta: str) -> None:
+        if not self.enabled or self.mode != "stream":
+            return
+        self.buffer += delta
+        for chunk in self._ready_chunks():
+            self._speak(chunk, wait=False)
+
+    def finish(self, full_text: str) -> None:
+        if not self.enabled:
+            return
+        if self.mode == "full-final":
+            self._speak(_speech_text(full_text), wait=True)
+            return
+        if self.mode == "stream":
+            remaining = _speech_chunk_text(self.buffer)
+            if remaining:
+                self._speak(remaining, wait=True)
+            self.buffer = ""
+
+    def _ready_chunks(self) -> list[str]:
+        chunks: list[str] = []
+        while True:
+            candidate, remainder = _split_ready_speech_chunk(self.buffer)
+            if not candidate:
+                break
+            chunks.append(candidate)
+            self.buffer = remainder
+        return chunks
+
+    def _speak(self, text: str, *, wait: bool) -> None:
+        phrase = text.strip()
+        if not phrase:
+            return
+        if self.current_process is not None and self.current_process.poll() is None:
+            if not wait:
+                return
+            try:
+                self.current_process.wait(timeout=int(getattr(self.args, "tts_timeout_seconds", 120) or 120))
+            except subprocess.TimeoutExpired:
+                return
+        try:
+            process = _start_speech_process(self.args, phrase)
+            self.spoken_count += 1
+            self.current_process = process
+            if wait and process is not None:
+                process.wait(timeout=int(getattr(self.args, "tts_timeout_seconds", 120) or 120))
+            if getattr(self.args, "json", False):
+                print(
+                    json.dumps(
+                        {
+                            "event_type": "speech_queued",
+                            "speech_mode": self.mode,
+                            "text": phrase,
+                            "audio_processed": True,
+                            "execution_authority": False,
+                        },
+                        sort_keys=True,
+                    )
+                )
+        except VoiceAudioError as exc:
+            self._warn(str(exc))
+        except (OSError, subprocess.SubprocessError) as exc:
+            self._warn(f"speech output failed: {exc}")
+
+    def _warn(self, message: str) -> None:
+        if self.warned:
+            return
+        self.warned = True
+        _print_speech_warning(self.args, message)
+
+    def stop(self) -> None:
+        if self.current_process is None or self.current_process.poll() is not None:
+            return
+        self.current_process.terminate()
+        try:
+            self.current_process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            self.current_process.kill()
+            self.current_process.wait(timeout=1)
+
+
+def _start_speech_process(args: argparse.Namespace, text: str) -> subprocess.Popen[str] | None:
+    tts_command = (getattr(args, "tts_command", None) or os.environ.get("JARVIS_LOCAL_TTS_COMMAND", "")).strip()
+    timeout = int(getattr(args, "tts_timeout_seconds", 120) or 120)
+    if tts_command:
+        output = VoiceAudioBuffer(Path(args.state)).tts_output_path(session_id="jarvis-chat")
+        result = synthesize_with_local_adapter(
+            text=text,
+            output_file=output,
+            tts_command=tts_command,
+            timeout_seconds=timeout,
+        )
+        if not getattr(args, "json", False):
+            print(f"\nSpoken response synthesized: {result.audio_file}")
+        return None
+    return _start_windows_piper(text)
+
+
+def _speech_text(text: str) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= 1200:
+        return compact
+    return compact[:1197].rstrip() + "..."
+
+
+def _speech_chunk_text(text: str) -> str:
+    without_code = re.sub(r"```.*?```", " ", text, flags=re.S)
+    without_inline = re.sub(r"`[^`]+`", " ", without_code)
+    without_links = re.sub(r"\[[^\]]+\]\([^)]+\)", " ", without_inline)
+    return _speech_text(without_links)
+
+
+def _split_ready_speech_chunk(buffer: str) -> tuple[str | None, str]:
+    clean = buffer.lstrip()
+    if len(_speech_chunk_text(clean)) < 180:
+        return None, buffer
+    match = re.search(r"(?<=[.!?])\s+", clean[120:700])
+    if match:
+        end = 120 + match.end()
+        chunk = _speech_chunk_text(clean[:end])
+        if chunk:
+            return chunk, clean[end:]
+    if len(_speech_chunk_text(clean)) >= 420:
+        split_at = clean.rfind(" ", 0, 520)
+        if split_at < 180:
+            split_at = min(len(clean), 520)
+        chunk = _speech_chunk_text(clean[:split_at])
+        if chunk:
+            return chunk, clean[split_at:]
+    return None, buffer
+
+
+class _ChatTerminalPrinter:
+    def __init__(self, args: argparse.Namespace) -> None:
+        self.mode = str(getattr(args, "terminal_mode", "compact") or "compact")
+        self.buffer = ""
+        self.printed_header = False
+
+    def print_event(self, event: dict[str, object]) -> None:
+        event_type = event.get("event_type")
+        if self.mode == "full":
+            _print_codex_event(event)
+            return
+        if event_type == "agent_message_delta":
+            if self.mode == "compact":
+                self.buffer += str(event.get("text") or "")
+                self._flush_terminal_blocks()
+            return
+        if event_type == "terminal_output":
+            print(str(event.get("text", "")), end="", flush=True)
+            return
+        if event_type in {"thread_started", "thread_resumed", "turn_completed", "approval_responded"}:
+            _print_codex_event(event)
+            return
+        if event_type == "approval_requested":
+            return
+        if event_type == "app_server_event" and self.mode != "silent":
+            return
+
+    def finish(self) -> None:
+        if self.mode == "compact":
+            self._flush_terminal_blocks(final=True)
+
+    def _flush_terminal_blocks(self, *, final: bool = False) -> None:
+        emitted, remainder = _extract_terminal_blocks(self.buffer, final=final)
+        self.buffer = remainder
+        if not emitted:
+            return
+        if not self.printed_header:
+            print("\nHigh-value terminal notes:")
+            self.printed_header = True
+        for block in emitted:
+            print(block.rstrip())
+
+
+def _extract_terminal_blocks(text: str, *, final: bool) -> tuple[list[str], str]:
+    emitted: list[str] = []
+    working = text
+
+    while True:
+        match = re.search(r"```(?:[A-Za-z0-9_-]+)?\n.*?```", working, flags=re.S)
+        if not match:
+            break
+        emitted.append(match.group(0))
+        working = working[: match.start()] + "\n" + working[match.end() :]
+
+    lines = working.splitlines(keepends=True)
+    kept_remainder: list[str] = []
+    for index, line in enumerate(lines):
+        has_newline = line.endswith("\n") or line.endswith("\r")
+        if not has_newline and not final and index == len(lines) - 1:
+            kept_remainder.append(line)
+            continue
+        stripped = line.strip()
+        if _is_high_value_terminal_line(stripped):
+            emitted.append(stripped)
+        else:
+            kept_remainder.append(line)
+    return _dedupe_blocks(emitted), "".join(kept_remainder[-2:])
+
+
+def _is_high_value_terminal_line(line: str) -> bool:
+    if not line:
+        return False
+    if line.startswith(("$ ", "> ", "uv ", "python", "pytest", "jarvis ", "git ", "npm ", "powershell", "curl ")):
+        return True
+    if len(line) > 180 and not re.search(r"\b(error|failed|failure|traceback|exception|blocked|approval required|permission denied)\b", line, re.I):
+        return False
+    if re.search(r"(^|[\s(])(/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_. -]+)+)(:\d+)?", line):
+        return True
+    if re.search(r"(^|[\s(])[A-Za-z]:\\[^:*?\"<>|]+", line):
+        return True
+    if re.search(r"\b(error|failed|failure|traceback|exception|blocked|approval required|permission denied)\b", line, re.I):
+        return True
+    if re.match(r"^\s*[-*]\s+`[^`]+`", line):
+        return True
+    if re.match(r"^\s*\d+\.\s+`[^`]+`", line):
+        return True
+    return False
+
+
+def _dedupe_blocks(blocks: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for block in blocks:
+        key = block.strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(block)
+    return unique
+
+
+def _start_windows_piper(text: str) -> subprocess.Popen[str]:
+    powershell = shutil.which("powershell.exe")
+    if not powershell:
+        raise VoiceAudioError("powershell.exe was not found; set JARVIS_LOCAL_TTS_COMMAND or run from WSL with Windows interop enabled")
+    wsl_script = Path("/mnt/c/Users/iveri/Apps/piper/say.ps1")
+    if not wsl_script.is_file():
+        raise VoiceAudioError("Windows Piper say.ps1 was not found; set JARVIS_LOCAL_TTS_COMMAND")
+    script = _windows_path_for(wsl_script)
+    return subprocess.Popen(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, text],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+
+
+def _windows_path_for(path: Path) -> str:
+    try:
+        value = subprocess.check_output(["wslpath", "-w", str(path)], text=True).strip()
+        if value:
+            return value
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    if str(path).startswith("/mnt/c/"):
+        return "C:\\" + str(path)[7:].replace("/", "\\")
+    return str(path)
+
+
+def _print_speech_warning(args: argparse.Namespace, message: str) -> None:
+    payload = {
+        "event_type": "speech_unavailable",
+        "status": "warning",
+        "message": message,
+        "audio_processed": False,
+        "execution_authority": False,
+    }
+    if getattr(args, "json", False):
+        print(json.dumps(payload, sort_keys=True))
+    else:
+        print(f"\nSpeech unavailable: {message}")
 
 
 def _print_codex_event(event: dict[str, object]) -> None:

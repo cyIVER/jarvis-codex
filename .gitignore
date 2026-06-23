@@ -12,6 +12,8 @@ build/
 state/**/*.jsonl
 state/**/*.json
 state/**/*.md
+state/runtime/**
+state/release/**
 !state/**/.gitkeep
 plans/**/.plan-url
 .codex/backups/

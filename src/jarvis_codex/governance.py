@@ -33,6 +33,7 @@ EXPECTED_SKILLS = {
     "ipc-orchestration-review",
     "safe-cli-handoff",
     "agent-skill-governance",
+    "harness-evaluator",
 }
 
 REQUIRED_AGENT_POLICY_TEXT = {

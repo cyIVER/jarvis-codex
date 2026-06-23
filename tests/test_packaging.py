@@ -175,6 +175,20 @@ def test_packaging_preflight_detects_unsigned_appimage_artifact(tmp_path: Path) 
     assert "review unsigned local installer artifact before signing/distribution" in preflight.remaining_gates
 
 
+def test_packaging_preflight_detects_windows_portable_artifact(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+    write(tmp_path / "tools/electron-hud/dist/Jarvis Codex-0.1.0-portable.exe")
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert preflight.installer_artifact_present is True
+    assert preflight.installer_artifact_paths == ["tools/electron-hud/dist/Jarvis Codex-0.1.0-portable.exe"]
+    assert "npm run make" not in preflight.recommended_commands
+    assert "review unsigned local installer artifact before signing/distribution" in preflight.remaining_gates
+
+
 def test_packaging_preflight_reports_missing_electron_icon(tmp_path: Path) -> None:
     write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
     write(tmp_path / "tools/electron-hud/electron-builder.json", json.dumps({"directories": {"buildResources": "assets"}, "icon": "icon.png"}))

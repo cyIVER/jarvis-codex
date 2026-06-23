@@ -28,7 +28,8 @@
   },
   "win": {
     "target": [
-      "nsis"
-    ]
+      "portable"
+    ],
+    "artifactName": "Jarvis Codex-${version}-portable.${ext}"
   }
 }

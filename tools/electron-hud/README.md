@@ -5,8 +5,10 @@ This is a local-only Electron shell for the Jarvis runtime HUD.
 Start the runtime separately:
 
 ```bash
-jarvis-codex runtime serve
+jarvis
 ```
+
+The Windows desktop flow is intentionally split: WSL owns runtime authority, while this Electron app is only a loopback UI shell over `http://127.0.0.1:8765`.
 
 The dependency lockfile is committed. It was generated with lifecycle scripts disabled.
 
@@ -29,13 +31,14 @@ These commands write package artifacts under the ignored `tools/electron-hud/dis
 
 The non-signing unpacked Linux package path has been locally validated with `npm run package`. The generated `dist/` contents are local evidence only and must remain uncommitted unless a later release-artifact plan explicitly approves them.
 
-The unsigned Linux AppImage path has also been locally validated with `npm run make`. The generated AppImage is local evidence only. It is not signed, reviewed for distribution, copied to a release location, or publication-ready.
+The default Windows target is a portable executable. Packaging remains local evidence only until signing, external review, copy, and distribution gates are explicitly accepted.
 
 The Electron Builder config uses the committed `assets/icon.png` package icon. Local `npm run make` validation no longer emits the default Electron icon warning.
 
 Safety boundaries:
 
 - Loads `http://127.0.0.1:8765` by default.
+- Windows portable output is configured as the reviewed default target; signing and publication remain separate gates.
 - `package-lock.json` pins Electron dependency resolution; it does not mean dependencies are installed.
 - `node_modules` is a local setup artifact only and is ignored by git.
 - `electron-builder.json` and the `package`/`make` scripts define a reviewed local packaging path; package execution, signing, and artifact copy remain separate approval-gated actions.

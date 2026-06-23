@@ -213,4 +213,8 @@ def _installer_artifacts(electron_dir: Path) -> list[str]:
     dist = electron_dir / "dist"
     if not dist.exists():
         return []
-    return [str(path.relative_to(electron_dir.parent.parent)) for path in sorted(dist.glob("*.AppImage")) if path.is_file()]
+    patterns = ("*.AppImage", "*.exe")
+    paths: list[Path] = []
+    for pattern in patterns:
+        paths.extend(path for path in sorted(dist.glob(pattern)) if path.is_file())
+    return [str(path.relative_to(electron_dir.parent.parent)) for path in sorted(paths)]

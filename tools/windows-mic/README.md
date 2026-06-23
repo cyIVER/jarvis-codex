@@ -43,7 +43,7 @@ export JARVIS_RECORD_COMMAND="powershell.exe -NoProfile -ExecutionPolicy Bypass 
 Then run:
 
 ```bash
-uv run jarvis-codex voice listen \
+uv run jarvis chat \
   --model /home/iveri/.cache/whisper.cpp/models/ggml-tiny.en.bin \
   --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /home/iveri/.cache/whisper.cpp/bin/v1.9.1/whisper-cli" \
   --allow-microphone \
@@ -52,6 +52,10 @@ uv run jarvis-codex voice listen \
   --approval-mode inline \
   --no-daemon-start
 ```
+
+`jarvis chat` speaks the assistant response in chunks through `JARVIS_LOCAL_TTS_COMMAND` when configured, or through the local Windows Piper setup at `C:\Users\iveri\Apps\piper\say.ps1` when available. Terminal output is compact by default and focuses on commands, code, paths, approvals, errors, and status. Pass `--terminal-mode full` to print the full assistant text, or `--no-speak` to disable audio.
+
+For conversational correction, add `--loop`. Press Ctrl+C while Jarvis is answering to cancel that answer and start the next recording window.
 
 The wrapper converts WSL output paths to Windows paths before invoking the recorder executable.
 
