@@ -196,6 +196,7 @@ This note backs the morning HTML dashboard.
 - Hardened the loop readiness scanner after Antigravity challenge review: package JSON discovery, standard executable/config directory scanning, whitespace-tolerant runtime marker detection, scanner self-definition exemptions, and root non-mutation tests.
 - Ran final targeted validation: governance PASS, loop readiness PASS, bounded loop-run proof, and 282 tests passed.
 - Implemented backend `swarm.launch` for approval-gated role-labeled PTY pane launch with exact role command/profile/cwd scope, HUD runtime-token enforcement, hardline policy preservation, and no Worktrunk or Git mutation.
+- Committed and pushed approval-gated swarm role launch in `752e3ac`.
 - Added `swarm.launch` tests for approved role pane launch, token and scope mismatches, cwd binding, role limit validation, and hardline policy blocks.
 - Ran final targeted validation after swarm launch: governance PASS, loop readiness PASS, runtime readiness foundation-ready, and 286 tests passed.
 
