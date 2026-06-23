@@ -67,6 +67,8 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "video/remotion/.gitignore", "out/*\n!out/.gitkeep\n")
     write(tmp_path / "video/remotion/out/jarvis-codex-plan.png")
     write(tmp_path / "video/remotion/out/jarvis-codex-plan.mp4")
+    write(tmp_path / "video/remotion/out/jarvis-codex-overnight-brief.png")
+    write(tmp_path / "video/remotion/out/jarvis-codex-overnight-brief.mp4")
 
     before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
 
@@ -86,6 +88,10 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert manifest["mobile_device_validation_required"] is True
     assert manifest["external_security_review_required"] is True
     assert manifest["generated_assets_require_approval"] is True
+    assert "video/remotion/out/jarvis-codex-plan.png" in manifest["generated_assets_present"]
+    assert "video/remotion/out/jarvis-codex-plan.mp4" in manifest["generated_assets_present"]
+    assert "video/remotion/out/jarvis-codex-overnight-brief.png" in manifest["generated_assets_present"]
+    assert "video/remotion/out/jarvis-codex-overnight-brief.mp4" in manifest["generated_assets_present"]
     assert "docs/VOICE_INGRESS.md" in manifest["release_candidates_present"]
     assert "docs/WHISPER_CPP_STT_RUNBOOK.md" in manifest["release_candidates_present"]
     assert "docs/SAFE_HANDOFF_GATEWAY_PRD.md" in manifest["release_candidates_present"]

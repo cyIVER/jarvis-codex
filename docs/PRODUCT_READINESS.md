@@ -38,7 +38,7 @@ The current release is a governed local operating substrate:
 - unattended loop scheduling operator evidence brief for accepted policy and run-log review evidence collection
 - voice ingress through transcript files, approved local executable STT adapters, and HUD controls for approved browser-audio transcription
 - approval-gated autonomous loop planning artifacts
-- local-only Remotion review asset scaffold
+- local-only Remotion review asset scaffold and 08:00 briefing video/poster surfaced through the operator dashboard
 
 ## Prioritized Assumptions
 

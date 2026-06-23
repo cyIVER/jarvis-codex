@@ -956,6 +956,22 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             True,
             "Generated local asset; keep ignored unless operator approves release packaging.",
         ),
+        _artifact(
+            root,
+            "video/remotion/out/jarvis-codex-overnight-brief.png",
+            "generated-review-asset",
+            False,
+            True,
+            "Generated 0800 briefing poster; keep ignored unless operator approves release packaging.",
+        ),
+        _artifact(
+            root,
+            "video/remotion/out/jarvis-codex-overnight-brief.mp4",
+            "generated-review-asset",
+            False,
+            True,
+            "Generated 0800 briefing video; keep ignored unless operator approves release packaging.",
+        ),
     ]
 
     warnings = []

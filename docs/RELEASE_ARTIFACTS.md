@@ -91,6 +91,8 @@ The manifest reports whether these files are present:
 
 - `video/remotion/out/jarvis-codex-plan.png`
 - `video/remotion/out/jarvis-codex-plan.mp4`
+- `video/remotion/out/jarvis-codex-overnight-brief.png`
+- `video/remotion/out/jarvis-codex-overnight-brief.mp4`
 
 Presence does not make them release artifacts. They require explicit operator approval before copying, publishing, attaching to releases, or moving into any tracked artifact bundle.
 
