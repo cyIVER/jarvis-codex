@@ -211,6 +211,10 @@ This note backs the morning HTML dashboard.
 - Ran Antigravity challenge review on the security packet and hardened it with explicit human external reviewer attestation, OWASP LLM Top 10, MITRE ATLAS, and non-server runtime readiness boundaries.
 - Ran final targeted validation: governance PASS, loop readiness PASS, and 293 tests passed.
 - Committed external security review packet in `336d407`.
+- Implemented and validated state-only release gate evidence records through `jarvis-codex --state <state-dir> release evidence add/list --json`.
+- Ran Antigravity challenge review on the evidence ledger and hardened state-local artifact hashing, malformed JSONL handling, invalid-gate rejection, and non-authoritative record semantics.
+- Ran final targeted validation: governance PASS, loop readiness PASS, and 300 tests passed.
+- Committed release gate evidence ledger in `f1f3ab9`.
 
 ## Pending
 
