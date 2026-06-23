@@ -43,6 +43,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
+- Read-only Gemini Live validation planning through `jarvis-codex gemini validation-plan --json`; it prepares cloud voice evidence steps without starting OAuth, opening WebSockets, launching adapters, probing the network, writing state, exposing secrets, or granting execution authority.
 - Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
 
 ## Not Yet Production-Complete
@@ -83,6 +84,7 @@ The following remain future or incomplete production gates:
 - Mobile validation plans are evidence checklists only; they must not launch the runtime, probe the network, open browsers, or grant execution authority.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
+- Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 
 ## Required Local Validation
@@ -101,7 +103,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-239 passed
+244 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

@@ -380,6 +380,46 @@ def test_gemini_feasibility_requires_json(monkeypatch):
     assert exc_info.value.code == 2
 
 
+def test_gemini_validation_plan_json_is_read_only_summary(monkeypatch, capsys):
+    class FakeGeminiValidationPlan:
+        def to_dict(self):
+            return {
+                "label": "Gemini Live validation plan",
+                "status": "READY_FOR_OPERATOR_TEST",
+                "credential_mode_ready": True,
+                "network_probe_performed": False,
+                "oauth_flow_started": False,
+                "websocket_opened": False,
+                "service_launch_performed": False,
+                "writes_state": False,
+                "execution_authority": False,
+                "secret_values_exposed": False,
+            }
+
+    monkeypatch.setattr(cli, "build_gemini_live_validation_plan", lambda: FakeGeminiValidationPlan())
+
+    code = run_cli(monkeypatch, ["gemini", "validation-plan", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["label"] == "Gemini Live validation plan"
+    assert data["status"] == "READY_FOR_OPERATOR_TEST"
+    assert data["network_probe_performed"] is False
+    assert data["websocket_opened"] is False
+    assert data["service_launch_performed"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+
+
+def test_gemini_validation_plan_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "validation-plan"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
 def test_loop_verify_json_returns_read_only_status(monkeypatch, capsys):
     seen = {}
 

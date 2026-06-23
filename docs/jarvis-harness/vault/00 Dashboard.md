@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:55 EDT
+updated: 2026-06-23 04:05 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -68,8 +68,9 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Approval-gated loop lifecycle records committed and pushed as `5414bf4`.
 - HUD loop lifecycle controls committed and pushed as `f9f240e`.
 - Read-only release packaging preflight committed and pushed as `b9dcfb1`.
-- Read-only mobile validation planner is implemented and awaiting commit.
-- Current Codeburn snapshot: month `$612.41`, 6550 calls.
+- Read-only mobile validation planner committed and pushed as `6acfb68`.
+- Read-only Gemini Live validation planner is implemented and awaiting commit.
+- Current Codeburn snapshot: month `$614.67`, 6573 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -106,11 +107,12 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
 - Packaging preflight is read-only; it does not install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
+- Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Electron dependency lock/install, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, approved Electron dependency lock/install, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

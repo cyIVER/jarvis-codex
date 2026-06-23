@@ -149,13 +149,17 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 234 tests passed.
 - Ran AG packaging preflight safety review; no package-authority issue was found.
 - Implemented and validated read-only mobile validation planning. It prepares iPhone/PWA evidence steps without probing the network, launching the runtime, opening browsers, writing state, or granting execution authority.
+- Committed and pushed read-only mobile validation planner in `6acfb68`.
 - Ran final integrated validation: governance PASS, 239 tests passed.
 - Ran AG mobile validation-plan safety review; no execution-authority, network-probe, service-launch, state-write, or approval-boundary issue was found.
-- Refreshed Codeburn snapshot: month `$612.41`, 6550 calls.
+- Implemented and validated read-only Gemini Live validation planning. It prepares cloud voice evidence steps without starting OAuth, opening WebSockets, probing the network, launching adapters, writing state, exposing secrets, approving cloud spend, or granting execution authority.
+- Ran final integrated validation: governance PASS, 244 tests passed.
+- Ran AG Gemini validation-plan safety review; no OAuth, WebSocket, network-probe, adapter-launch, state-write, secret-exposure, spend-authority, or fallback-boundary issue was found.
+- Refreshed Codeburn snapshot: month `$614.67`, 6573 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Electron dependency lock/install, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approved Electron dependency lock/install, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

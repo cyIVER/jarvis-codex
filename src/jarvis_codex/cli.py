@@ -6,7 +6,7 @@ from pathlib import Path
 
 import uvicorn
 
-from .gemini import build_gemini_feasibility
+from .gemini import build_gemini_feasibility, build_gemini_live_validation_plan
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
@@ -112,6 +112,8 @@ def main() -> int:
     gemini_sub = gemini.add_subparsers(dest="gemini_command", required=True)
     gemini_feasibility = gemini_sub.add_parser("feasibility", help="Print a read-only Gemini Live auth feasibility report")
     gemini_feasibility.add_argument("--json", action="store_true", help="Print Gemini feasibility as JSON")
+    gemini_validation = gemini_sub.add_parser("validation-plan", help="Print a read-only Gemini Live connection validation plan")
+    gemini_validation.add_argument("--json", action="store_true", help="Print Gemini validation plan as JSON")
     loop = sub.add_parser("loop", help="Review autonomous loop readiness without mutation")
     loop_sub = loop.add_subparsers(dest="loop_command", required=True)
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
@@ -232,6 +234,9 @@ def main() -> int:
             parser.error("gemini commands are JSON-only in this read-only first implementation; pass --json")
         if args.gemini_command == "feasibility":
             print(json.dumps(build_gemini_feasibility().to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.gemini_command == "validation-plan":
+            print(json.dumps(build_gemini_live_validation_plan().to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "loop":
         if not args.json:

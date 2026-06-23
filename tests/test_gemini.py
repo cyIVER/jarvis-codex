@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.gemini import build_gemini_feasibility
+from jarvis_codex.gemini import build_gemini_feasibility, build_gemini_live_validation_plan
 
 
 def test_gemini_feasibility_without_credentials_is_read_only(tmp_path: Path) -> None:
@@ -61,3 +61,40 @@ def test_gemini_feasibility_keeps_actual_live_connection_as_gate(tmp_path: Path)
     assert feasibility.google_application_credentials_present is True
     assert "run an explicit networked Gemini Live connection test only after operator approval" in feasibility.remaining_gates
     assert "https://ai.google.dev/gemini-api/docs/live-api" in feasibility.sources
+
+
+def test_gemini_validation_plan_without_credentials_is_not_ready(tmp_path: Path) -> None:
+    plan = build_gemini_live_validation_plan({}, tmp_path / "missing-adc.json")
+
+    assert plan.status == "NEEDS_CREDENTIALS"
+    assert plan.credential_mode_ready is False
+    assert plan.network_probe_performed is False
+    assert plan.websocket_opened is False
+    assert plan.oauth_flow_started is False
+    assert plan.service_launch_performed is False
+    assert plan.writes_state is False
+    assert plan.execution_authority is False
+    assert plan.secret_values_exposed is False
+    assert any("No credential signal" in warning for warning in plan.warnings)
+
+
+def test_gemini_validation_plan_with_api_key_does_not_expose_secret(tmp_path: Path) -> None:
+    plan = build_gemini_live_validation_plan({"GEMINI_API_KEY": "secret-value"}, tmp_path / "missing-adc.json")
+
+    assert plan.status == "READY_FOR_OPERATOR_TEST"
+    assert plan.credential_mode_ready is True
+    assert plan.browser_direct_requires_ephemeral_tokens is True
+    assert plan.ephemeral_tokens_preview is True
+    assert plan.server_to_server_available is True
+    assert "secret-value" not in str(plan.to_dict())
+    assert any("long-lived API key" in criterion for criterion in plan.fail_criteria)
+
+
+def test_gemini_validation_plan_names_connection_gates(tmp_path: Path) -> None:
+    plan = build_gemini_live_validation_plan({"GOOGLE_API_KEY": "google-secret"}, tmp_path / "missing-adc.json")
+
+    assert any("ephemeral-token" in step for step in plan.validation_steps)
+    assert any("WebSocket connection" in step for step in plan.validation_steps)
+    assert any("GoAway" in item for item in plan.session_limits_to_verify)
+    assert any("do not open Gemini WebSockets" in action for action in plan.unsafe_actions)
+    assert "https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens" in plan.sources

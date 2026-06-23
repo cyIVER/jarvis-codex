@@ -42,6 +42,7 @@ jarvis-codex runtime serve                # serve the runtime HUD on 127.0.0.1:8
 jarvis-codex mobile preflight --json      # classify private-network iPhone/PWA access without probing
 jarvis-codex mobile validation-plan --json # prepare iPhone/PWA test evidence without serving
 jarvis-codex gemini feasibility --json    # inspect Gemini Live auth readiness without connecting
+jarvis-codex gemini validation-plan --json # prepare Gemini Live test evidence without connecting
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector

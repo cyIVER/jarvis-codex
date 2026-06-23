@@ -50,6 +50,26 @@ It does not:
 - launch services
 - write state
 
+## Implemented Validation Plan
+
+Run:
+
+```bash
+jarvis-codex gemini validation-plan --json
+```
+
+The validation plan is also read-only. It turns the current Live API constraints into an operator evidence checklist without:
+
+- starting OAuth
+- opening a Gemini WebSocket
+- launching a runtime adapter
+- probing the network
+- writing state
+- exposing secret values
+- granting execution authority
+
+The plan requires separate approval before any networked test. Browser-direct Live API remains blocked until ephemeral-token minting is designed and reviewed. Server-mediated validation remains the preferred first path.
+
 ## Recommended Integration Shape
 
 Use this order:
@@ -71,4 +91,4 @@ Use this order:
 
 ## Safety Boundary
 
-The feasibility check is not a voice adapter. It is not proof that Gemini Live works in this environment. It is only a local readiness summary.
+The feasibility check and validation plan are not voice adapters. They are not proof that Gemini Live works in this environment. They are local readiness and evidence-planning summaries only.
