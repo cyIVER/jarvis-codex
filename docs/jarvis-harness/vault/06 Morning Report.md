@@ -73,7 +73,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed HUD readiness panel in `495e7a9`.
 - Implemented and validated browser-managed voice status output. This does not run local TTS or grant approval authority.
 - Committed and pushed browser voice status output in `7d8685f`.
-- Refreshed Codeburn snapshot: month `$554.87`, 6035 calls.
+- Implemented and validated non-writing runtime policy profile catalog.
+- Committed and pushed runtime policy profile catalog in `0b23f80`.
+- Ran final integrated validation: governance PASS, 165 tests passed.
+- Refreshed Codeburn snapshot: month `$556.29`, 6046 calls.
 
 ## Pending
 
