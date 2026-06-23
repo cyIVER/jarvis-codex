@@ -344,6 +344,7 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
 
     after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
     mobile = next(item for item in checklist["checklist"] if item["gate"] == "actual_mobile_device_validation")
+    gemini = next(item for item in checklist["checklist"] if item["gate"] == "networked_gemini_live_validation")
     external = next(item for item in checklist["checklist"] if item["gate"] == "external_security_review")
     unattended = next(item for item in checklist["checklist"] if item["gate"] == "unattended_loop_scheduling")
     assert checklist["status"] == "blocked"
@@ -362,12 +363,15 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert "actual_mobile_device_validation" in checklist["blocked_by"]
     assert "networked_gemini_live_validation" in checklist["blocked_by"]
     assert "jarvis-codex mobile evidence-brief --host <private-host> --json" in checklist["recommended_read_only_commands"]
+    assert "jarvis-codex gemini evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex loop unattended-policy --json" in checklist["recommended_read_only_commands"]
     assert checklist["summary"]["unattended_loop_policy_status"] == "ready-for-human-policy-review"
     assert "launch runtime services" in checklist["unsafe_actions_not_authorized"]
     assert "mobile evidence-brief" in mobile["read_only_command"]
     assert mobile["release_gate_closed"] is False
+    assert "gemini evidence-brief" in gemini["read_only_command"]
+    assert gemini["release_gate_closed"] is False
     assert external["evidence_count"] == 1
     assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False

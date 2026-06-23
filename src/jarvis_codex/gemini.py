@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -69,6 +70,40 @@ class GeminiLiveValidationPlan:
     unsafe_actions: list[str]
     warnings: list[str]
     sources: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class GeminiLiveEvidenceBrief:
+    label: str
+    status: str
+    recommended_path: str
+    credential_mode_ready: bool
+    auth_modes_present: list[str]
+    browser_direct_requires_ephemeral_tokens: bool
+    feasibility_command: str
+    validation_plan_command: str
+    network_test_command: str
+    release_evidence_command: str
+    required_operator_evidence: list[str]
+    operator_steps: list[str]
+    pass_criteria: list[str]
+    fail_criteria: list[str]
+    unsafe_actions: list[str]
+    warnings: list[str]
+    sources: list[str]
+    network_probe_performed: bool
+    oauth_flow_started: bool
+    websocket_opened: bool
+    service_launch_performed: bool
+    writes_state: bool
+    execution_authority: bool
+    secret_values_exposed: bool
+    cloud_spend_authority: bool
+    release_gate_closed: bool
+    requires_human_acceptance: bool
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -211,4 +246,71 @@ def build_gemini_live_validation_plan(
         ],
         warnings=warnings,
         sources=GEMINI_LIVE_SOURCES,
+    )
+
+
+def build_gemini_live_evidence_brief(
+    env: Mapping[str, str] | None = None,
+    application_default_credentials_path: Path | None = None,
+) -> GeminiLiveEvidenceBrief:
+    """Prepare a compact Gemini Live operator evidence brief without network, auth, or state side effects."""
+    feasibility = build_gemini_feasibility(env, application_default_credentials_path)
+    plan = build_gemini_live_validation_plan(env, application_default_credentials_path)
+    release_summary = (
+        "Networked Gemini Live validation with redacted credential mode, WebSocket result metadata, "
+        "cloud indicator evidence, and local fallback boundary confirmation."
+    )
+    release_command = (
+        "jarvis-codex --state <state-dir> release evidence add "
+        "--gate networked_gemini_live_validation "
+        f"--summary {json.dumps(release_summary)} --reviewer operator --json"
+    )
+    warnings = list(dict.fromkeys([*feasibility.warnings, *plan.warnings]))
+    return GeminiLiveEvidenceBrief(
+        label="Gemini Live operator evidence brief",
+        status=plan.status,
+        recommended_path=plan.recommended_path,
+        credential_mode_ready=plan.credential_mode_ready,
+        auth_modes_present=feasibility.auth_modes_present,
+        browser_direct_requires_ephemeral_tokens=plan.browser_direct_requires_ephemeral_tokens,
+        feasibility_command="jarvis-codex gemini feasibility --json",
+        validation_plan_command="jarvis-codex gemini validation-plan --json",
+        network_test_command="future approved Gemini Live adapter command; not implemented or executed by this brief",
+        release_evidence_command=release_command,
+        required_operator_evidence=[
+            *plan.required_operator_evidence,
+            "approved exact network test command and captured exit/status result",
+            "confirmation that no long-lived credential was exposed to HUD, PWA, logs, or browser code",
+            "confirmation that local STT/TTS fallback remained available after the cloud test",
+        ],
+        operator_steps=[
+            "Run the feasibility and validation-plan commands first.",
+            "Confirm the credential mode, billing/quota posture, and endpoint family before any networked test.",
+            "Review and approve the exact Gemini Live adapter command before OAuth, WebSocket, or network activity.",
+            "Run only a minimal redacted network test after approval.",
+            "Capture setup/result metadata with secret values redacted.",
+            "Store any evidence artifact under <state-dir>/release/ before hashing it with release evidence add.",
+            "Record release evidence metadata only after a human reviews the redacted evidence.",
+        ],
+        pass_criteria=plan.pass_criteria,
+        fail_criteria=plan.fail_criteria,
+        unsafe_actions=[
+            *plan.unsafe_actions,
+            "do not treat this brief as proof that Gemini Live connected",
+            "do not treat this brief as approval for cloud spend",
+            "do not run a future adapter command without exact operator approval",
+            "do not close the networked_gemini_live_validation gate from this brief",
+        ],
+        warnings=warnings,
+        sources=plan.sources,
+        network_probe_performed=False,
+        oauth_flow_started=False,
+        websocket_opened=False,
+        service_launch_performed=False,
+        writes_state=False,
+        execution_authority=False,
+        secret_values_exposed=False,
+        cloud_spend_authority=False,
+        release_gate_closed=False,
+        requires_human_acceptance=True,
     )

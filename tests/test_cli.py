@@ -744,8 +744,56 @@ def test_gemini_validation_plan_json_is_read_only_summary(monkeypatch, capsys):
     assert data["execution_authority"] is False
 
 
+def test_gemini_evidence_brief_json_is_read_only_summary(monkeypatch, capsys):
+    class FakeGeminiEvidenceBrief:
+        def to_dict(self):
+            return {
+                "label": "Gemini Live operator evidence brief",
+                "status": "READY_FOR_OPERATOR_TEST",
+                "credential_mode_ready": True,
+                "network_probe_performed": False,
+                "oauth_flow_started": False,
+                "websocket_opened": False,
+                "service_launch_performed": False,
+                "writes_state": False,
+                "execution_authority": False,
+                "secret_values_exposed": False,
+                "cloud_spend_authority": False,
+                "release_gate_closed": False,
+                "release_evidence_command": "jarvis-codex --state <state-dir> release evidence add --gate networked_gemini_live_validation --json",
+            }
+
+    monkeypatch.setattr(cli, "build_gemini_live_evidence_brief", lambda: FakeGeminiEvidenceBrief())
+
+    code = run_cli(monkeypatch, ["gemini", "evidence-brief", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["label"] == "Gemini Live operator evidence brief"
+    assert data["status"] == "READY_FOR_OPERATOR_TEST"
+    assert data["network_probe_performed"] is False
+    assert data["oauth_flow_started"] is False
+    assert data["websocket_opened"] is False
+    assert data["service_launch_performed"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["secret_values_exposed"] is False
+    assert data["cloud_spend_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert "networked_gemini_live_validation" in data["release_evidence_command"]
+
+
 def test_gemini_validation_plan_requires_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "validation-plan"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_gemini_evidence_brief_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "gemini", "evidence-brief"])
 
     with pytest.raises(SystemExit) as exc_info:
         cli.main()

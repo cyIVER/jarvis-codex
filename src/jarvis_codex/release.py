@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .gemini import build_gemini_live_validation_plan
+from .gemini import build_gemini_live_evidence_brief, build_gemini_live_validation_plan
 from .loop_readiness import build_unattended_loop_policy
 from .mobile import build_mobile_validation_plan
 from .packaging import build_packaging_preflight
@@ -315,6 +315,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     gate_status = build_release_gate_status(evidence_records)
     mobile_validation = build_mobile_validation_plan().to_dict()
     gemini_validation = build_gemini_live_validation_plan().to_dict()
+    gemini_evidence_brief = build_gemini_live_evidence_brief().to_dict()
     unattended_policy = build_unattended_loop_policy(root)
 
     gate_lookup = {gate["gate"]: gate for gate in gate_status["gates"]}
@@ -332,10 +333,10 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             gate_lookup,
             "networked_gemini_live_validation",
             "Run an approved Gemini Live network validation using the selected credential mode.",
-            "jarvis-codex gemini feasibility --json && jarvis-codex gemini validation-plan --json",
-            gemini_validation["required_operator_evidence"],
-            gemini_validation["unsafe_actions"],
-            [f"current validation-plan status: {gemini_validation['status']}"],
+            "jarvis-codex gemini feasibility --json && jarvis-codex gemini evidence-brief --json",
+            gemini_evidence_brief["required_operator_evidence"],
+            gemini_evidence_brief["unsafe_actions"],
+            [f"current evidence-brief status: {gemini_evidence_brief['status']}"],
         ),
         _release_checklist_item(
             gate_lookup,
@@ -441,6 +442,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "jarvis-codex mobile discover --json",
             "jarvis-codex mobile evidence-brief --host <private-host> --json",
             "jarvis-codex gemini feasibility --json",
+            "jarvis-codex gemini evidence-brief --json",
             "jarvis-codex loop verify --json",
             "jarvis-codex loop unattended-policy --json",
         ],

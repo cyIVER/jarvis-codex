@@ -106,8 +106,11 @@ pattern: product-readiness-triage
 - [x] PM-033 - Mobile operator evidence brief
   Loop action: added read-only `mobile evidence-brief --json` to package the target URL, approval-gated serve command, iPhone screenshot/note requirements, and release evidence recording command for actual private-network validation.
   Human decision: the brief does not launch the runtime, open browsers, probe networks, write state, or close `actual_mobile_device_validation`; human-accepted device evidence is still required.
-- [ ] PM-034 - Next product slice
-  Loop action: pending prioritization between actual iPhone private-network validation evidence, approved Gemini Live network validation, Electron signing/distribution flow, external security reviewer attestation, and accepted unattended/background scheduling evidence.
+- [x] PM-034 - Gemini Live operator evidence brief
+  Loop action: added read-only `gemini evidence-brief --json` to package credential mode, billing/quota review, redaction requirements, approval-gated network-test expectations, and release-evidence recording instructions.
+  Human decision: the brief does not start OAuth, open WebSockets, probe networks, approve cloud spend, write state, or close `networked_gemini_live_validation`; accepted human evidence is still required.
+- [ ] PM-035 - Next product slice
+  Loop action: pending prioritization between actual iPhone private-network validation, approved Gemini Live network test execution, Electron signing/distribution flow, external security reviewer attestation, and accepted unattended/background scheduling evidence.
   Human decision: not selected yet.
 
 ## Watch List
@@ -141,3 +144,4 @@ Run log: 2026-06-23 | findings: loop verifier checked budget presence but not bu
 Run log: 2026-06-23 | findings: product readiness artifacts lagged committed platform state | actions: reconciled acceptance matrix and loop state with current validated surfaces | escalations: 0
 Run log: 2026-06-23 | findings: unattended loop scheduling gate lacked a compact policy evidence command | actions: added read-only unattended loop policy report and linked it from release readiness | escalations: 0
 Run log: 2026-06-23 | findings: actual iPhone validation still needed an operator-ready evidence packet | actions: added read-only mobile evidence brief with release-evidence recording instructions | escalations: 0
+Run log: 2026-06-23 | findings: networked Gemini Live validation still needed an operator-ready redaction and evidence packet | actions: added read-only Gemini evidence brief with release-evidence recording instructions | escalations: 0

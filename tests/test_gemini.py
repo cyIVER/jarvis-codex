@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.gemini import build_gemini_feasibility, build_gemini_live_validation_plan
+from jarvis_codex.gemini import build_gemini_feasibility, build_gemini_live_evidence_brief, build_gemini_live_validation_plan
 
 
 def test_gemini_feasibility_without_credentials_is_read_only(tmp_path: Path) -> None:
@@ -98,3 +98,36 @@ def test_gemini_validation_plan_names_connection_gates(tmp_path: Path) -> None:
     assert any("GoAway" in item for item in plan.session_limits_to_verify)
     assert any("do not open Gemini WebSockets" in action for action in plan.unsafe_actions)
     assert "https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens" in plan.sources
+
+
+def test_gemini_evidence_brief_is_read_only_and_release_gate_safe(tmp_path: Path) -> None:
+    brief = build_gemini_live_evidence_brief({"GOOGLE_API_KEY": "google-secret"}, tmp_path / "missing-adc.json")
+
+    assert brief.label == "Gemini Live operator evidence brief"
+    assert brief.status == "READY_FOR_OPERATOR_TEST"
+    assert brief.credential_mode_ready is True
+    assert brief.auth_modes_present == ["GOOGLE_API_KEY"]
+    assert brief.network_probe_performed is False
+    assert brief.oauth_flow_started is False
+    assert brief.websocket_opened is False
+    assert brief.service_launch_performed is False
+    assert brief.writes_state is False
+    assert brief.execution_authority is False
+    assert brief.secret_values_exposed is False
+    assert brief.cloud_spend_authority is False
+    assert brief.release_gate_closed is False
+    assert brief.requires_human_acceptance is True
+    assert "networked_gemini_live_validation" in brief.release_evidence_command
+    assert "google-secret" not in str(brief.to_dict())
+    assert any("secret values redacted" in step for step in brief.operator_steps)
+    assert any("do not close" in action for action in brief.unsafe_actions)
+
+
+def test_gemini_evidence_brief_without_credentials_is_not_ready(tmp_path: Path) -> None:
+    brief = build_gemini_live_evidence_brief({}, tmp_path / "missing-adc.json")
+
+    assert brief.status == "NEEDS_CREDENTIALS"
+    assert brief.credential_mode_ready is False
+    assert brief.auth_modes_present == []
+    assert brief.release_gate_closed is False
+    assert "No Gemini credential signal" in brief.warnings[0]

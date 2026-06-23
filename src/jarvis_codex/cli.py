@@ -7,7 +7,7 @@ from pathlib import Path
 import uvicorn
 
 from .autonomous_loop import run_autonomous_loop_once, run_autonomous_loop_schedule
-from .gemini import build_gemini_feasibility, build_gemini_live_validation_plan
+from .gemini import build_gemini_feasibility, build_gemini_live_evidence_brief, build_gemini_live_validation_plan
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
@@ -156,6 +156,8 @@ def main() -> int:
     gemini_feasibility.add_argument("--json", action="store_true", help="Print Gemini feasibility as JSON")
     gemini_validation = gemini_sub.add_parser("validation-plan", help="Print a read-only Gemini Live connection validation plan")
     gemini_validation.add_argument("--json", action="store_true", help="Print Gemini validation plan as JSON")
+    gemini_evidence = gemini_sub.add_parser("evidence-brief", help="Print a read-only Gemini Live operator evidence brief")
+    gemini_evidence.add_argument("--json", action="store_true", help="Print Gemini evidence brief as JSON")
     loop = sub.add_parser("loop", help="Review autonomous loop readiness without mutation")
     loop_sub = loop.add_subparsers(dest="loop_command", required=True)
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
@@ -337,6 +339,9 @@ def main() -> int:
             return 0
         if args.gemini_command == "validation-plan":
             print(json.dumps(build_gemini_live_validation_plan().to_dict(), indent=2, sort_keys=True))
+            return 0
+        if args.gemini_command == "evidence-brief":
+            print(json.dumps(build_gemini_live_evidence_brief().to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "loop":
         if not args.json:
