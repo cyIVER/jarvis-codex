@@ -92,6 +92,11 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 
 ## Gate Docs
 
+- `LOOP.md`
+- `STATE.md`
+- `loop-budget.md`
+- `loop-run-log.md`
+- `docs/safety.md`
 - `docs/VOICE_NOTIFICATIONS.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/REMOTION_REVIEW.md`
