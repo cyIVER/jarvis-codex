@@ -167,7 +167,7 @@ This note backs the morning HTML dashboard.
 - Installed Electron HUD local dependencies under ignored `tools/electron-hud/node_modules/`; verified `electron --version` reports `v42.4.1`.
 - Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
 - Ran final integrated validation: governance PASS, 248 tests passed.
-- Refreshed Codeburn snapshot: month `$623.87`, 6645 calls.
+- Refreshed Codeburn snapshot: month `$625.53`, 6657 calls.
 
 ## Pending
 
