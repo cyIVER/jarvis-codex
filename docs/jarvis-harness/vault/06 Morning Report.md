@@ -66,7 +66,10 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 158 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
 - Implemented non-writing `runtime.readiness` RPC for current foundation status and remaining release gaps.
 - Committed and pushed runtime readiness RPC in `c176976`.
-- Refreshed Codeburn snapshot: month `$546.90`, 5961 calls.
+- Implemented and validated AG-triggered boundary hardening: same-origin WebSocket checks, runtime-token-gated approval responses and approved action consumption, atomic approval consumption, visible approval scope, and runtime-owned STT paths.
+- Committed and pushed runtime boundary hardening in `7d3e0b5`.
+- Ran final integrated validation: governance PASS, 164 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
+- Refreshed Codeburn snapshot: month `$551.11`, 6002 calls.
 
 ## Pending
 
