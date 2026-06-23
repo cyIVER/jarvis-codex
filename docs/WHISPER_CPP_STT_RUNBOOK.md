@@ -4,6 +4,25 @@ This runbook covers local file-based speech-to-text for Jarvis Codex through an 
 
 Jarvis does not install `whisper.cpp`, download models, convert audio, access microphones, start listeners, or choose a cloud fallback.
 
+## Current Local Evidence
+
+The current WSL environment has a user-cache `whisper.cpp` setup that was prepared outside the Jarvis command path:
+
+- `whisper-cli`: `/home/iveri/.cache/whisper.cpp/bin/v1.9.1/whisper-cli`
+- ggml model: `/home/iveri/.cache/whisper.cpp/models/ggml-tiny.en.bin`
+- sample audio: `/home/iveri/.cache/whisper.cpp/samples/jfk.wav`
+
+`jarvis-codex voice discover --json` now reports `READY` for this local cache. A readiness probe against the JFK sample passed without writing state or processing audio, and one explicitly approved local transcription wrote only to a temporary state directory under `/tmp`.
+
+The proof transcript captured:
+
+```text
+And so my fellow Americans ask not what your country can do for you
+ask what you can do for your country.
+```
+
+This evidence proves the file-based local STT path. It does not approve microphone listeners, background recording, model downloads from Jarvis commands, cloud STT, Dockerized STT, GPU/NPU adapters, or runtime workflow execution.
+
 ## Required Local Inputs
 
 - A local `whisper-cli` executable built or installed by the operator.

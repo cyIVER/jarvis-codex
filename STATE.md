@@ -45,15 +45,18 @@ pattern: product-readiness-triage
   Human decision: microphone listeners, model downloads, cloud STT, GPU/NPU STT adapters, and Codex App Server bridge remain separate approval-gated phases.
 - [x] PM-013 - STT readiness probe
   Loop action: added `voice probe --json` and `whisper-cpp-stt-adapter.py --check-only` so local STT wiring can be verified without processing audio or writing state.
-  Human decision: real transcription still requires operator-selected `whisper-cli`, a local ggml model, and explicit `--allow-audio-processing`.
+  Human decision: real transcription requires operator-selected `whisper-cli`, a local ggml model, and explicit `--allow-audio-processing`.
 - [x] PM-014 - Expanded release readiness manifest
   Loop action: expanded the read-only release manifest to cover core docs, loop state, voice ingress, local runtime, safe handoff, Worktrunk lane PRD, and explicit publication approval status.
   Human decision: publication, artifact copying, release uploads, and generated asset promotion still require separate approval.
 - [x] PM-015 - whisper.cpp STT operator runbook
   Loop action: added a no-download runbook for operator-supplied `whisper-cli`, local ggml models, STT readiness probing, and guarded transcription.
   Human decision: Jarvis still does not install `whisper.cpp`, download models, convert audio, or approve microphone/background listeners.
-- [ ] PM-016 - Next product slice
-  Loop action: pending prioritization between real local STT transcription exercise, operator release review, and broader release readiness review.
+- [x] PM-016 - Real local STT transcription exercise
+  Loop action: cached whisper.cpp v1.9.1 and `ggml-tiny.en.bin` outside the repo, proved `voice discover --json` is `READY`, probed the JFK sample without writes, and captured one approved sample transcript into `/tmp` state.
+  Human decision: this validates file-based local STT only; microphone listeners, runtime chunk transcription, cloud STT, and background capture remain gated.
+- [ ] PM-017 - Next product slice
+  Loop action: pending prioritization between runtime-captured audio chunk STT, operator release review, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List
@@ -61,7 +64,7 @@ pattern: product-readiness-triage
 - Validator portability and governance drift checks.
 - Project-local `skills.config` only if repeated routing noise appears.
 - Loop audit score is 86/100; generic loop-triage, loop-verifier skill, and loop-budget skill automation remain deferred to avoid changing the Phase 1 governance baseline.
-- Voice microphone capture, cloud STT, model downloads, and Codex App Server bridge remain gated; file-based local STT plus a `whisper.cpp` adapter wrapper and non-runtime readiness probe are implemented.
+- Voice microphone capture, cloud STT, Jarvis-managed model downloads, and Codex App Server bridge remain gated; file-based local STT plus a `whisper.cpp` adapter wrapper, non-runtime readiness probe, and one approved sample transcription are implemented.
 - Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging; manifest output is review-only.
 
 ## Recent Noise
@@ -71,3 +74,4 @@ pattern: product-readiness-triage
 
 ---
 Run log: 2026-06-23 | findings: voice ingress needed actual STT instead of transcript-only deferral | actions: added approval-gated local executable STT adapter path | escalations: 0
+Run log: 2026-06-23 | findings: local STT cache was missing | actions: installed whisper.cpp v1.9.1 user-cache binary, downloaded `ggml-tiny.en.bin`, probed JFK sample, captured approved sample transcript into temp state | escalations: 0

@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$644.73</div>
-          <div class="note">Latest Codeburn month snapshot: 6828 calls. Daily counter reset after midnight.</div>
+          <div class="value">$646.59</div>
+          <div class="note">Latest Codeburn month snapshot: 6841 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -287,7 +287,8 @@
           <li>Loop lifecycle records require scoped approvals and runtime token; they do not launch agents, PTYs, Worktrunk, shell, or runtime workflows.</li>
           <li>AG challenge review found STT, approval replay, command policy, WebSocket origin, token, and API-contract issues; fixes are committed in <code>89b09fc</code>, <code>c176976</code>, and <code>7d3e0b5</code>.</li>
           <li>Final integrated validation passed: governance PASS, 263 tests, provider status matrix, release artifact hash evidence, Electron icon readiness, unsigned Electron installer evidence, mobile host discovery tests, STT discovery tests, AG challenge review, Electron package-build validation, Electron packaging-script review, Electron lock boundary review, Gemini validation-plan review, mobile validation-plan review, packaging preflight review, HUD loop control review, loop lifecycle review, Gemini feasibility review, mobile preflight review, Electron scaffold review, release manifest review, swarm lifecycle review, HUD browser smoke, local TTS adapter tests, runtime readiness/serve CLI tests, swarm-plan smoke, and command-proposal smoke.</li>
-          <li>Windows AC sleep and hibernate were set to never for the overnight run.</li>
+          <li>Local whisper.cpp STT is now installed in the user cache and proven with a JFK sample transcription into temp state; this proves file-based STT only, not always-on microphone capture.</li>
+          <li>Windows AC sleep, hibernate, and display timeout were set to never for the overnight run.</li>
         </ul>
       </div>
     </section>
@@ -332,13 +333,14 @@
         <div class="step"><strong>Phase 34</strong><span>Electron dependencies are locally installed under ignored node_modules; preflight now drops install gate while package/sign/artifact gates remain.</span></div>
         <div class="step"><strong>Phase 35</strong><span>Electron Builder config and reviewed package/make scripts are present; packaging execution, signing, isolated build review, and artifact security review remain gated.</span></div>
         <div class="step"><strong>Phase 36</strong><span>Non-signing Electron package execution produced a local ignored linux-unpacked artifact; signing, installer generation, artifact review, and distribution remain gated.</span></div>
-        <div class="step"><strong>Phase 37</strong><span>Read-only local STT discovery reports whisper.cpp binaries and ggml models without microphone access, audio processing, downloads, cloud calls, runtime start, or state writes; this machine currently reports NEEDS_SETUP.</span></div>
+        <div class="step"><strong>Phase 37</strong><span>Read-only local STT discovery reports whisper.cpp binaries and ggml models without microphone access, audio processing, downloads, cloud calls, runtime start, or state writes; this machine now reports READY for the user-cache whisper.cpp setup.</span></div>
         <div class="step"><strong>Phase 38</strong><span>Read-only mobile host discovery recommends the WSL private-interface candidate 172.28.39.152 without probing, serving, opening browsers, or writing state.</span></div>
         <div class="step"><strong>Phase 39</strong><span>Local dependency audits for Electron HUD and Remotion report zero high-or-worse npm vulnerabilities; external security review remains a separate release gate.</span></div>
         <div class="step"><strong>Phase 40</strong><span>Unsigned Electron AppImage generation produced a local ignored artifact; signing, malware review, artifact copy, and distribution remain gated.</span></div>
         <div class="step"><strong>Phase 41</strong><span>Electron Builder now uses a committed Jarvis icon asset, and local make validation no longer reports the default Electron icon warning.</span></div>
         <div class="step"><strong>Phase 42</strong><span>Release artifact evidence reports size and SHA-256 for the committed icon and ignored Electron artifacts without building, signing, copying, publishing, or writing files.</span></div>
         <div class="step"><strong>Phase 43</strong><span>The HUD now renders a non-writing Codex, Antigravity, and Codeburn provider matrix without launching providers or granting execution authority.</span></div>
+        <div class="step"><strong>Phase 44</strong><span>User-cache whisper.cpp v1.9.1 plus ggml-tiny.en.bin transcribed the JFK sample through the Jarvis adapter into temp state, proving the local file-based STT path without cloud services or repo state writes.</span></div>
       </div>
     </section>
 

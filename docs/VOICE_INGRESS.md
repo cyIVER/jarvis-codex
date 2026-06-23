@@ -55,6 +55,18 @@ python3 scripts/whisper-cpp-stt-adapter.py \
   --check-only
 ```
 
+## Current Local STT Cache
+
+This machine currently has a validated local `whisper.cpp` cache:
+
+- `/home/iveri/.cache/whisper.cpp/bin/v1.9.1/whisper-cli`
+- `/home/iveri/.cache/whisper.cpp/models/ggml-tiny.en.bin`
+- `/home/iveri/.cache/whisper.cpp/samples/jfk.wav`
+
+`jarvis-codex voice discover --json` reports `READY` for those local assets. The JFK sample was probed without state writes and then transcribed once with `--allow-audio-processing` into a temporary state directory under `/tmp`.
+
+This does not change the approval model. Microphone use still begins in the browser permission flow, and local audio transcription still requires an explicit approved adapter command.
+
 ## What It Does
 
 - Reads one local text transcript file, or one explicit local audio file through an approved local STT adapter.

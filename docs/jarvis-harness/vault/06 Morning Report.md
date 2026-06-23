@@ -171,7 +171,10 @@ This note backs the morning HTML dashboard.
 - Added Electron Builder `26.15.3`, `electron-builder.json`, and reviewed package/make scripts so packaging preflight can recommend `npm run package` and `npm run make` while keeping package execution, signing, and artifact distribution gated.
 - Ran `npm run package`; Electron Builder produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact. The artifact is not signed, copied, reviewed for distribution, or publication-ready.
 - Added read-only `jarvis-codex voice discover --json` for local `whisper-cli` and ggml model discovery without microphone access, audio processing, downloads, cloud calls, runtime start, or state writes.
-- Ran `jarvis-codex voice discover --json`; this machine currently reports `NEEDS_SETUP` because no local `whisper-cli` or ggml model candidate was found.
+- Installed a user-cache whisper.cpp v1.9.1 Ubuntu x64 binary under `/home/iveri/.cache/whisper.cpp/bin/v1.9.1/` and downloaded `ggml-tiny.en.bin` under `/home/iveri/.cache/whisper.cpp/models/`.
+- Ran `jarvis-codex voice discover --json`; this machine now reports `READY` with one `whisper-cli` candidate and one ggml model candidate.
+- Probed `/home/iveri/.cache/whisper.cpp/samples/jfk.wav` without writing state or processing audio; the readiness probe passed.
+- Ran one explicitly approved local STT transcription into `/tmp/jarvis-codex-stt-state-*`; Jarvis captured the JFK sample transcript as a `voice-audio-file` episode without cloud STT or repo state writes.
 - Added read-only `jarvis-codex mobile discover --json`; this machine currently recommends `172.28.39.152` as a private-interface candidate without probing, serving, opening browsers, or writing state.
 - Ran `npm audit --audit-level=high` in `tools/electron-hud` and `video/remotion`; both reported zero vulnerabilities.
 - Ran `npm run make`; Electron Builder produced a local ignored unsigned AppImage at `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage`. It is not signed, copied, reviewed, or publication-ready.
@@ -180,6 +183,7 @@ This note backs the morning HTML dashboard.
 - Added read-only `jarvis-codex release artifact-evidence --json` for size/SHA-256 review of the committed icon and ignored local Electron artifacts without building, signing, copying, publishing, launching services, mutating Git, or writing files.
 - Added non-writing Codex, Antigravity, and Codeburn provider status matrix to runtime RPC, readiness, and HUD. It reports provider roles and boundaries without launching providers, PTYs, shell commands, Worktrunk, services, or workflows.
 - Ran final integrated validation: governance PASS, 263 tests passed.
+- Refreshed Codeburn snapshot: month `$646.59`, 6841 calls.
 
 ## Pending
 
