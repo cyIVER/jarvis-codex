@@ -133,6 +133,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Gemini Live evidence brief is an operator collection aid only; it does not start OAuth, open WebSockets, probe the network, launch adapters, approve cloud spend, write state, or close the networked Gemini validation gate.
 - Packaging/signing evidence brief is an operator collection aid only; it does not run npm, build packages, sign artifacts, copy outputs, publish artifacts, access signing credentials, write files, or close packaging gates.
 - External security evidence brief is an operator collection aid only; it does not run scanners, launch services, probe networks, build packages, sign artifacts, copy outputs, publish artifacts, replace human reviewer sign-off, write files, or close the external review gate.
+- Unattended loop evidence brief is an operator collection aid only; it does not start daemons, background schedulers, services, agents, PTYs, Worktrunk, Git mutation, runtime workflows, write state, or close the unattended scheduling gate.
+- The 0800 Remotion briefing is a local generated review asset served from the morning dashboard; it is not release evidence or publication approval.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.

@@ -258,6 +258,12 @@ This note backs the morning HTML dashboard.
 - Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, external security evidence-brief proof, release checklist linkage PASS, and 323 tests passed.
 - Committed and pushed external security evidence brief in `750180f`.
 - Refreshed Codeburn snapshot: today `$25.35` across 222 calls; month `$735.92`, 7615 calls.
+- Implemented and validated read-only `jarvis-codex loop unattended-evidence-brief --json`; it packages operator acceptance evidence, run-log visibility, stop controls, escalation requirements, and release evidence recording instructions without daemons, background schedulers, services, agent fanout, Worktrunk, Git mutation, runtime workflows, state writes, or gate closure.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, unattended evidence-brief proof, release checklist linkage PASS, and 325 tests passed.
+- Committed and pushed unattended loop evidence brief in `37d8031`.
+- Refreshed Codeburn snapshot: today `$32.82` across 279 calls; month `$743.39`, 7672 calls.
+- Created a 30-second Remotion 0800 video briefing covering completed work, remaining production gates, and decisions still needed.
+- Exported the HTML dashboard plus MP4 and poster to Windows Downloads and opened `C:\Users\iveri\Downloads\jarvis-harness-overnight-dashboard.html`.
 
 ## Pending
 
