@@ -576,6 +576,59 @@ def test_loop_verify_failure_returns_nonzero(monkeypatch, capsys):
     assert data["failures"] == 1
 
 
+def test_loop_run_once_requires_allow_validation(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "run-once", "--json"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_loop_run_once_json_records_bounded_execution(tmp_path, monkeypatch, capsys):
+    seen = {}
+
+    class FakeLoopRun:
+        status = "PASS"
+
+        def to_dict(self):
+            return {
+                "run_id": "loop_fixture",
+                "status": "PASS",
+                "writes_state": True,
+                "execution_authority": False,
+                "arbitrary_command_execution": False,
+                "service_launch_performed": False,
+                "network_probe_performed": False,
+                "git_mutation_performed": False,
+                "worktrunk_mutation_performed": False,
+            }
+
+    def fake_run_once(root, state_root, *, allow_validation):
+        seen["root"] = root
+        seen["state_root"] = state_root
+        seen["allow_validation"] = allow_validation
+        return FakeLoopRun()
+
+    monkeypatch.setattr(cli, "run_autonomous_loop_once", fake_run_once)
+
+    code = run_cli(
+        monkeypatch,
+        ["--state", str(tmp_path / "state"), "loop", "run-once", "--root", "/repo", "--allow-validation", "--json"],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert str(seen["state_root"]) == str(tmp_path / "state")
+    assert seen["allow_validation"] is True
+    assert data["status"] == "PASS"
+    assert data["writes_state"] is True
+    assert data["execution_authority"] is False
+    assert data["arbitrary_command_execution"] is False
+    assert data["service_launch_performed"] is False
+
+
 def test_loop_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "verify"])
 

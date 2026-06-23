@@ -221,7 +221,7 @@
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 47</strong>Mobile HUD</div>
+        <div class="ring-text"><strong>PHASE 48</strong>Loop Run</div>
       </div>
     </header>
 
@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$656.11</div>
-          <div class="note">Latest Codeburn month snapshot: 6918 calls. Daily counter reset after midnight.</div>
+          <div class="value">$671.39</div>
+          <div class="note">Latest Codeburn month snapshot: 7055 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">Runtime, PTY supervision, provider status matrix, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, approval-gated swarm lifecycle records, approval-gated loop lifecycle records, HUD swarm lifecycle controls, HUD loop lifecycle controls, standalone runtime readiness CLI, HUD mobile access readiness, hardened Electron HUD scaffold, pinned Electron lockfile, local ignored Electron dependencies, reviewed Electron packaging scripts, committed Electron icon, local non-signing Electron package artifact, local release artifact hash evidence, local dependency audit evidence, read-only mobile host discovery, read-only mobile preflight, read-only mobile validation planner, read-only Gemini Live feasibility, read-only Gemini Live validation planner, read-only packaging preflight, state-only command proposals, automated HUD browser smoke, loopback runtime serve, release artifact review, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT discovery, local STT, server-resolved STT model ids, HUD approved STT controls, approval-gated local TTS, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
+          <div class="note">Runtime, PTY supervision, bounded loop run-once execution, broadened loop readiness guardrail scan, provider status matrix, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, approval-gated swarm lifecycle records, approval-gated loop lifecycle records, HUD swarm lifecycle controls, HUD loop lifecycle controls, standalone runtime readiness CLI, HUD mobile access readiness, hardened Electron HUD scaffold, pinned Electron lockfile, local ignored Electron dependencies, reviewed Electron packaging scripts, committed Electron icon, local non-signing Electron package artifact, local release artifact hash evidence, local dependency audit evidence, read-only mobile host discovery, read-only mobile preflight, read-only mobile validation planner, read-only Gemini Live feasibility, read-only Gemini Live validation planner, read-only packaging preflight, state-only command proposals, automated HUD browser smoke, loopback runtime serve, release artifact review, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT discovery, local STT, server-resolved STT model ids, HUD approved STT controls, approval-gated local TTS, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
         </div>
       </div>
     </section>
@@ -286,7 +286,7 @@
           <li>Voice intent proposals classify transcripts but must not execute commands.</li>
           <li>Loop lifecycle records require scoped approvals and runtime token; they do not launch agents, PTYs, Worktrunk, shell, or runtime workflows.</li>
           <li>AG challenge review found STT, approval replay, command policy, WebSocket origin, token, and API-contract issues; fixes are committed in <code>89b09fc</code>, <code>c176976</code>, and <code>7d3e0b5</code>.</li>
-          <li>Final integrated validation passed: governance PASS, 266 tests, provider status matrix, mobile HUD readiness, release artifact hash evidence, Electron icon readiness, unsigned Electron installer evidence, mobile host discovery tests, STT discovery tests, AG challenge review, Electron package-build validation, Electron packaging-script review, Electron lock boundary review, Gemini validation-plan review, mobile validation-plan review, packaging preflight review, HUD loop control review, loop lifecycle review, Gemini feasibility review, mobile preflight review, Electron scaffold review, release manifest review, swarm lifecycle review, HUD browser smoke, local TTS adapter tests, runtime readiness/serve CLI tests, swarm-plan smoke, and command-proposal smoke.</li>
+          <li>Final integrated validation passed: governance PASS, loop readiness PASS, bounded loop-run proof, 282 tests, provider status matrix, mobile HUD readiness, release artifact hash evidence, Electron icon readiness, unsigned Electron installer evidence, mobile host discovery tests, STT discovery tests, AG challenge review, Electron package-build validation, Electron packaging-script review, Electron lock boundary review, Gemini validation-plan review, mobile validation-plan review, packaging preflight review, HUD loop control review, loop lifecycle review, Gemini feasibility review, mobile preflight review, Electron scaffold review, release manifest review, swarm lifecycle review, HUD browser smoke, local TTS adapter tests, runtime readiness/serve CLI tests, swarm-plan smoke, and command-proposal smoke.</li>
           <li>Local whisper.cpp STT is now installed in the user cache and proven with a JFK sample transcription into temp state; this proves file-based STT only, not always-on microphone capture.</li>
           <li>Windows AC sleep, hibernate, and display timeout were set to never for the overnight run.</li>
         </ul>
@@ -344,6 +344,7 @@
         <div class="step"><strong>Phase 45</strong><span>Runtime STT now accepts safe server-resolved model ids under JARVIS_LOCAL_STT_MODELS_DIR, while rejecting traversal ids and direct client cache paths.</span></div>
         <div class="step"><strong>Phase 46</strong><span>The HUD now exposes approval request and approved transcription buttons for the latest captured local audio chunk, using safe STT model ids and the runtime token gate.</span></div>
         <div class="step"><strong>Phase 47</strong><span>The HUD now renders mobile access readiness from non-writing host discovery, showing the recommended private URL and display-only serve/preflight/validation command proposals without launching services, probing the network, or granting execution authority.</span></div>
+        <div class="step"><strong>Phase 48</strong><span>Bounded loop run-once execution now runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records local JSON evidence under the selected state directory, while the broadened loop readiness scanner checks code, governance, script, CI, package JSON, standard executable/config, and safety surfaces for forbidden authority markers.</span></div>
       </div>
     </section>
 

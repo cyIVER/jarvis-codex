@@ -187,13 +187,17 @@ This note backs the morning HTML dashboard.
 - Added server-resolved `model_id` support for `voice.transcribe_audio`; the runtime can use `JARVIS_LOCAL_STT_MODELS_DIR` without accepting arbitrary client model paths.
 - Added tests for valid model-id transcription, unsafe model-id rejection before adapter execution, and direct cache path rejection without `model_id`.
 - Added HUD controls for requesting transcription approval on the latest captured local audio chunk and running approved local STT with a safe `model_id`.
-- Refreshed Codeburn snapshot: month `$656.11`, 6918 calls.
+- Refreshed Codeburn snapshot: month `$671.39`, 7055 calls.
 - Added non-writing mobile access evidence to `runtime.readiness` and the HUD, including the recommended private URL and display-only serve/preflight/validation command proposals.
 - Committed and pushed HUD mobile access readiness in `1acb844`.
+- Added bounded `jarvis-codex loop run-once --allow-validation --json` execution for fixed validators/readiness collectors with local state evidence and no arbitrary command authority.
+- Ran bounded loop execution into `/tmp/jarvis-codex-loop-run-final3-20260623T054557`; it recorded governance PASS, loop readiness PASS, runtime readiness foundation-ready, and Codeburn status.
+- Hardened the loop readiness scanner after Antigravity challenge review: package JSON discovery, standard executable/config directory scanning, whitespace-tolerant runtime marker detection, scanner self-definition exemptions, and root non-mutation tests.
+- Ran final targeted validation: governance PASS, loop readiness PASS, bounded loop-run proof, and 282 tests passed.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, unattended loop scheduling, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

@@ -128,6 +128,13 @@ Loop and swarm:
 
 `swarm.start` and `swarm.stop` are implemented as approval-gated lifecycle records. They require a matching scoped approval and the HUD runtime token, consume that approval on use, and append `swarm.started` or `swarm.stopped`. They do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
 
+CLI loop execution:
+
+- `jarvis-codex loop verify --json`
+- `jarvis-codex loop run-once --allow-validation --json`
+
+`loop run-once` runs only fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry. It writes a loop-run JSON record under the selected `--state` directory and appends `logs/loop-runs.jsonl`. It does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
+
 Telemetry:
 
 - `telemetry.codeburn_status`

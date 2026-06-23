@@ -48,6 +48,21 @@ These records do not launch agents, start PTYs, mutate Worktrunk, run shell comm
 
 The HUD exposes matching loop lifecycle controls. The controls can request approval and record approved lifecycle state, but they do not start autonomous loop execution.
 
+## Bounded Loop Runner
+
+`jarvis-codex loop run-once --allow-validation --json` runs one bounded product-readiness loop iteration.
+
+The runner executes only fixed built-in validators/readiness collectors and fixed no-shell Codeburn telemetry:
+
+- Phase 1 Codex governance validation.
+- Loop readiness validation.
+- Runtime readiness summary.
+- Fixed Codeburn telemetry status.
+
+It writes a loop-run JSON record under the selected `--state` directory and appends `logs/loop-runs.jsonl`.
+
+It does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or run runtime workflows.
+
 ## Risk-Scaled Spawning
 
 Risk factors:
@@ -100,6 +115,7 @@ Before commit or push:
 
 - `/loop` can run a delivery phase with a durable event trail.
 - `/loop` lifecycle methods can record approved state without starting execution.
+- `loop run-once` can execute fixed validators and record a bounded loop-run event.
 - `/swarm` can record role-labeled lifecycle state with scoped approvals.
 - Actual role-labeled pane spawning remains a future implementation gate.
 - High-risk work triggers adversarial review.

@@ -50,6 +50,8 @@ Required v1 capabilities:
 
 Loop lifecycle methods record approved state only. They do not launch agents, start PTYs, execute shell commands, mutate Worktrunk, run runtime workflows, or grant execution authority.
 
+The CLI also exposes `jarvis-codex loop run-once --allow-validation --json` for one bounded loop iteration. It runs only fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records evidence under the selected `--state` directory. It is not a generic command runner and does not launch services, agents, PTYs, Worktrunk, Git mutation, network probes, or runtime workflows.
+
 The wire model should separate:
 
 - JSON-RPC request and response frames.

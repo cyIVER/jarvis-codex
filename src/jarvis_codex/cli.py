@@ -6,6 +6,7 @@ from pathlib import Path
 
 import uvicorn
 
+from .autonomous_loop import run_autonomous_loop_once
 from .gemini import build_gemini_feasibility, build_gemini_live_validation_plan
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
@@ -131,6 +132,14 @@ def main() -> int:
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
     loop_verify.add_argument("--root", default=".", help="Repository root to inspect")
     loop_verify.add_argument("--json", action="store_true", help="Print loop readiness as JSON")
+    loop_run_once = loop_sub.add_parser("run-once", help="Run one bounded autonomous loop iteration")
+    loop_run_once.add_argument("--root", default=".", help="Repository root to inspect")
+    loop_run_once.add_argument("--json", action="store_true", help="Print loop run result as JSON")
+    loop_run_once.add_argument(
+        "--allow-validation",
+        action="store_true",
+        help="Required confirmation to run fixed validators and write a loop-run record under --state",
+    )
     doctor = sub.add_parser("doctor", help="Inspect state")
     doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
@@ -273,6 +282,12 @@ def main() -> int:
             result = validate_loop_readiness(Path(args.root))
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["status"] == "PASS" else 1
+        if args.loop_command == "run-once":
+            if not args.allow_validation:
+                parser.error("loop run-once requires --allow-validation")
+            result = run_autonomous_loop_once(Path(args.root), Path(args.state), allow_validation=True)
+            print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+            return 0 if result.status == "PASS" else 1
     if args.command == "doctor":
         data = state.doctor()
         if args.governance:

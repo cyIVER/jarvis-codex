@@ -64,8 +64,11 @@ pattern: product-readiness-triage
 - [x] PM-019 - HUD mobile access readiness
   Loop action: surfaced non-writing mobile host discovery in runtime readiness and the HUD, including recommended private URL and display-only serve/preflight/validation command proposals.
   Human decision: real iPhone private-network validation and non-loopback runtime serving still require explicit operator approval and evidence.
-- [ ] PM-020 - Next product slice
-  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, actual swarm launch design, and actual loop execution design.
+- [x] PM-020 - Bounded loop run-once execution
+  Loop action: added `jarvis-codex loop run-once --allow-validation --json` to run fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and write loop-run evidence under the selected state directory.
+  Human decision: the runner does not accept arbitrary commands, launch services, probe the network, mutate Git/Worktrunk, start agents, start PTYs, or execute runtime workflows.
+- [ ] PM-021 - Next product slice
+  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, actual swarm launch design, and unattended loop scheduling.
   Human decision: not selected yet.
 
 ## Watch List
@@ -87,3 +90,4 @@ Run log: 2026-06-23 | findings: local STT cache was missing | actions: installed
 Run log: 2026-06-23 | findings: runtime STT needed a model cache path that did not let clients pass arbitrary filesystem paths | actions: added server-resolved `model_id` support under `JARVIS_LOCAL_STT_MODELS_DIR` with traversal and direct-cache-path tests | escalations: 0
 Run log: 2026-06-23 | findings: HUD lacked a button path from captured audio chunks to approved local STT | actions: added transcription approval request and approved transcription controls for the latest captured audio path | escalations: 0
 Run log: 2026-06-23 | findings: mobile host discovery existed only in CLI/docs and was not visible in the harness | actions: added non-writing mobile access evidence to runtime readiness and HUD display-only command proposals | escalations: 0
+Run log: 2026-06-23 | findings: loop lifecycle records did not perform a bounded iteration | actions: added fixed-check `loop run-once` execution with local JSON evidence and no arbitrary command authority | escalations: 0

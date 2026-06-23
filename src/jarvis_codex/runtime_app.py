@@ -85,7 +85,6 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
         "iphone_private_network_validation",
         "approved_gemini_live_network_test",
         "actual_swarm_agent_launch",
-        "actual_loop_execution",
         "signed_release_artifacts",
         "external_security_review",
     ]
@@ -108,6 +107,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "codeburn_shell": False,
             "swarm_lifecycle_records": True,
             "loop_lifecycle_records": True,
+            "bounded_loop_run_once": True,
             "agent_provider_status": True,
             "electron_hud_scaffold": True,
             "electron_lockfile": True,

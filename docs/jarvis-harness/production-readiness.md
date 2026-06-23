@@ -21,6 +21,7 @@ Implemented and validated in the local FastAPI runtime:
 - Planning-only swarm lane proposal records through `swarm.plan` without agent launch, PTY launch, Worktrunk mutation, or command execution.
 - Approval-gated swarm lifecycle records through `swarm.start` and `swarm.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
+- Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
@@ -67,7 +68,8 @@ The following remain future or incomplete production gates:
 - Electron desktop app signing, artifact security review, and distribution approval.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- Actual loop execution and actual multi-agent launch orchestration.
+- Actual multi-agent launch orchestration.
+- Higher-level unattended loop scheduling beyond bounded `loop run-once`.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
@@ -84,6 +86,7 @@ The following remain future or incomplete production gates:
 - Swarm plans are planning records only; they must not be treated as permission to launch agents, mutate Worktrunk, start PTYs, or run commands.
 - Swarm lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
 - Loop lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as autonomous execution, agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
+- Bounded `loop run-once` does not accept arbitrary command strings, launch services, probe the network, mutate Git, mutate Worktrunk, start agents, start PTYs, or execute runtime workflows.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.
@@ -120,7 +123,7 @@ Run from the repo root:
 
 ```bash
 python3 scripts/validate-jarvis-codex-phase1.py
-uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py tests/test_packaging.py
+uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py tests/test_packaging.py tests/test_loop_readiness.py tests/test_autonomous_loop.py
 ```
 
 Expected current baseline:
@@ -130,7 +133,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-256 passed
+282 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,72 @@ FORBIDDEN_RUNTIME_MARKERS = [
     "npm run render",
     "npm run still",
 ]
+SCAN_DIRS = [".github", ".codex", ".agents", ".hooks", "bin", "config", "lib", "packages", "scripts", "src", "tests"]
+SCAN_FILES = [
+    "STATE.md",
+    "LOOP.md",
+    "Makefile",
+    "package.json",
+    "docs/safety.md",
+    "docs/PRODUCT_READINESS.md",
+    "docs/jarvis-harness/production-readiness.md",
+]
+SCAN_SUFFIXES = {
+    "",
+    ".bash",
+    ".js",
+    ".json",
+    ".md",
+    ".mjs",
+    ".ps1",
+    ".py",
+    ".sh",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".yml",
+    ".yaml",
+    ".zsh",
+}
+SCAN_FILE_NAMES = {"package.json"}
+SKIP_TOP_LEVEL_PARTS = {
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+}
+SECTION_GUARDRAIL_PHRASES = {
+    "approval-gated actions",
+    "approval gates",
+    "deny list",
+    "disallowed tools/actions",
+    "forbidden",
+    "must not perform",
+    "must not run",
+    "must not run or authorize",
+    "never run",
+    "safety gates",
+    "without explicit approval",
+}
+TEST_EXECUTION_PHRASES = {"check_call", "check_output", "os.system", "popen", "subprocess."}
+SPLIT_COMMAND_PATTERNS = {
+    "git push": ("git\", \"push", "git', 'push", "git\" + \" push", "git' + ' push"),
+    "git reset": ("git\", \"reset", "git', 'reset", "git\" + \" reset", "git' + ' reset"),
+    "git clean": ("git\", \"clean", "git', 'clean", "git\" + \" clean", "git' + ' clean"),
+    "git rebase": ("git\", \"rebase", "git', 'rebase", "git\" + \" rebase", "git' + ' rebase"),
+    "git merge": ("git\", \"merge", "git', 'merge", "git\" + \" merge", "git' + ' merge"),
+}
+MARKER_REGEXES = {
+    'sandbox_mode = "workspace-write"': re.compile(r"\bsandbox_mode\s*=\s*['\"]workspace-write['\"]", re.I),
+    "git push": re.compile(r"\bgit\s+push\b", re.I),
+    "git reset": re.compile(r"\bgit\s+reset\b", re.I),
+    "git clean": re.compile(r"\bgit\s+clean\b", re.I),
+    "git rebase": re.compile(r"\bgit\s+rebase\b", re.I),
+    "git merge": re.compile(r"\bgit\s+merge\b", re.I),
+    "npm run render": re.compile(r"\bnpm\s+run\s+render\b", re.I),
+    "npm run still": re.compile(r"\bnpm\s+run\s+still\b", re.I),
+}
 
 
 def _check_file(root: Path, name: str, relative_path: str) -> LoopCheck:
@@ -56,15 +123,16 @@ def _check_text_contains(root: Path, name: str, relative_path: str, marker: str)
 
 def _check_forbidden_markers(root: Path) -> list[LoopCheck]:
     checks: list[LoopCheck] = []
-    scanned_files = [root / ".github/workflows/ci.yml"]
+    scanned_files = _iter_marker_scan_files(root)
     for marker in FORBIDDEN_RUNTIME_MARKERS:
         found = []
         for path in scanned_files:
             if not path.exists():
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
-            for line in text.splitlines():
-                if marker in line and "not" not in line.lower() and "no " not in line.lower():
+            lines = text.splitlines()
+            for index, line in enumerate(lines):
+                if _marker_in_line(marker, line) and not _line_is_negative_guardrail(path, lines, index, marker):
                     found.append(str(path.relative_to(root)))
                     break
         checks.append(
@@ -76,6 +144,107 @@ def _check_forbidden_markers(root: Path) -> list[LoopCheck]:
             )
         )
     return checks
+
+
+def _iter_marker_scan_files(root: Path) -> list[Path]:
+    files: list[Path] = []
+    for relative in SCAN_FILES:
+        path = root / relative
+        if path.exists() and path.is_file():
+            files.append(path)
+    for relative in SCAN_DIRS:
+        path = root / relative
+        if not path.exists() or not path.is_dir():
+            continue
+        for candidate in path.rglob("*"):
+            if _skip_scan_candidate(root, candidate):
+                continue
+            files.append(candidate)
+    for candidate in root.rglob("*"):
+        if not candidate.is_file() or candidate.name not in SCAN_FILE_NAMES:
+            continue
+        if _skip_scan_candidate(root, candidate):
+            continue
+        files.append(candidate)
+    for candidate in root.iterdir():
+        if candidate.is_file() and candidate.suffix in SCAN_SUFFIXES:
+            files.append(candidate)
+    return sorted(set(files))
+
+
+def _skip_scan_candidate(root: Path, candidate: Path) -> bool:
+    if not candidate.is_file() or candidate.suffix not in SCAN_SUFFIXES:
+        return True
+    relative_parts = candidate.relative_to(root).parts
+    return any(part in SKIP_TOP_LEVEL_PARTS or part == "node_modules" for part in relative_parts)
+
+
+def _marker_in_line(marker: str, line: str) -> bool:
+    if MARKER_REGEXES.get(marker) and MARKER_REGEXES[marker].search(line):
+        return True
+    if marker in line:
+        return True
+    return any(pattern in line for pattern in SPLIT_COMMAND_PATTERNS.get(marker, ()))
+
+
+def _line_is_negative_guardrail(path: Path, lines: list[str], index: int, marker: str) -> bool:
+    line = lines[index].lower()
+    if "tests" in path.parts:
+        if path.name == "test_loop_readiness.py":
+            return True
+        return not _test_marker_has_nearby_execution(lines, index)
+
+    if path.suffix == ".py":
+        if _is_known_guardrail_definition(path, line, marker):
+            return True
+        start = max(0, index - 12)
+        end = min(len(lines), index + 3)
+        context = " ".join(lines[start:end]).lower()
+        if path.name == "plan_viewer.py" and "command:" in line and "status: 'gated'" in context:
+            return True
+        return False
+
+    if path.suffix in {".md", ".toml", ".yml", ".yaml"}:
+        if ".github" in path.parts and path.suffix in {".yml", ".yaml"}:
+            return False
+        start = max(0, index - 12)
+        context = " ".join(lines[start : index + 1]).lower()
+        return any(phrase in context for phrase in SECTION_GUARDRAIL_PHRASES)
+
+    return False
+
+
+def _test_marker_has_nearby_execution(lines: list[str], index: int) -> bool:
+    start = max(0, index - 2)
+    end = min(len(lines), index + 4)
+    text = "\n".join(lines[start:end]).lower()
+    return any(phrase in text for phrase in TEST_EXECUTION_PHRASES)
+
+
+def _is_known_guardrail_definition(path: Path, line: str, marker: str) -> bool:
+    stripped = line.strip()
+    quoted_marker_lines = {f'"{marker}",', f"'{marker}',"}
+    if path.name == "loop_readiness.py":
+        return (
+            stripped in quoted_marker_lines
+            or ": re.compile(" in stripped
+            or any(pattern in stripped for pattern in SPLIT_COMMAND_PATTERNS.get(marker, ()))
+            or "jarvis_worker_fixer.toml is absent" in stripped
+        )
+    if path.name == "governance.py":
+        return (
+            stripped in quoted_marker_lines
+            or "worker_fixer_path=agent_dir" in stripped
+            or 'pass_("jarvis_worker_fixer.toml is absent.")' in stripped
+        )
+    if path.name == "policy.py":
+        return (
+            "destructive git" in stripped
+            or "hardline" in stripped
+            or "git mutation" in stripped
+            or "lowered[:2]" in stripped
+        )
+    return False
 
 
 def validate_loop_readiness(root: Path) -> dict[str, Any]:
