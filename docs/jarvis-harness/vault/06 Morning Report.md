@@ -230,6 +230,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated `release.readiness_checklist` runtime RPC plus HUD Release Plan panel.
 - Ran final targeted validation: governance PASS, loop readiness PASS, HUD browser checklist smoke, and 308 tests passed.
 - Committed HUD release checklist surface in `830f057`.
+- Hardened read-only loop readiness verification with explicit loop-budget policy checks for manual cadence, token cap, kill switches, and escalation rules.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, and 309 tests passed.
+- Committed loop budget-policy checks in `10b038e`.
 
 ## Pending
 
