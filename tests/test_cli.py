@@ -1091,6 +1091,49 @@ def test_loop_unattended_policy_json_is_read_only(monkeypatch, capsys):
     assert data["release_gate_closed"] is False
 
 
+def test_loop_unattended_evidence_brief_json_is_read_only(monkeypatch, capsys):
+    def fake_brief(root):
+        return {
+            "label": "Jarvis unattended loop scheduling operator evidence brief",
+            "status": "READY_FOR_OPERATOR_REVIEW",
+            "root": str(root),
+            "writes_files": False,
+            "writes_state": False,
+            "daemon_started": False,
+            "background_scheduler_started": False,
+            "service_launch_performed": False,
+            "arbitrary_command_authority": False,
+            "agent_fanout_authority": False,
+            "git_mutation_performed": False,
+            "worktrunk_mutation_performed": False,
+            "runtime_workflow_performed": False,
+            "execution_authority": False,
+            "release_gate_closed": False,
+            "release_evidence_command": "jarvis-codex --state <state-dir> release evidence add --gate unattended_loop_scheduling --json",
+        }
+
+    monkeypatch.setattr(cli, "build_unattended_loop_evidence_brief", fake_brief)
+
+    code = run_cli(monkeypatch, ["loop", "unattended-evidence-brief", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["label"] == "Jarvis unattended loop scheduling operator evidence brief"
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["daemon_started"] is False
+    assert data["background_scheduler_started"] is False
+    assert data["service_launch_performed"] is False
+    assert data["arbitrary_command_authority"] is False
+    assert data["agent_fanout_authority"] is False
+    assert data["git_mutation_performed"] is False
+    assert data["worktrunk_mutation_performed"] is False
+    assert data["runtime_workflow_performed"] is False
+    assert data["execution_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert "unattended_loop_scheduling" in data["release_evidence_command"]
+
+
 def test_loop_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "loop", "verify"])
 

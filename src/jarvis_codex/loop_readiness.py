@@ -359,3 +359,88 @@ def build_unattended_loop_policy(root: Path) -> dict[str, Any]:
             "This report does not authorize unattended operation or close the unattended_loop_scheduling release gate.",
         ],
     }
+
+
+def build_unattended_loop_evidence_brief(root: Path) -> dict[str, Any]:
+    """Build a read-only operator brief for unattended/background loop scheduling evidence."""
+    root = root.resolve()
+    policy = build_unattended_loop_policy(root)
+    release_evidence_command = (
+        "jarvis-codex --state <state-dir> release evidence add "
+        "--gate unattended_loop_scheduling "
+        "--summary \"Unattended loop policy accepted with budget, stop, escalation, and observable run evidence\" "
+        "--reviewer operator --json"
+    )
+    required_operator_evidence = [
+        "accepted schedule cadence and maximum interval",
+        "accepted iteration cap and token cap per loop cycle",
+        "accepted kill switches and manual stop controls",
+        "accepted escalation rules for validation failures or budget drift",
+        "human-observable run log location and review cadence",
+        "foreground versus background scheduling decision",
+        "allowed fixed validators and readiness collectors only",
+        "operator acceptance that unattended policy evidence does not close gates automatically",
+    ]
+    return {
+        "label": "Jarvis unattended loop scheduling operator evidence brief",
+        "status": "READY_FOR_OPERATOR_REVIEW"
+        if policy["status"] == "ready-for-human-policy-review"
+        else "NEEDS_READINESS_FIXES",
+        "root": str(root),
+        "policy_status": policy["status"],
+        "policy_command": "jarvis-codex loop unattended-policy --json",
+        "validation_command": "jarvis-codex loop verify --json",
+        "release_evidence_command": release_evidence_command,
+        "required_operator_evidence": required_operator_evidence,
+        "operator_steps": [
+            "Run loop verify and unattended-policy first.",
+            "Review schedule cadence, budget cap, kill switches, escalation rules, and run-log visibility.",
+            "Decide whether the approved policy remains foreground-only or may later include a separately implemented scheduler.",
+            "Do not start any daemon, background scheduler, service, PTY, agent fanout, Worktrunk flow, or Git mutation from this brief.",
+            "Record release evidence metadata only after a human accepts the unattended loop policy and evidence.",
+        ],
+        "pass_criteria": [
+            "loop readiness reports PASS",
+            "operator accepts cadence, iteration cap, token cap, stop controls, escalation rules, and run-log review cadence",
+            "operator explicitly accepts that only fixed validators/readiness collectors may run",
+            "any future background scheduler remains separately approved before implementation or launch",
+            "release evidence references the accepted policy and observable run evidence",
+        ],
+        "fail_criteria": [
+            "loop readiness reports failures",
+            "policy omits kill switches, token budget, cadence, escalation rules, or human-observable logs",
+            "brief is treated as permission to launch a daemon or scheduler",
+            "brief is treated as permission to run arbitrary commands, agents, PTYs, Worktrunk, Git mutation, or services",
+            "release evidence records are treated as automatic gate closure",
+        ],
+        "unsafe_actions": [
+            "do not start daemons from this brief",
+            "do not start background schedulers from this brief",
+            "do not run arbitrary commands from this brief",
+            "do not launch services, agents, PTYs, Worktrunk flows, or runtime workflows from this brief",
+            "do not mutate Git or Worktrunk from this brief",
+            "do not remove stop controls, budget caps, escalation rules, or human review points",
+            "do not close the unattended_loop_scheduling release gate from this brief",
+        ],
+        "warnings": policy["remaining_release_gates"] + policy["approval_required_before"],
+        "policy_summary": {
+            "status": policy["status"],
+            "readiness_summary": policy["readiness_summary"],
+            "bounded_foreground_schedule_available": policy["bounded_foreground_schedule_available"],
+            "approved_for_unattended_operation": policy["approved_for_unattended_operation"],
+            "background_scheduler_implemented": policy["background_scheduler_implemented"],
+        },
+        "writes_files": False,
+        "writes_state": False,
+        "daemon_started": False,
+        "background_scheduler_started": False,
+        "service_launch_performed": False,
+        "arbitrary_command_authority": False,
+        "agent_fanout_authority": False,
+        "git_mutation_performed": False,
+        "worktrunk_mutation_performed": False,
+        "runtime_workflow_performed": False,
+        "release_gate_closed": False,
+        "execution_authority": False,
+        "requires_human_acceptance": True,
+    }

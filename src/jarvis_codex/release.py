@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .gemini import build_gemini_live_evidence_brief, build_gemini_live_validation_plan
-from .loop_readiness import build_unattended_loop_policy
+from .loop_readiness import build_unattended_loop_evidence_brief, build_unattended_loop_policy
 from .mobile import build_mobile_validation_plan
 from .packaging import build_packaging_preflight
 from .state import RELEASE_EVIDENCE_GATES
@@ -483,6 +483,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
     gemini_validation = build_gemini_live_validation_plan().to_dict()
     gemini_evidence_brief = build_gemini_live_evidence_brief().to_dict()
     unattended_policy = build_unattended_loop_policy(root)
+    unattended_evidence_brief = build_unattended_loop_evidence_brief(root)
 
     gate_lookup = {gate["gate"]: gate for gate in gate_status["gates"]}
     checklist_items = [
@@ -535,14 +536,10 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             gate_lookup,
             "unattended_loop_scheduling",
             "Keep unattended scheduling blocked until an explicit scheduler, budget, stop, and human-observable run policy is approved.",
-            "jarvis-codex loop unattended-policy --json",
-            unattended_policy["required_policy_evidence"],
-            [
-                "do not launch daemons or background schedulers from this checklist command",
-                "do not run autonomous loops without the explicit --allow-validation gate",
-                "do not remove human stop or review points",
-            ],
-            unattended_policy["notes"],
+            "jarvis-codex loop unattended-evidence-brief --json",
+            unattended_evidence_brief["required_operator_evidence"],
+            unattended_evidence_brief["unsafe_actions"],
+            [f"current unattended evidence brief status: {unattended_evidence_brief['status']}"],
         ),
     ]
 
@@ -592,6 +589,7 @@ def build_release_readiness_checklist(root: Path, evidence_records: list[dict[st
             "jarvis-codex gemini evidence-brief --json",
             "jarvis-codex loop verify --json",
             "jarvis-codex loop unattended-policy --json",
+            "jarvis-codex loop unattended-evidence-brief --json",
         ],
         "unsafe_actions_not_authorized": [
             "install packages",

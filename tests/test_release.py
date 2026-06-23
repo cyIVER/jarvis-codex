@@ -435,6 +435,7 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex release security-evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert "jarvis-codex loop unattended-policy --json" in checklist["recommended_read_only_commands"]
+    assert "jarvis-codex loop unattended-evidence-brief --json" in checklist["recommended_read_only_commands"]
     assert checklist["summary"]["unattended_loop_policy_status"] == "ready-for-human-policy-review"
     assert "launch runtime services" in checklist["unsafe_actions_not_authorized"]
     assert "mobile evidence-brief" in mobile["read_only_command"]
@@ -450,8 +451,9 @@ def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp
     assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False
     assert any("accepted attestation artifact" in item for item in external["required_evidence"])
-    assert unattended["read_only_command"] == "jarvis-codex loop unattended-policy --json"
+    assert unattended["read_only_command"] == "jarvis-codex loop unattended-evidence-brief --json"
     assert unattended["release_gate_closed"] is False
-    assert "accepted kill switches" in unattended["required_evidence"]
-    assert any("does not authorize unattended operation" in note for note in unattended["notes"])
+    assert "accepted kill switches and manual stop controls" in unattended["required_evidence"]
+    assert any("do not start daemons" in action for action in unattended["unsafe_actions_not_authorized"])
+    assert any("READY_FOR_OPERATOR_REVIEW" in note for note in unattended["notes"])
     assert before == after

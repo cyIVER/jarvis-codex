@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.loop_readiness import build_unattended_loop_policy, validate_loop_readiness
+from jarvis_codex.loop_readiness import (
+    build_unattended_loop_evidence_brief,
+    build_unattended_loop_policy,
+    validate_loop_readiness,
+)
 
 
 def write(path: Path, text: str = "ok") -> None:
@@ -77,6 +81,38 @@ def test_unattended_loop_policy_reports_readiness_failures(tmp_path):
     assert policy["readiness_summary"]["status"] == "FAIL"
     assert policy["readiness_summary"]["failures"] > 0
     assert policy["release_gate_closed"] is False
+
+
+def test_unattended_loop_evidence_brief_is_read_only_and_keeps_gate_open(tmp_path):
+    write_minimal_loop_repo(tmp_path)
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    brief = build_unattended_loop_evidence_brief(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    assert brief["label"] == "Jarvis unattended loop scheduling operator evidence brief"
+    assert brief["status"] == "READY_FOR_OPERATOR_REVIEW"
+    assert brief["policy_status"] == "ready-for-human-policy-review"
+    assert brief["policy_command"] == "jarvis-codex loop unattended-policy --json"
+    assert brief["validation_command"] == "jarvis-codex loop verify --json"
+    assert "unattended_loop_scheduling" in brief["release_evidence_command"]
+    assert "accepted kill switches and manual stop controls" in brief["required_operator_evidence"]
+    assert any("do not start daemons" in action for action in brief["unsafe_actions"])
+    assert any("do not run arbitrary commands" in action for action in brief["unsafe_actions"])
+    assert brief["writes_files"] is False
+    assert brief["writes_state"] is False
+    assert brief["daemon_started"] is False
+    assert brief["background_scheduler_started"] is False
+    assert brief["service_launch_performed"] is False
+    assert brief["arbitrary_command_authority"] is False
+    assert brief["agent_fanout_authority"] is False
+    assert brief["git_mutation_performed"] is False
+    assert brief["worktrunk_mutation_performed"] is False
+    assert brief["runtime_workflow_performed"] is False
+    assert brief["release_gate_closed"] is False
+    assert brief["execution_authority"] is False
+    assert brief["requires_human_acceptance"] is True
+    assert before == after
 
 
 def test_loop_readiness_fails_when_required_surfaces_are_missing(tmp_path):

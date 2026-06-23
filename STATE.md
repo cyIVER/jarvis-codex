@@ -115,7 +115,10 @@ pattern: product-readiness-triage
 - [x] PM-036 - External security reviewer evidence brief
   Loop action: added read-only `release security-evidence-brief --json` to package reviewer scope, standards, findings/remediation requirements, accepted-attestation requirements, and release-evidence recording instructions.
   Human decision: the brief does not run scanners, launch services, probe networks, build packages, sign artifacts, copy outputs, publish artifacts, write files, replace human reviewer sign-off, or close `external_security_review`.
-- [ ] PM-037 - Next product slice
+- [x] PM-037 - Unattended loop scheduling evidence brief
+  Loop action: added read-only `loop unattended-evidence-brief --json` to package policy acceptance, run-log visibility, kill switches, escalation rules, and release-evidence recording instructions.
+  Human decision: the brief does not start daemons, background schedulers, services, agent fanout, Worktrunk, Git mutation, runtime workflows, write state, or close `unattended_loop_scheduling`.
+- [ ] PM-038 - Next product slice
   Loop action: pending prioritization between actual iPhone private-network validation, approved Gemini Live network test execution, signing/distribution execution, accepted external security attestation, and accepted unattended/background scheduling evidence.
   Human decision: not selected yet.
 
@@ -153,3 +156,4 @@ Run log: 2026-06-23 | findings: actual iPhone validation still needed an operato
 Run log: 2026-06-23 | findings: networked Gemini Live validation still needed an operator-ready redaction and evidence packet | actions: added read-only Gemini evidence brief with release-evidence recording instructions | escalations: 0
 Run log: 2026-06-23 | findings: packaging and signing gates still needed an operator-ready evidence packet | actions: added read-only packaging/signing evidence brief with release-evidence recording instructions | escalations: 0
 Run log: 2026-06-23 | findings: external security review still needed an operator-ready accepted-attestation evidence packet | actions: added read-only external security evidence brief with release-evidence recording instructions | escalations: 0
+Run log: 2026-06-23 | findings: unattended/background scheduling gate still needed an operator-ready acceptance evidence packet | actions: added read-only unattended loop scheduling evidence brief with release-evidence recording instructions | escalations: 0
