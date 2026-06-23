@@ -110,6 +110,10 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 - `docs/WORKTRUNK_LANES.md`
 - `docs/JARVIS_WHITE_PAPER.md`
 
+## CI
+
+GitHub CI runs Python tests, project-local Codex governance validation, and Remotion typecheck/audit checks. It does not render Remotion assets, publish artifacts, mutate Git/Worktrunk state, launch services, or execute local runtime workflows.
+
 ## Roadmap
 
 1. Local state, handoff CLI, and read-only doctor.

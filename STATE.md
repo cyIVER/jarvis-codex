@@ -34,7 +34,10 @@ pattern: product-readiness-triage
 - [x] PM-009 - Release artifact review manifest
   Loop action: added read-only release manifest CLI, docs, and tests for local review surfaces and generated Remotion asset approval labels.
   Human decision: no artifact copy, publish, upload, or release bundle without explicit approval.
-- [ ] PM-010 - Next product slice
+- [x] PM-010 - GitHub CI and review templates
+  Loop action: added validation-only GitHub CI, PR template, issue template, and guardrail tests.
+  Human decision: no render, publish, release upload, or runtime execution in CI.
+- [ ] PM-011 - Next product slice
   Loop action: pending prioritization between voice ingress discovery, release publication planning, and broader release readiness review.
   Human decision: not selected yet.
 
@@ -42,6 +45,7 @@ pattern: product-readiness-triage
 
 - Validator portability and governance drift checks.
 - Project-local `skills.config` only if repeated routing noise appears.
+- Loop audit score is 86/100; remaining gaps are triage skill, loop-verifier skill, and loop-budget skill automation.
 - Voice ingress and Codex App Server bridge remain discovery only.
 - Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging; manifest output is review-only.
 
@@ -51,4 +55,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: release assets needed a non-authoritative manifest | actions: added read-only release manifest | escalations: 0
+Run log: 2026-06-23 | findings: loop audit needed GitHub validation surfaces | actions: added validation-only CI and review templates | escalations: 0

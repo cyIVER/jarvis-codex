@@ -24,6 +24,7 @@ The current release is a governed local operating substrate:
 - notification pack hint routing
 - read-only lane scoring, JSON lane CLI review, and WorkerContract planning records
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
+- GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - approval-gated autonomous loop planning artifacts
 - local-only Remotion review asset scaffold
 
@@ -34,6 +35,7 @@ The current release is a governed local operating substrate:
 | Local-first state plus review UI is enough to coordinate the next Codex work loop. | Low | CLI, plan viewer, browser smoke, workflow rehearsal, tests, and docs exist. | Run operator review on generated Remotion and plan-viewer surfaces before publishing release notes. |
 | Explicit planning queues prevent accidental execution better than free-form displayed commands. | Low | Queue entries include non-execution authority language, safe handoff output, and tests. | Keep command runners out of scope until a separate runner PRD is approved. |
 | Governance validator plus doctor summary will catch project-local agent/skill drift. | Low | Validator passes with 156 checks; doctor is opt-in and read-only. | Add checks only when trial runs reveal routing noise. |
+| GitHub-side validation catches drift outside the local shell. | Low | CI workflow runs Python tests, project-local governance validation, and Remotion typecheck/audit without rendering or publishing artifacts. | Observe the first remote run after push and tighten only if it finds environment drift. |
 | Local Remotion review assets improve review and handoff quality without adding hosted risk. | Low | Typecheck, render, audit, scaffold tests, and the read-only release manifest pass. | Review generated asset with the operator before any copy, publication, or tracked release bundle. |
 | Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Low | Read-only lane tests pass, docs say mutation is approval-gated, `jarvis-codex lane list --json` plus `lane score --json` expose review-only CLI output, and an isolated real-worktree fixture covers multiple worktrees. | Exercise manually on operator-selected real worktrees before any mutation PRD. |
 
@@ -46,7 +48,8 @@ The current release is a governed local operating substrate:
 | 3 | Plan viewer browser smoke automation | Existing package/static tests are now backed by a headless Chromium render smoke. | High | Keep browser smoke in the dev test suite; do not add browser-launching automation to production commands. |
 | 4 | Worktrunk lane CLI review | Read-only `lane list --json` and `lane score --json` are implemented and covered by an isolated real-worktree fixture; mutation remains out of scope. | High | Manual operator review on real worktrees can happen before considering any mutation PRD. |
 | 5 | Release artifact packaging | Read-only manifest is implemented; generated assets still require operator approval before packaging. | High | Keep the manifest as review-only until the operator approves a specific artifact copy/publish step. |
-| 6 | Voice ingress and Codex App Server bridge | Important product direction, but higher runtime and approval risk. | Low | Keep as discovery until state, queue, handoff, and lane review loops are proven. |
+| 6 | GitHub CI and review templates | CI and templates are present and validation-only. | High | Watch the first remote CI result after push; do not add publish/release jobs without approval. |
+| 7 | Voice ingress and Codex App Server bridge | Important product direction, but higher runtime and approval risk. | Low | Keep as discovery until state, queue, handoff, and lane review loops are proven. |
 
 ## Release Acceptance Criteria
 
@@ -62,6 +65,7 @@ The current release is a governed local operating substrate:
 - `tests/test_cli.py` covers read-only JSON lane list and score commands.
 - `tests/test_lanes.py` covers read-only lane inventory across an isolated temporary git repo with multiple worktrees.
 - `tests/test_release.py` covers the read-only release manifest and generated asset approval labels.
+- `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - Global architecture validation has zero errors.
 
 ## Unresolved Product Decisions
