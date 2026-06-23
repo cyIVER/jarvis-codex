@@ -59,7 +59,6 @@ PLANNED_METHODS = {
     "loop.resume",
     "loop.start",
     "loop.stop",
-    "profile.set",
     "prompt.cancel",
     "prompt.send",
     "pty.restart",
@@ -343,6 +342,7 @@ def _dispatch_request(
                     "runtime.health",
                     "runtime.readiness",
                     "profile.list",
+                    "profile.set",
                     "command.classify",
                     "pty.create",
                     "pty.input",
@@ -411,6 +411,53 @@ def _dispatch_request(
                 "profiles": profiles,
                 "default_profile": "observe",
                 "writes_state": False,
+            },
+        )
+
+    if method == "profile.set":
+        session_id = str(params.get("session_id") or "")
+        profile_id = str(params.get("profile_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if profile_id not in POLICY_PROFILES:
+            return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
+        session = store.session(session_id)
+        if session is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        if session.get("profile_id") == profile_id:
+            return make_response(
+                request_id,
+                {
+                    "session_id": session_id,
+                    "profile_id": profile_id,
+                    "already_set": True,
+                    "writes_state": False,
+                    "session": session,
+                },
+            )
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="session.profile_set",
+            payload={
+                "profile_id": profile_id,
+                "previous_profile_id": session.get("profile_id"),
+                "reason": str(params.get("reason") or "profile set"),
+            },
+        )
+        updated = store.session(session_id)
+        return make_response(
+            request_id,
+            {
+                "session_id": session_id,
+                "profile_id": profile_id,
+                "event_id": event.id,
+                "sequence": event.sequence,
+                "writes_state": True,
+                "session": updated or session,
             },
         )
 

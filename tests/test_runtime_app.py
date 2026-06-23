@@ -346,6 +346,95 @@ def test_runtime_profile_list_reports_policy_catalog_without_writing_state(tmp_p
     assert not state.exists()
 
 
+def test_runtime_profile_set_updates_session_profile_and_history(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-profile"}, request_id="req_1"),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "profile.set",
+            {"session_id": "session-profile", "profile_id": "dev-loop", "reason": "test"},
+            request_id="req_2",
+        ),
+    )
+    get_response = client.post(
+        "/rpc",
+        json=make_request("session.get", {"session_id": "session-profile"}, request_id="req_3"),
+    )
+    history_response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-profile"}, request_id="req_4"),
+    )
+
+    result = response.json()["result"]
+    assert result["profile_id"] == "dev-loop"
+    assert result["writes_state"] is True
+    assert get_response.json()["result"]["session"]["profile_id"] == "dev-loop"
+    assert [event["event_type"] for event in history_response.json()["result"]["messages"]] == [
+        "session.created",
+        "session.profile_set",
+    ]
+
+
+def test_runtime_profile_set_is_idempotent_for_current_profile(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request(
+            "session.create",
+            {"session_id": "session-profile", "profile_id": "dev-loop"},
+            request_id="req_1",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "profile.set",
+            {"session_id": "session-profile", "profile_id": "dev-loop"},
+            request_id="req_2",
+        ),
+    )
+
+    result = response.json()["result"]
+    assert result["already_set"] is True
+    assert result["writes_state"] is False
+    assert app.state.event_store.current_sequence() == 1
+
+
+def test_runtime_profile_set_validates_session_and_profile(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    missing_response = client.post("/rpc", json=make_request("profile.set", request_id="req_1"))
+    invalid_profile_response = client.post(
+        "/rpc",
+        json=make_request(
+            "profile.set",
+            {"session_id": "session-profile", "profile_id": "unbounded"},
+            request_id="req_2",
+        ),
+    )
+    unknown_response = client.post(
+        "/rpc",
+        json=make_request(
+            "profile.set",
+            {"session_id": "missing", "profile_id": "observe"},
+            request_id="req_3",
+        ),
+    )
+
+    assert missing_response.json()["error"]["code"] == "missing_session_id"
+    assert invalid_profile_response.json()["error"]["code"] == "invalid_profile"
+    assert unknown_response.json()["error"]["code"] == "unknown_session"
+
+
 def test_runtime_session_create_rejects_unknown_profile(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

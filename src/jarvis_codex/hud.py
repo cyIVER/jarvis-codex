@@ -403,7 +403,11 @@ HUD_HTML = """<!doctype html>
       <div class="panel-body">
         <div class="agent-pane">
           <div><strong id="active-session">No active session selected</strong><span>Session context is local to this HUD until selected or created.</span></div>
-          <button id="create-session" type="button">Create HUD Session</button>
+          <div>
+            <select id="session-profile" aria-label="Session policy profile"></select>
+            <button id="create-session" type="button">Create HUD Session</button>
+            <button id="set-session-profile" type="button">Set Profile</button>
+          </div>
         </div>
         <div id="sessions-list" class="log">Active sessions will appear here.</div>
         <button id="refresh-session-history" type="button">Refresh Session History</button>
@@ -434,6 +438,8 @@ HUD_JS = r"""(() => {
   const sessionHistory = document.getElementById("session-history");
   const refreshSessionHistoryButton = document.getElementById("refresh-session-history");
   const createSession = document.getElementById("create-session");
+  const sessionProfile = document.getElementById("session-profile");
+  const setSessionProfile = document.getElementById("set-session-profile");
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
   const pwaStatus = document.getElementById("pwa-status");
@@ -503,6 +509,10 @@ HUD_JS = r"""(() => {
     return activeSessionId || "hud";
   }
 
+  function selectedProfileId() {
+    return sessionProfile.value || "observe";
+  }
+
   function connect() {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(`${protocol}//${location.host}/ws`);
@@ -511,6 +521,7 @@ HUD_JS = r"""(() => {
       log("Connected to Jarvis runtime.");
       request("initialize");
       request("session.list", { status: "active", limit: 25 });
+      request("profile.list");
       refreshSessionHistory();
       request("approval.list", { status: "pending" });
       request("approval.list", { status: "approved" });
@@ -550,6 +561,18 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.archived_session_id) {
         log(`Archived session ${frame.result.archived_session_id}.`);
+        request("session.list", { status: "active", limit: 25 });
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.profiles)) {
+        renderProfiles(frame.result.profiles, frame.result.default_profile || "observe");
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.profile_id && frame.result.session) {
+        log(`Session ${frame.result.session_id} profile set to ${frame.result.profile_id}.`);
         request("session.list", { status: "active", limit: 25 });
         refreshSessionHistory();
         requestIndex.delete(frame.id);
@@ -654,11 +677,22 @@ HUD_JS = r"""(() => {
   createSession.addEventListener("click", () => {
     request("session.create", {
       title: `HUD session ${new Date().toLocaleString()}`,
-      profile_id: "observe",
+      profile_id: selectedProfileId(),
       source_client: "hud",
       actor_id: "user"
     });
     log("HUD session creation requested.");
+  });
+
+  setSessionProfile.addEventListener("click", () => {
+    request("profile.set", {
+      session_id: currentSessionId(),
+      profile_id: selectedProfileId(),
+      reason: "HUD profile selection",
+      source_client: "hud",
+      actor_id: "user"
+    });
+    log(`Session profile update requested: ${selectedProfileId()}. This changes metadata only.`);
   });
 
   refreshCodeburn.addEventListener("click", () => {
@@ -906,6 +940,14 @@ HUD_JS = r"""(() => {
         <button type="button" class="danger" data-archive-session-id="${escapeHtml(session.id)}">Archive Session</button>
       </section>
     `).join("");
+  }
+
+  function renderProfiles(profiles, defaultProfile) {
+    sessionProfile.innerHTML = profiles.map((profile) => `
+      <option value="${escapeHtml(profile.id)}">${escapeHtml(profile.label || profile.id)}</option>
+    `).join("");
+    sessionProfile.value = defaultProfile || "observe";
+    log(`Loaded ${profiles.length} policy profiles. Profile selection changes session metadata only.`);
   }
 
   function refreshSessionHistory() {

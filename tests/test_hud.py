@@ -19,6 +19,8 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="approvals-list"' in response.text
     assert 'id="approved-launches"' in response.text
     assert 'id="active-session"' in response.text
+    assert 'id="session-profile"' in response.text
+    assert 'id="set-session-profile"' in response.text
     assert 'id="create-session"' in response.text
     assert 'id="sessions-list"' in response.text
     assert 'id="refresh-session-history"' in response.text
@@ -61,6 +63,11 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text
     assert 'request("session.list", { status: "active", limit: 25 })' in response.text
+    assert 'request("profile.list")' in response.text
+    assert 'request("profile.set"' in response.text
+    assert "renderProfiles(frame.result.profiles" in response.text
+    assert "Profile selection changes session metadata only" in response.text
+    assert "Session profile update requested" in response.text
     assert 'request("session.create"' in response.text
     assert 'request("message.list", { session_id: currentSessionId(), limit: 25 })' in response.text
     assert "renderSessionHistory(frame.result.messages" in response.text

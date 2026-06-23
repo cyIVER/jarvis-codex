@@ -518,6 +518,19 @@ class JarvisEventStore:
             )
             return
 
+        if event_type == "session.profile_set":
+            profile_id = str(payload.get("profile_id") or "observe")
+            connection.execute(
+                """
+                UPDATE sessions
+                SET profile_id = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                (profile_id, created_at, session_id),
+            )
+            return
+
         if event_type == "approval.requested":
             approval_id = str(payload["approval_id"])
             scope_json = json.dumps(payload.get("scope") or {}, sort_keys=True)

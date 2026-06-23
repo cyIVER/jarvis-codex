@@ -56,6 +56,32 @@ def test_event_store_updates_session_projection(tmp_path):
     assert session["model_route"] == {"agent": "codex"}
 
 
+def test_event_store_updates_session_profile_projection(tmp_path):
+    store = JarvisEventStore(tmp_path / "jarvis.db")
+    store.append_event(
+        session_id="session-1",
+        actor_id="user",
+        source_client="pytest",
+        event_type="session.created",
+        payload={"title": "Profile run", "profile_id": "observe"},
+        created_at=10,
+    )
+    store.append_event(
+        session_id="session-1",
+        actor_id="user",
+        source_client="pytest",
+        event_type="session.profile_set",
+        payload={"profile_id": "dev-loop"},
+        created_at=20,
+    )
+
+    session = store.session("session-1")
+
+    assert session is not None
+    assert session["profile_id"] == "dev-loop"
+    assert session["updated_at"] == 20
+
+
 def test_event_store_lists_sessions_by_updated_time_and_status(tmp_path):
     store = JarvisEventStore(tmp_path / "jarvis.db")
     store.append_event(

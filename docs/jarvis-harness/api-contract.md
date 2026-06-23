@@ -82,7 +82,7 @@ Policy:
 - `profile.set`
 - `command.classify`
 
-`profile.list` is implemented as a non-writing profile catalog. `profile.set` remains planned because changing a session profile is stateful and requires a separate event/projection decision.
+`profile.list` is implemented as a non-writing profile catalog. `profile.set` is implemented as a state-only session metadata update that appends `session.profile_set` and updates the session projection. Setting a profile does not by itself execute commands or grant approval authority.
 
 Voice:
 
