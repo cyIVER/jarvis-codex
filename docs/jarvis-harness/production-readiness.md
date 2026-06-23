@@ -47,6 +47,7 @@ Implemented and validated in the local FastAPI runtime:
 - Electron HUD local dependencies installed under ignored `tools/electron-hud/node_modules/` for operator validation; `node_modules` is not a release artifact.
 - Electron Builder dependency, `electron-builder.json`, and reviewed `npm run package` / `npm run make` scripts are present for an approval-gated packaging phase.
 - Non-signing Electron package execution was locally validated with `npm run package`; generated artifacts live under ignored `tools/electron-hud/dist/` and are not release artifacts.
+- Local dependency audit evidence is clean for the current JavaScript package surfaces: `tools/electron-hud` and `video/remotion` both report zero high-or-worse npm vulnerabilities.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
@@ -65,6 +66,7 @@ The following remain future or incomplete production gates:
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
 - External security review.
+- External security review beyond local dependency audit evidence.
 
 ## Safety Invariants
 
@@ -99,6 +101,7 @@ The following remain future or incomplete production gates:
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
+- Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 
 ## Required Local Validation
 
