@@ -12,6 +12,7 @@ Implemented and validated in the local FastAPI runtime:
 - State-only session archive lifecycle through `session.archive`.
 - Non-writing policy profile catalog through `profile.list`.
 - State-only session profile metadata updates through `profile.set`.
+- Semantic prompt history writes through `prompt.send` without agent or command execution.
 - Session-scoped semantic history through `message.list`.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.

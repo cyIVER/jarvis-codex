@@ -23,6 +23,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="set-session-profile"' in response.text
     assert 'id="create-session"' in response.text
     assert 'id="sessions-list"' in response.text
+    assert 'id="prompt-text"' in response.text
+    assert 'id="send-prompt"' in response.text
+    assert "This does not execute Codex" in response.text
     assert 'id="refresh-session-history"' in response.text
     assert 'id="session-history"' in response.text
     assert "This is not an execution queue" in response.text
@@ -69,6 +72,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Profile selection changes session metadata only" in response.text
     assert "Session profile update requested" in response.text
     assert 'request("session.create"' in response.text
+    assert 'request("prompt.send"' in response.text
+    assert "Prompt recorded" in response.text
+    assert "No execution authority granted" in response.text
+    assert "This does not execute a command or agent" in response.text
     assert 'request("message.list", { session_id: currentSessionId(), limit: 25 })' in response.text
     assert "renderSessionHistory(frame.result.messages" in response.text
     assert "Session history refresh requested" in response.text

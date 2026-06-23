@@ -230,6 +230,62 @@ def test_runtime_session_archive_validates_session_id(tmp_path):
     assert unknown_response.json()["error"]["code"] == "unknown_session"
 
 
+def test_runtime_prompt_send_records_semantic_prompt_without_execution_authority(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-prompt"}, request_id="req_1"),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "prompt.send",
+            {"session_id": "session-prompt", "text": "Plan the next UI slice", "source_client": "hud"},
+            request_id="req_2",
+        ),
+    )
+    history_response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-prompt"}, request_id="req_3"),
+    )
+
+    result = response.json()["result"]
+    messages = history_response.json()["result"]["messages"]
+    assert result["writes_state"] is True
+    assert result["execution_authority"] is False
+    assert messages[-1]["event_type"] == "prompt.sent"
+    assert messages[-1]["payload"]["text"] == "Plan the next UI slice"
+    assert messages[-1]["payload"]["execution_authority"] is False
+
+
+def test_runtime_prompt_send_validates_session_and_text(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-prompt"}, request_id="req_1"),
+    )
+
+    missing_session = client.post(
+        "/rpc",
+        json=make_request("prompt.send", {"text": "hello"}, request_id="req_2"),
+    )
+    missing_prompt = client.post(
+        "/rpc",
+        json=make_request("prompt.send", {"session_id": "session-prompt", "text": "   "}, request_id="req_3"),
+    )
+    unknown_session = client.post(
+        "/rpc",
+        json=make_request("prompt.send", {"session_id": "missing", "text": "hello"}, request_id="req_4"),
+    )
+
+    assert missing_session.json()["error"]["code"] == "missing_session_id"
+    assert missing_prompt.json()["error"]["code"] == "missing_prompt"
+    assert unknown_session.json()["error"]["code"] == "unknown_session"
+
+
 def test_runtime_message_list_reports_empty_history_without_writing_state(tmp_path):
     state = tmp_path / "state"
     app = create_app(state)
@@ -474,7 +530,7 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    for index, method in enumerate(("pty.restart", "session.resume", "prompt.send", "loop.start")):
+    for index, method in enumerate(("pty.restart", "session.resume", "prompt.cancel", "loop.start")):
         response = client.post("/rpc", json=make_request(method, request_id=f"req_{index}"))
 
         assert response.status_code == 200

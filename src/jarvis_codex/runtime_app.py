@@ -60,7 +60,6 @@ PLANNED_METHODS = {
     "loop.start",
     "loop.stop",
     "prompt.cancel",
-    "prompt.send",
     "pty.restart",
     "session.cancel",
     "session.fork",
@@ -343,6 +342,7 @@ def _dispatch_request(
                     "runtime.readiness",
                     "profile.list",
                     "profile.set",
+                    "prompt.send",
                     "command.classify",
                     "pty.create",
                     "pty.input",
@@ -544,6 +544,39 @@ def _dispatch_request(
                 "sequence": event.sequence,
                 "writes_state": True,
                 "session": archived or session,
+            },
+        )
+
+    if method == "prompt.send":
+        session_id = str(params.get("session_id") or "")
+        text = str(params.get("text") or "").strip()
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if not text:
+            return make_error_response(request_id, code="missing_prompt", message="prompt text is required")
+        if store.session(session_id) is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="prompt.sent",
+            payload={
+                "text": text,
+                "target": str(params.get("target") or "planning"),
+                "execution_authority": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "prompt_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "writes_state": True,
+                "execution_authority": False,
             },
         )
 

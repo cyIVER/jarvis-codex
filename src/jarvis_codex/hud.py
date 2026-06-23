@@ -410,6 +410,8 @@ HUD_HTML = """<!doctype html>
           </div>
         </div>
         <div id="sessions-list" class="log">Active sessions will appear here.</div>
+        <textarea id="prompt-text" class="log" rows="4" placeholder="Record a prompt in session history. This does not execute Codex, Antigravity, PTY, or Worktrunk."></textarea>
+        <button id="send-prompt" type="button">Record Prompt</button>
         <button id="refresh-session-history" type="button">Refresh Session History</button>
         <div id="session-history" class="log">Semantic session history will appear here. This is not an execution queue.</div>
       </div>
@@ -440,6 +442,8 @@ HUD_JS = r"""(() => {
   const createSession = document.getElementById("create-session");
   const sessionProfile = document.getElementById("session-profile");
   const setSessionProfile = document.getElementById("set-session-profile");
+  const promptText = document.getElementById("prompt-text");
+  const sendPrompt = document.getElementById("send-prompt");
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
   const pwaStatus = document.getElementById("pwa-status");
@@ -578,6 +582,13 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && frame.result.prompt_event_id) {
+        log(`Prompt recorded for ${frame.result.session_id}. No execution authority granted.`);
+        promptText.value = "";
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.sessions) {
         renderSessions(frame.result.sessions);
         requestIndex.delete(frame.id);
@@ -693,6 +704,22 @@ HUD_JS = r"""(() => {
       actor_id: "user"
     });
     log(`Session profile update requested: ${selectedProfileId()}. This changes metadata only.`);
+  });
+
+  sendPrompt.addEventListener("click", () => {
+    const text = promptText.value.trim();
+    if (!text) {
+      log("Prompt text is empty; nothing recorded.");
+      return;
+    }
+    request("prompt.send", {
+      session_id: currentSessionId(),
+      text,
+      target: "planning",
+      source_client: "hud",
+      actor_id: "user"
+    });
+    log("Prompt record requested. This does not execute a command or agent.");
   });
 
   refreshCodeburn.addEventListener("click", () => {
