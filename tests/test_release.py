@@ -22,6 +22,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
     write(tmp_path / "docs/RUNTIME_GATES.md")
     write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
     write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
     write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
     write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")
@@ -45,6 +46,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert manifest["publication_requires_approval"] is True
     assert manifest["generated_assets_require_approval"] is True
     assert "docs/VOICE_INGRESS.md" in manifest["release_candidates_present"]
+    assert "docs/WHISPER_CPP_STT_RUNBOOK.md" in manifest["release_candidates_present"]
     assert "docs/SAFE_HANDOFF_GATEWAY_PRD.md" in manifest["release_candidates_present"]
     assert all(item["release_candidate"] is False for item in generated)
     assert all(item["requires_approval"] is True for item in generated)
@@ -73,6 +75,7 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
     write(tmp_path / "docs/RUNTIME_GATES.md")
     write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
     write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
     write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
     write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")

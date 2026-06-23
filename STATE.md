@@ -49,7 +49,10 @@ pattern: product-readiness-triage
 - [x] PM-014 - Expanded release readiness manifest
   Loop action: expanded the read-only release manifest to cover core docs, loop state, voice ingress, local runtime, safe handoff, Worktrunk lane PRD, and explicit publication approval status.
   Human decision: publication, artifact copying, release uploads, and generated asset promotion still require separate approval.
-- [ ] PM-015 - Next product slice
+- [x] PM-015 - whisper.cpp STT operator runbook
+  Loop action: added a no-download runbook for operator-supplied `whisper-cli`, local ggml models, STT readiness probing, and guarded transcription.
+  Human decision: Jarvis still does not install `whisper.cpp`, download models, convert audio, or approve microphone/background listeners.
+- [ ] PM-016 - Next product slice
   Loop action: pending prioritization between real local STT transcription exercise, operator release review, and broader release readiness review.
   Human decision: not selected yet.
 

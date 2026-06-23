@@ -23,6 +23,7 @@ The command inspects expected local review surfaces and generated review assets.
 - `docs/RELEASE_ARTIFACTS.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/VOICE_INGRESS.md`
+- `docs/WHISPER_CPP_STT_RUNBOOK.md`
 - `docs/LOCAL_ML_RUNTIME.md`
 - `docs/SAFE_HANDOFF_GATEWAY_PRD.md`
 - `docs/WORKTRUNK_LANE_CLI_PRD.md`

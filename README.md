@@ -106,6 +106,7 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 - `docs/safety.md`
 - `docs/VOICE_NOTIFICATIONS.md`
 - `docs/VOICE_INGRESS.md`
+- `docs/WHISPER_CPP_STT_RUNBOOK.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/REMOTION_REVIEW.md`
 - `docs/RELEASE_ARTIFACTS.md`

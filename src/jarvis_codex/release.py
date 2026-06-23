@@ -121,6 +121,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "docs/WHISPER_CPP_STT_RUNBOOK.md",
+            "stt-runbook",
+            True,
+            False,
+            "Documents operator-supplied whisper.cpp setup, readiness probing, and guarded transcription.",
+        ),
+        _artifact(
+            root,
             "docs/LOCAL_ML_RUNTIME.md",
             "local-runtime-doc",
             True,

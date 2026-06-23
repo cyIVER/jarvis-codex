@@ -1,0 +1,76 @@
+# whisper.cpp STT Runbook
+
+This runbook covers local file-based speech-to-text for Jarvis Codex through an operator-supplied `whisper.cpp` binary and local ggml model.
+
+Jarvis does not install `whisper.cpp`, download models, convert audio, access microphones, start listeners, or choose a cloud fallback.
+
+## Required Local Inputs
+
+- A local `whisper-cli` executable built or installed by the operator.
+- A local ggml Whisper model file, for example `ggml-base.en.bin`.
+- A local 16-bit WAV audio file.
+
+The upstream `whisper.cpp` CLI documents `whisper-cli` with `-m <model>` and `-f <audio>` arguments, and its examples use 16-bit WAV input.
+
+Reference: https://github.com/ggml-org/whisper.cpp
+
+## Readiness Probe
+
+Run this before transcription:
+
+```bash
+jarvis-codex voice probe \
+  --audio-file recording.wav \
+  --model models/ggml-base.en.bin \
+  --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" \
+  --json
+```
+
+The probe verifies only local readiness. It should report:
+
+- `runtime_started: false`
+- `audio_processed: false`
+- `writes_state: false`
+- `external_services: false`
+- `model_downloaded: false`
+
+The standalone adapter can also check its own inputs:
+
+```bash
+python3 scripts/whisper-cpp-stt-adapter.py \
+  --audio-file recording.wav \
+  --model models/ggml-base.en.bin \
+  --whisper-command /path/to/whisper-cli \
+  --check-only
+```
+
+## Approved Transcription
+
+Only run transcription after the readiness probe passes and the operator approves one local audio-processing action:
+
+```bash
+jarvis-codex voice ingest \
+  --audio-file recording.wav \
+  --model models/ggml-base.en.bin \
+  --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" \
+  --allow-audio-processing \
+  --json
+```
+
+On success, Jarvis captures the transcript as a normal episode with source `voice-audio-file`.
+
+## Guardrails
+
+- Do not use this as approval to record from a microphone.
+- Do not download or convert models from this command path.
+- Do not run Dockerized STT from this command path.
+- Do not use a cloud STT fallback.
+- Do not start background listeners, wake-word flows, daemons, or Codex App Server bridges.
+- Do not treat the captured transcript as execution authority.
+
+## Troubleshooting
+
+- `stt_command_resolves` fails: provide the full path to `whisper-cli`, or ensure the executable is on `PATH`.
+- `model_file_exists` fails: provide a local model path. Jarvis will not download it.
+- `audio_is_readable_16bit_wav` fails: provide a readable 16-bit WAV file. Audio conversion is an operator-managed step outside Jarvis.
+- Transcription returns an empty transcript: inspect the audio/model pairing and run the adapter directly with the same paths.
