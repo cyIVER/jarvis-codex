@@ -152,3 +152,40 @@ def test_lane_commands_require_json(monkeypatch):
         cli.main()
 
     assert exc_info.value.code == 2
+
+
+def test_release_manifest_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_manifest(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis Codex release artifact manifest",
+            "status": "ready-for-review",
+            "execution_authority": False,
+            "writes_files": False,
+            "artifact_copy_performed": False,
+            "generated_assets_require_approval": True,
+            "artifacts": [],
+            "warnings": [],
+        }
+
+    monkeypatch.setattr(cli, "build_release_manifest", fake_manifest)
+
+    code = run_cli(monkeypatch, ["release", "manifest", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["execution_authority"] is False
+    assert data["writes_files"] is False
+    assert data["artifact_copy_performed"] is False
+
+
+def test_release_commands_require_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2

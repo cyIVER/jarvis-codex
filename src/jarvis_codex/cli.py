@@ -7,6 +7,7 @@ from pathlib import Path
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
+from .release import build_release_manifest
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
 
@@ -53,6 +54,11 @@ def main() -> int:
     lane_score.add_argument("--repo", required=True, help="Lane repository path to inspect")
     lane_score.add_argument("--branch", required=True, help="Lane branch name")
     lane_score.add_argument("--json", action="store_true", help="Print lane score as JSON")
+    release = sub.add_parser("release", help="Review release artifacts without packaging or copying")
+    release_sub = release.add_subparsers(dest="release_command", required=True)
+    release_manifest = release_sub.add_parser("manifest", help="Print a read-only release artifact manifest")
+    release_manifest.add_argument("--root", default=".", help="Repository root to inspect")
+    release_manifest.add_argument("--json", action="store_true", help="Print release manifest as JSON")
     doctor = sub.add_parser("doctor", help="Inspect state")
     doctor.add_argument("--governance", action="store_true", help="Include project-local Codex governance validation")
 
@@ -113,6 +119,12 @@ def main() -> int:
                 "execution_authority": False,
             }
             print(json.dumps(payload, indent=2, sort_keys=True))
+            return 0
+    if args.command == "release":
+        if not args.json:
+            parser.error("release commands are JSON-only in this read-only first implementation; pass --json")
+        if args.release_command == "manifest":
+            print(json.dumps(build_release_manifest(Path(args.root)), indent=2, sort_keys=True))
             return 0
     if args.command == "doctor":
         data = state.doctor()

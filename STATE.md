@@ -31,8 +31,11 @@ pattern: product-readiness-triage
 - [x] PM-008 - Broader real-worktree lane review coverage
   Loop action: added an isolated real git-worktree pytest fixture for read-only lane inventory and scoring.
   Human decision: still no lane mutation commands.
-- [ ] PM-009 - Next product slice
-  Loop action: pending prioritization between release artifact packaging, voice ingress discovery, and broader release readiness review.
+- [x] PM-009 - Release artifact review manifest
+  Loop action: added read-only release manifest CLI, docs, and tests for local review surfaces and generated Remotion asset approval labels.
+  Human decision: no artifact copy, publish, upload, or release bundle without explicit approval.
+- [ ] PM-010 - Next product slice
+  Loop action: pending prioritization between voice ingress discovery, release publication planning, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List
@@ -40,7 +43,7 @@ pattern: product-readiness-triage
 - Validator portability and governance drift checks.
 - Project-local `skills.config` only if repeated routing noise appears.
 - Voice ingress and Codex App Server bridge remain discovery only.
-- Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging.
+- Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging; manifest output is review-only.
 
 ## Recent Noise
 
@@ -48,4 +51,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: lane CLI needed real-worktree coverage | actions: added isolated git worktree fixture test | escalations: 0
+Run log: 2026-06-23 | findings: release assets needed a non-authoritative manifest | actions: added read-only release manifest | escalations: 0

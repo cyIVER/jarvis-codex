@@ -32,6 +32,7 @@ jarvis-codex handoff --queue-summary      # print a read-only safe planning-queu
 jarvis-codex hardware --workload llm      # inspect CPU/GPU/NPU/Docker capabilities
 jarvis-codex lane list --json             # inspect Worktrunk lane readiness without mutation
 jarvis-codex lane score --repo . --branch main --json
+jarvis-codex release manifest --json      # review release artifacts without packaging
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector
@@ -102,6 +103,7 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 - `docs/VOICE_NOTIFICATIONS.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/REMOTION_REVIEW.md`
+- `docs/RELEASE_ARTIFACTS.md`
 - `docs/PRODUCT_READINESS.md`
 - `docs/SAFE_HANDOFF_GATEWAY_PRD.md`
 - `docs/WORKTRUNK_LANE_CLI_PRD.md`
