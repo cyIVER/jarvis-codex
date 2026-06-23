@@ -69,6 +69,20 @@ jarvis-codex --state <state-dir> release gate-status --json
 
 Evidence records are state-only review metadata. They do not close release gates, approve publication, launch tests, run mobile or Gemini validation, sign artifacts, copy artifacts, mutate Git, or grant execution authority.
 
+## Release Readiness Checklist
+
+Aggregate the current open release gates and operator next actions with:
+
+```bash
+jarvis-codex --state <state-dir> release readiness-checklist --json
+```
+
+This command combines the release manifest, artifact evidence, packaging preflight, external security review packet, mobile validation plan, Gemini validation plan, and recorded evidence counts into one blocked-gate checklist.
+
+The checklist is read-only. It does not write files, write state, probe networks, launch services, build packages, sign artifacts, copy artifacts, run mobile or Gemini validation, close release gates, or approve publication.
+
+Commands displayed in the checklist are proposed read-only or approval-gated follow-up commands. They are not execution authority.
+
 ## Generated Assets
 
 Generated Remotion outputs under `video/remotion/out/` are local review assets only.
@@ -93,4 +107,4 @@ If Remotion assets are being considered for release packaging, separately run th
 
 ## Non-authority
 
-The manifest and artifact evidence commands are not execution authority. They do not approve installs, Docker, GPU workloads, Remotion rendering, browser launch, service launch, Worktrunk mutation, Git mutation, packaging, signing, artifact copying, publication, or release upload.
+The manifest, artifact evidence, gate status, and readiness checklist commands are not execution authority. They do not approve installs, Docker, GPU workloads, Remotion rendering, browser launch, service launch, Worktrunk mutation, Git mutation, mobile validation, Gemini network calls, packaging, signing, artifact copying, publication, release upload, or gate closure.

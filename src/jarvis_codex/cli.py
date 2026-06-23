@@ -19,6 +19,7 @@ from .release import (
     build_release_artifact_evidence,
     build_release_gate_status,
     build_release_manifest,
+    build_release_readiness_checklist,
 )
 from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
@@ -113,6 +114,9 @@ def main() -> int:
     release_evidence_list.add_argument("--json", action="store_true", help="Print evidence records as JSON")
     release_gate_status = release_sub.add_parser("gate-status", help="Summarize release gates and recorded evidence without closing gates")
     release_gate_status.add_argument("--json", action="store_true", help="Print gate status as JSON")
+    release_checklist = release_sub.add_parser("readiness-checklist", help="Print a read-only release readiness checklist")
+    release_checklist.add_argument("--root", default=".", help="Repository root to inspect")
+    release_checklist.add_argument("--json", action="store_true", help="Print readiness checklist as JSON")
     runtime = sub.add_parser("runtime", help="Run the local Jarvis runtime")
     runtime_sub = runtime.add_subparsers(dest="runtime_command", required=True)
     runtime_serve = runtime_sub.add_parser("serve", help="Serve the runtime HUD on loopback by default")
@@ -287,6 +291,9 @@ def main() -> int:
                 return 0
         if args.release_command == "gate-status":
             print(json.dumps(build_release_gate_status(state.release_evidence()), indent=2, sort_keys=True))
+            return 0
+        if args.release_command == "readiness-checklist":
+            print(json.dumps(build_release_readiness_checklist(Path(args.root), state.release_evidence()), indent=2, sort_keys=True))
             return 0
     if args.command == "runtime":
         if args.runtime_command == "readiness":

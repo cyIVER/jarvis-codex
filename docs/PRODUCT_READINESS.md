@@ -25,6 +25,7 @@ The current release is a governed local operating substrate:
 - notification pack hint routing
 - read-only lane scoring, JSON lane CLI review, and WorkerContract planning records
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
+- read-only release readiness checklist that aggregates open release gates and next actions without running them
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
 - voice ingress through transcript files and approved local executable STT adapters
@@ -52,7 +53,7 @@ The current release is a governed local operating substrate:
 | 2 | Safe handoff / execution gateway design | Converts planning queue into controlled action proposals without weakening governance. | Medium | Read-only queue handoff is implemented; do not add a runner without a separate PRD. |
 | 3 | Plan viewer browser smoke automation | Existing package/static tests are now backed by a headless Chromium render smoke. | High | Keep browser smoke in the dev test suite; do not add browser-launching automation to production commands. |
 | 4 | Worktrunk lane CLI review | Read-only `lane list --json` and `lane score --json` are implemented and covered by an isolated real-worktree fixture; mutation remains out of scope. | High | Manual operator review on real worktrees can happen before considering any mutation PRD. |
-| 5 | Release artifact packaging | Read-only manifest is implemented across core docs, loop state, plan viewer, voice ingress, whisper.cpp runbook, local runtime, safe handoff, Worktrunk lane PRD, and generated assets; publication is explicitly not ready without approval. | High | Keep the manifest as review-only until the operator approves a specific artifact copy/publish step. |
+| 5 | Release artifact packaging | Read-only manifest, artifact evidence, open-gate status, and release readiness checklist are implemented across core docs, loop state, plan viewer, voice ingress, whisper.cpp runbook, local runtime, safe handoff, Worktrunk lane PRD, and generated assets; publication is explicitly not ready without approval. | High | Keep release review surfaces as review-only until the operator approves a specific artifact copy/publish/signing step. |
 | 6 | GitHub CI and review templates | CI and templates are present and validation-only. | High | Watch the first remote CI result after push; do not add publish/release jobs without approval. |
 | 7 | Loop readiness verifier | Local JSON verifier is implemented without adding new project-local skills or agents. | High | Keep loop-triage and loop-verifier skills deferred until the governance baseline is intentionally expanded. |
 | 8 | Voice ingress and Codex App Server bridge | File-based STT is implemented and locally exercised with cached `whisper.cpp` v1.9.1, `ggml-tiny.en.bin`, readiness discovery, readiness probe, and one approved sample transcription into temp state; microphone listeners and Codex App Server bridge remain higher-risk runtime phases. | High | Keep always-on capture, browser audio chunk transcription, and bridge work behind separate approval gates. |
@@ -71,7 +72,7 @@ The current release is a governed local operating substrate:
 - `tests/test_cli.py` covers read-only JSON lane list and score commands.
 - `tests/test_lanes.py` covers read-only lane inventory across an isolated temporary git repo with multiple worktrees.
 - `tests/test_release.py` covers the expanded read-only release manifest, publication approval labels, and generated asset approval labels.
-- `tests/test_state.py`, `tests/test_cli.py`, and `tests/test_release.py` cover state-only release evidence recording, open-gate status summaries, state-local artifact hashing, and no automatic gate closure.
+- `tests/test_state.py`, `tests/test_cli.py`, and `tests/test_release.py` cover state-only release evidence recording, open-gate status summaries, release readiness checklist aggregation, state-local artifact hashing, and no automatic gate closure.
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier and runtime-authority marker checks.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
@@ -82,9 +83,9 @@ The current release is a governed local operating substrate:
 
 - Whether future PM loop commits should be pushed immediately after validation or batched for release review.
 - Whether generated Remotion PNG/MP4 files should be copied to a release artifact location or remain local ignored outputs after operator review.
-- Whether the next package should connect runtime-captured browser audio chunks to the approved local STT adapter, start release publication planning, or broaden release readiness review.
+- Whether the next package should connect runtime-captured browser audio chunks to the approved local STT adapter, begin operator-run release gate evidence collection, or broaden release readiness review.
 - Whether project-local `skills.config` should remain deferred until more routing evidence appears.
 
 ## Recommendation
 
-Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, the static plan viewer has headless browser smoke coverage, Worktrunk lane CLI review is read-only JSON output with isolated real-worktree coverage, release artifact review is manifest-only until a specific copy or publication action is approved, and release evidence records are metadata only until a human accepts the relevant external gate.
+Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, the static plan viewer has headless browser smoke coverage, Worktrunk lane CLI review is read-only JSON output with isolated real-worktree coverage, release artifact review and readiness checklist output remain planning-only until a specific copy, signing, publication, or validation action is approved, and release evidence records are metadata only until a human accepts the relevant external gate.

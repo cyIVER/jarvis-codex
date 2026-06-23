@@ -413,6 +413,51 @@ def test_release_gate_status_reports_open_gates_from_state_evidence(tmp_path, mo
     assert gemini["release_gate_closed"] is False
 
 
+def test_release_readiness_checklist_json_is_read_only_summary(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    seen = {}
+
+    def fake_checklist(root, evidence_records):
+        seen["root"] = root
+        seen["evidence_records"] = evidence_records
+        return {
+            "label": "Jarvis Codex release readiness checklist",
+            "status": "blocked",
+            "writes_files": False,
+            "writes_state": False,
+            "network_probe_performed": False,
+            "service_launch_performed": False,
+            "package_build_performed": False,
+            "signing_performed": False,
+            "artifact_copy_performed": False,
+            "execution_authority": False,
+            "publication_ready": False,
+            "release_gate_closed": False,
+            "blocked_by": ["external_security_review"],
+            "checklist": [],
+        }
+
+    monkeypatch.setattr(cli, "build_release_readiness_checklist", fake_checklist)
+
+    code = run_cli(monkeypatch, ["--state", str(state), "release", "readiness-checklist", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert seen["evidence_records"] == []
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["network_probe_performed"] is False
+    assert data["service_launch_performed"] is False
+    assert data["package_build_performed"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["execution_authority"] is False
+    assert data["publication_ready"] is False
+    assert data["release_gate_closed"] is False
+    assert not state.exists()
+
+
 def test_release_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
 

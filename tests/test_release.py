@@ -7,6 +7,7 @@ from jarvis_codex.release import (
     build_release_artifact_evidence,
     build_release_gate_status,
     build_release_manifest,
+    build_release_readiness_checklist,
 )
 
 
@@ -258,8 +259,86 @@ def test_release_gate_status_summarizes_evidence_without_closing_gates():
     assert status["evidence_closes_gates"] is False
     assert status["human_acceptance_required"] is True
     assert external["status"] == "open"
-    assert external["evidence_count"] == 2
-    assert external["latest_evidence_id"] == "evidence_new"
-    assert external["latest_reviewer"] == "reviewer-b"
+
+
+def test_release_readiness_checklist_aggregates_open_gates_without_authority(tmp_path):
+    write(tmp_path / "README.md")
+    write(tmp_path / "STATE.md")
+    write(tmp_path / "LOOP.md")
+    write(tmp_path / "loop-budget.md")
+    write(tmp_path / "loop-run-log.md")
+    write(tmp_path / "docs/PRODUCT_READINESS.md")
+    write(tmp_path / "docs/PLAN_VIEWER.md")
+    write(tmp_path / "docs/REMOTION_REVIEW.md")
+    write(tmp_path / "docs/RELEASE_ARTIFACTS.md")
+    write(tmp_path / "docs/RUNTIME_GATES.md")
+    write(tmp_path / "docs/VOICE_INGRESS.md")
+    write(tmp_path / "docs/WHISPER_CPP_STT_RUNBOOK.md")
+    write(tmp_path / "docs/LOCAL_ML_RUNTIME.md")
+    write(tmp_path / "docs/SAFE_HANDOFF_GATEWAY_PRD.md")
+    write(tmp_path / "docs/WORKTRUNK_LANE_CLI_PRD.md")
+    write(tmp_path / "docs/jarvis-harness/README.md")
+    write(tmp_path / "docs/jarvis-harness/production-readiness.md")
+    write(tmp_path / "docs/jarvis-harness/runtime-acp.md")
+    write(tmp_path / "docs/jarvis-harness/api-contract.md")
+    write(tmp_path / "docs/jarvis-harness/acceptance-matrix.md")
+    write(tmp_path / "docs/jarvis-harness/mobile-access.md")
+    write(tmp_path / "docs/jarvis-harness/voice-mode.md")
+    write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
+    write(tmp_path / "docs/jarvis-harness/external-security-review.md")
+    write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
+    write(tmp_path / "src/jarvis_codex/runtime_app.py")
+    write(tmp_path / "src/jarvis_codex/hud.py")
+    write(tmp_path / "src/jarvis_codex/cli.py")
+    write(tmp_path / "src/jarvis_codex/mobile.py")
+    write(tmp_path / "src/jarvis_codex/gemini.py")
+    write(tmp_path / "src/jarvis_codex/packaging.py")
+    write(tmp_path / "tests/test_hud_browser.py")
+    write(tmp_path / "tools/electron-hud/package.json")
+    write(tmp_path / "tools/electron-hud/package-lock.json")
+    write(tmp_path / "tools/electron-hud/electron-builder.json")
+    write(tmp_path / "tools/electron-hud/main.js")
+    write(tmp_path / "tools/electron-hud/preload.js")
+    write(tmp_path / "tools/plan-viewer/index.html")
+    write(tmp_path / "tools/electron-hud/assets/icon.png", "icon")
+    write(tmp_path / "video/remotion/.gitignore", "out/*\n!out/.gitkeep\n")
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    checklist = build_release_readiness_checklist(
+        tmp_path,
+        [
+            {
+                "id": "evidence_1",
+                "created_at": 1,
+                "gate": "external_security_review",
+                "reviewer": "external-reviewer",
+                "summary": "review pending fixes",
+                "release_gate_closed": False,
+            }
+        ],
+    )
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    external = next(item for item in checklist["checklist"] if item["gate"] == "external_security_review")
+    assert checklist["status"] == "blocked"
+    assert checklist["writes_files"] is False
+    assert checklist["writes_state"] is False
+    assert checklist["network_probe_performed"] is False
+    assert checklist["service_launch_performed"] is False
+    assert checklist["package_build_performed"] is False
+    assert checklist["signing_performed"] is False
+    assert checklist["artifact_copy_performed"] is False
+    assert checklist["execution_authority"] is False
+    assert checklist["publication_ready"] is False
+    assert checklist["release_gate_closed"] is False
+    assert checklist["evidence_closes_gates"] is False
+    assert checklist["human_acceptance_required"] is True
+    assert "actual_mobile_device_validation" in checklist["blocked_by"]
+    assert "networked_gemini_live_validation" in checklist["blocked_by"]
+    assert "jarvis-codex release security-review-plan --json" in checklist["recommended_read_only_commands"]
+    assert "launch runtime services" in checklist["unsafe_actions_not_authorized"]
+    assert external["evidence_count"] == 1
+    assert external["latest_evidence_id"] == "evidence_1"
     assert external["release_gate_closed"] is False
-    assert all(item["release_gate_closed"] is False for item in status["gates"])
+    assert any("human attestation artifact" in note for note in external["notes"])
+    assert before == after

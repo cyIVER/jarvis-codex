@@ -5,6 +5,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from .gemini import build_gemini_live_validation_plan
+from .mobile import build_mobile_validation_plan
+from .packaging import build_packaging_preflight
 from .state import RELEASE_EVIDENCE_GATES
 
 
@@ -298,6 +301,189 @@ def build_release_gate_status(evidence_records: list[dict[str, Any]]) -> dict[st
         "human_acceptance_required": True,
         "open_gate_count": len(gates),
         "gates": gates,
+    }
+
+
+def build_release_readiness_checklist(root: Path, evidence_records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate release gate next actions without launching validators or closing gates."""
+    root = root.resolve()
+    manifest = build_release_manifest(root)
+    artifact_evidence = build_release_artifact_evidence(root)
+    packaging_preflight = build_packaging_preflight(root).to_dict()
+    security_review = build_external_security_review_plan(root)
+    gate_status = build_release_gate_status(evidence_records)
+    mobile_validation = build_mobile_validation_plan().to_dict()
+    gemini_validation = build_gemini_live_validation_plan().to_dict()
+
+    gate_lookup = {gate["gate"]: gate for gate in gate_status["gates"]}
+    checklist_items = [
+        _release_checklist_item(
+            gate_lookup,
+            "actual_mobile_device_validation",
+            "Validate the HUD on an actual iPhone or approved mobile device over a private network.",
+            "jarvis-codex mobile discover --json && jarvis-codex mobile validation-plan --host <private-host> --json",
+            mobile_validation["required_operator_evidence"],
+            mobile_validation["unsafe_actions"],
+            [f"current default validation status: {mobile_validation['status']}"],
+        ),
+        _release_checklist_item(
+            gate_lookup,
+            "networked_gemini_live_validation",
+            "Run an approved Gemini Live network validation using the selected credential mode.",
+            "jarvis-codex gemini feasibility --json && jarvis-codex gemini validation-plan --json",
+            gemini_validation["required_operator_evidence"],
+            gemini_validation["unsafe_actions"],
+            [f"current validation-plan status: {gemini_validation['status']}"],
+        ),
+        _release_checklist_item(
+            gate_lookup,
+            "electron_packaging_and_signing",
+            "Review Electron packaging readiness, then separately approve any install, build, make, or signing command.",
+            "jarvis-codex release packaging-preflight --json",
+            [
+                "reviewed Electron dependency lockfile and builder configuration",
+                "operator-approved package/build command transcript",
+                "signing credential readiness note with no secret values",
+                "signed artifact hash and platform target list after a separately approved packaging run",
+            ],
+            [
+                "do not run npm install from this checklist command",
+                "do not run npm run package or npm run make from this checklist command",
+                "do not sign artifacts or access signing secrets from this checklist command",
+            ],
+            packaging_preflight["remaining_gates"],
+        ),
+        _release_checklist_item(
+            gate_lookup,
+            "release_packaging_and_signing",
+            "Review release artifact evidence and approve any artifact copy, signing, publication, or upload separately.",
+            "jarvis-codex release artifact-evidence --json",
+            [
+                "artifact evidence manifest with size and SHA-256",
+                "operator-selected release target and distribution note",
+                "explicit publication approval after signing and security review",
+            ],
+            [
+                "do not copy artifacts from this checklist command",
+                "do not publish or upload artifacts from this checklist command",
+                "do not treat ignored local dist artifacts as release candidates",
+            ],
+            artifact_evidence["remaining_release_gates"],
+        ),
+        _release_checklist_item(
+            gate_lookup,
+            "external_security_review",
+            "Send the external security review packet to a human reviewer and record the accepted attestation as evidence.",
+            "jarvis-codex release security-review-plan --json",
+            security_review["reviewer_deliverables"],
+            [
+                "do not run scanners, launch services, or probe networks from this checklist command",
+                "do not treat passing tests or internal fixes as external reviewer sign-off",
+                "do not close this gate without a human external reviewer artifact or accepted attestation",
+            ],
+            security_review["remaining_release_gates"],
+        ),
+        _release_checklist_item(
+            gate_lookup,
+            "unattended_loop_scheduling",
+            "Keep unattended scheduling blocked until an explicit scheduler, budget, stop, and human-observable run policy is approved.",
+            "jarvis-codex loop verify --json",
+            [
+                "approved bounded schedule policy",
+                "budget and stop criteria evidence",
+                "human-visible run log and failure escalation evidence",
+            ],
+            [
+                "do not launch daemons or background schedulers from this checklist command",
+                "do not run autonomous loops without the explicit --allow-validation gate",
+                "do not remove human stop or review points",
+            ],
+            [
+                "loop verify is read-only evidence only",
+                "foreground loop runs remain bounded and approval-gated",
+            ],
+        ),
+    ]
+
+    open_gates = [item["gate"] for item in checklist_items if item["status"] == "open"]
+    blocked_by = sorted({gate for gate in manifest["remaining_release_gates"] if gate in RELEASE_EVIDENCE_GATES} | set(open_gates))
+
+    return {
+        "label": "Jarvis Codex release readiness checklist",
+        "status": "blocked" if blocked_by else "ready-for-human-release-review",
+        "root": str(root),
+        "writes_files": False,
+        "writes_state": False,
+        "network_probe_performed": False,
+        "service_launch_performed": False,
+        "package_build_performed": False,
+        "signing_performed": False,
+        "artifact_copy_performed": False,
+        "runtime_launch_performed": False,
+        "execution_authority": False,
+        "publication_ready": False,
+        "release_gate_closed": False,
+        "human_acceptance_required": True,
+        "not_test_replacement": True,
+        "evidence_closes_gates": False,
+        "blocked_by": blocked_by,
+        "summary": {
+            "manifest_status": manifest["status"],
+            "artifact_evidence_status": artifact_evidence["status"],
+            "packaging_preflight_status": packaging_preflight["status"],
+            "security_review_plan_status": security_review["status"],
+            "mobile_validation_plan_status": mobile_validation["status"],
+            "gemini_validation_plan_status": gemini_validation["status"],
+            "open_gate_count": gate_status["open_gate_count"],
+        },
+        "recommended_read_only_commands": [
+            "jarvis-codex release manifest --json",
+            "jarvis-codex release artifact-evidence --json",
+            "jarvis-codex release packaging-preflight --json",
+            "jarvis-codex release security-review-plan --json",
+            "jarvis-codex --state <state-dir> release gate-status --json",
+            "jarvis-codex mobile discover --json",
+            "jarvis-codex gemini feasibility --json",
+            "jarvis-codex loop verify --json",
+        ],
+        "unsafe_actions_not_authorized": [
+            "install packages",
+            "build packages",
+            "sign artifacts",
+            "copy or publish release artifacts",
+            "launch runtime services",
+            "open network probes or Gemini WebSockets",
+            "run mobile browser validation",
+            "start background schedulers or daemons",
+            "mutate Git or Worktrunk state",
+            "close release gates",
+        ],
+        "checklist": checklist_items,
+    }
+
+
+def _release_checklist_item(
+    gate_lookup: dict[str, dict[str, Any]],
+    gate: str,
+    next_action: str,
+    read_only_command: str,
+    required_evidence: list[str],
+    unsafe_actions: list[str],
+    notes: list[str],
+) -> dict[str, Any]:
+    status = gate_lookup.get(gate, {})
+    return {
+        "gate": gate,
+        "status": status.get("status", "open"),
+        "evidence_count": status.get("evidence_count", 0),
+        "latest_evidence_id": status.get("latest_evidence_id"),
+        "release_gate_closed": False,
+        "requires_human_acceptance": True,
+        "next_action": next_action,
+        "read_only_command": read_only_command,
+        "required_evidence": required_evidence,
+        "unsafe_actions_not_authorized": unsafe_actions,
+        "notes": notes,
     }
 
 
