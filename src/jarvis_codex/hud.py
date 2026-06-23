@@ -367,7 +367,10 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
           <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
           <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
+          <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
         </div>
+        <div id="readiness-gaps" class="log">Readiness summary pending.</div>
+        <button id="refresh-readiness" type="button">Refresh Readiness</button>
       </div>
 
       <div class="panel">
@@ -428,6 +431,9 @@ HUD_JS = r"""(() => {
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
   const pwaStatus = document.getElementById("pwa-status");
+  const readinessStatus = document.getElementById("readiness-status");
+  const readinessGaps = document.getElementById("readiness-gaps");
+  const refreshReadiness = document.getElementById("refresh-readiness");
   let socket;
   let requestSeq = 0;
   const requestIndex = new Map();
@@ -502,6 +508,7 @@ HUD_JS = r"""(() => {
       request("approval.list", { status: "approved" });
       request("voice.provider_status");
       request("telemetry.codeburn_status");
+      request("runtime.readiness");
     });
     socket.addEventListener("close", () => {
       socketStatus.textContent = "offline";
@@ -540,6 +547,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.codeburn) {
         renderCodeburnStatus(frame.result.codeburn);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "production_complete")) {
+        renderReadiness(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -628,6 +640,11 @@ HUD_JS = r"""(() => {
   refreshCodeburn.addEventListener("click", () => {
     request("telemetry.codeburn_status");
     log("Codeburn telemetry refresh requested.");
+  });
+
+  refreshReadiness.addEventListener("click", () => {
+    request("runtime.readiness");
+    log("Runtime readiness refresh requested.");
   });
 
   sessionsList.addEventListener("click", (event) => {
@@ -853,6 +870,15 @@ HUD_JS = r"""(() => {
     }
     codeburnStatus.textContent = `$${status.month_cost} / ${status.month_calls}`;
     log(`Codeburn month usage: $${status.month_cost} across ${status.month_calls} calls.`);
+  }
+
+  function renderReadiness(readiness) {
+    readinessStatus.textContent = readiness.status || "unknown";
+    const gaps = Array.isArray(readiness.remaining_gaps) ? readiness.remaining_gaps : [];
+    readinessGaps.textContent = gaps.length
+      ? `Remaining release gaps: ${gaps.join(", ")}`
+      : "No remaining release gaps reported.";
+    log(`Runtime readiness: ${readiness.status || "unknown"}; production complete: ${Boolean(readiness.production_complete)}.`);
   }
 
   function approvedLaunchCommand(approval) {

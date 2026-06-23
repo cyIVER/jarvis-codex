@@ -23,6 +23,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="codeburn-status"' in response.text
     assert 'id="refresh-codeburn"' in response.text
     assert 'id="pwa-status"' in response.text
+    assert 'id="readiness-status"' in response.text
+    assert 'id="readiness-gaps"' in response.text
+    assert 'id="refresh-readiness"' in response.text
     assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
     assert 'rel="icon" href="/assets/icon.svg"' in response.text
     assert 'name="jarvis-runtime-token"' in response.text
@@ -52,6 +55,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("session.list", { status: "active", limit: 25 })' in response.text
     assert 'request("session.create"' in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
+    assert 'request("runtime.readiness")' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert 'request("approval.list", { status: "approved" })' in response.text
@@ -80,6 +84,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "renderSessions(frame.result.sessions)" in response.text
     assert "renderCodeburnStatus(frame.result.codeburn)" in response.text
     assert "Codeburn month usage" in response.text
+    assert "renderReadiness(frame.result)" in response.text
+    assert "Remaining release gaps" in response.text
+    assert "Runtime readiness refresh requested" in response.text
     assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text
     assert "PWA service worker registered" in response.text
     assert "currentSessionId()" in response.text

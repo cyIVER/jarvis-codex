@@ -13,6 +13,7 @@ Implemented and validated in the local FastAPI runtime:
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
 - Runtime-served HUD shell for Codex, Antigravity, Codeburn, approvals, voice, sessions, and PWA status.
+- HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
 - Browser click-to-arm microphone flow with browser STT where available.
 - Local audio chunk storage and approval-gated local STT adapter execution.
 - Voice intent proposals that do not execute commands.
@@ -92,7 +93,7 @@ Smoke-check these surfaces, then stop the server:
 - `/assets/hud.js` loads from the runtime.
 - `/manifest.webmanifest` returns `display: standalone`.
 - `/service-worker.js` contains the HUD cache and excludes runtime RPC routes.
-- The HUD shows socket, policy, voice, approval, Codeburn, and PWA status metrics.
+- The HUD shows socket, policy, voice, approval, Codeburn, PWA, and runtime readiness status metrics.
 - The microphone button requires a click before browser permission.
 - Approval cards expose operation, risk, and scope before approve/reject.
 - Approval buttons approve/reject only; approved launches use a separate token-gated launch button.
