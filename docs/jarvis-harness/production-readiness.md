@@ -88,15 +88,14 @@ Implemented and validated in the local FastAPI runtime:
 
 ## Not Yet Production-Complete
 
-The following remain future or incomplete production gates:
+The following release gates remain open until the required evidence is recorded and explicitly accepted:
 
 - Electron desktop app signing, artifact security review, and distribution approval.
-- Full mobile device validation over Tailscale or WireGuard.
-- Networked Gemini Live validation and cloud voice provider integration.
-- Higher-level unattended or background loop operation beyond bounded foreground `loop schedule`, read-only policy reporting, and read-only evidence briefing.
-- Release packaging, installer, and signed artifacts.
-- External security review.
-- External security review beyond local dependency audit evidence.
+- Actual iPhone or approved mobile-device validation over an approved private-network address.
+- Approved Gemini Live network validation with credential, billing/quota, redaction, and fallback evidence.
+- Release packaging/signing review with explicit copy, upload, or publication approval if distribution is requested.
+- External security reviewer attestation beyond local dependency audit evidence.
+- Unattended/background scheduling policy acceptance before any daemon, background scheduler, or open-ended loop operation.
 
 ## Safety Invariants
 
