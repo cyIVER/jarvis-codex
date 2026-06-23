@@ -179,7 +179,7 @@ Append one entry per meaningful loop cycle. Keep entries short and prune or arch
   "actions_taken": 1,
   "escalations": 0,
   "validations": [
-    "uv run pytest tests/test_voice.py tests/test_cli.py tests/test_workflow_rehearsal.py",
+    "uv run pytest tests/test_voice.py tests/test_cli.py tests/test_workflow_rehearsal.py tests/test_whisper_cpp_adapter.py",
     "uv run pytest",
     "python3 scripts/validate-jarvis-codex-phase1.py"
   ],

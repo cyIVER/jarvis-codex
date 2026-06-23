@@ -16,12 +16,14 @@ For audio files, use an explicit local STT adapter command:
 jarvis-codex voice ingest \
   --audio-file recording.wav \
   --model models/ggml-base.en.bin \
-  --stt-command "python3 scripts/local-stt-adapter.py" \
+  --stt-command "python3 scripts/whisper-cpp-stt-adapter.py --whisper-command /path/to/whisper-cli" \
   --allow-audio-processing \
   --json
 ```
 
 The STT adapter command receives `--audio-file <path>` and `--model <path>`, prints the transcript to stdout, and exits. Jarvis captures stdout as a normal episode with source `voice-audio-file`.
+
+The included `scripts/whisper-cpp-stt-adapter.py` wraps a local `whisper.cpp` `whisper-cli` executable. It expects a local ggml model file and audio in a format accepted by `whisper-cli`; upstream `whisper.cpp` documents 16-bit WAV as the baseline CLI input format.
 
 ## What It Does
 

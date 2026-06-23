@@ -41,7 +41,7 @@ pattern: product-readiness-triage
   Loop action: added read-only `jarvis-codex loop verify --json`, package tests, and docs.
   Human decision: no new project-local loop skills or agents until governance baseline expansion is approved.
 - [x] PM-012 - File-based local STT voice ingress
-  Loop action: added approval-gated `voice ingest --audio-file` with explicit local adapter command and model path.
+  Loop action: added approval-gated `voice ingest --audio-file` with explicit local adapter command, model path, and included `whisper.cpp` wrapper.
   Human decision: microphone listeners, model downloads, cloud STT, GPU/NPU STT adapters, and Codex App Server bridge remain separate approval-gated phases.
 - [ ] PM-013 - Next product slice
   Loop action: pending prioritization between real local STT adapter exercise, release publication planning, and broader release readiness review.
@@ -52,7 +52,7 @@ pattern: product-readiness-triage
 - Validator portability and governance drift checks.
 - Project-local `skills.config` only if repeated routing noise appears.
 - Loop audit score is 86/100; generic loop-triage, loop-verifier skill, and loop-budget skill automation remain deferred to avoid changing the Phase 1 governance baseline.
-- Voice microphone capture, cloud STT, model downloads, and Codex App Server bridge remain gated; file-based local STT is implemented.
+- Voice microphone capture, cloud STT, model downloads, and Codex App Server bridge remain gated; file-based local STT plus a `whisper.cpp` adapter wrapper are implemented.
 - Generated Remotion PNG/MP4 artifacts remain local ignored outputs unless approved for release packaging; manifest output is review-only.
 
 ## Recent Noise
