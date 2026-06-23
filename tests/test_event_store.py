@@ -242,3 +242,18 @@ def test_event_store_projects_approval_lifecycle(tmp_path):
     assert approval["decided_at"] == 20
     assert approval["scope"]["command"].startswith("uv run pytest")
     assert store.approvals(status="approved")[0]["id"] == "appr-1"
+
+    store.append_event(
+        session_id="session-1",
+        actor_id="runtime",
+        source_client="pytest",
+        event_type="approval.consumed",
+        payload={"approval_id": "appr-1", "reason": "used"},
+        created_at=30,
+    )
+    used = store.approval("appr-1")
+
+    assert used["status"] == "used"
+    assert used["decided_at"] == 30
+    assert store.approvals(status="approved") == []
+    assert store.approvals(status="used")[0]["id"] == "appr-1"

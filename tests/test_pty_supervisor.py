@@ -18,7 +18,7 @@ def _collect_text(supervisor: PtySupervisor, channel_id: str, *, timeout: float 
 
 def test_spawn_short_lived_command_reads_output():
     supervisor = PtySupervisor()
-    result = supervisor.spawn("python3 -c \"print('jarvis')\"", profile="dev-loop")
+    result = supervisor.spawn("pwd", profile="dev-loop")
 
     try:
         supervisor.get(result.channel_id).wait(timeout=2)
@@ -26,7 +26,7 @@ def test_spawn_short_lived_command_reads_output():
     finally:
         supervisor.close_all()
 
-    assert "jarvis" in text
+    assert "/" in text
     assert result.policy.allowed is True
 
 
@@ -89,7 +89,7 @@ def test_write_input_and_drain_output_from_cat():
 
 def test_next_output_reads_shared_stream_queue():
     supervisor = PtySupervisor()
-    result = supervisor.spawn("python3 -c \"print('shared stream')\"", profile="dev-loop")
+    result = supervisor.spawn("pwd", profile="dev-loop")
 
     try:
         supervisor.get(result.channel_id).wait(timeout=2)
@@ -99,7 +99,7 @@ def test_next_output_reads_shared_stream_queue():
 
     assert chunk is not None
     assert chunk.channel_id == result.channel_id
-    assert "shared stream" in chunk.chunk
+    assert "/" in chunk.chunk
 
 
 def test_resize_and_kill_running_process():
@@ -125,7 +125,7 @@ def test_resize_rejects_invalid_dimensions():
 
 def test_cleanup_finished_evicts_terminated_channel():
     supervisor = PtySupervisor()
-    result = supervisor.spawn("python3 -c \"print('done')\"", profile="dev-loop")
+    result = supervisor.spawn("pwd", profile="dev-loop")
 
     supervisor.get(result.channel_id).wait(timeout=2)
     removed = supervisor.cleanup_finished()

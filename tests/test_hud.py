@@ -50,6 +50,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("session.list", { status: "active", limit: 25 })' in response.text
     assert 'request("session.create"' in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
+    assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert 'request("approval.list", { status: "approved" })' in response.text
     assert "Voice intent proposal" in response.text

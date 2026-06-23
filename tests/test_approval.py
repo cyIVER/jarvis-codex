@@ -38,6 +38,23 @@ def test_approval_service_responds_once(tmp_path):
         service.respond(approval_id=request.approval["id"], status="rejected")
 
 
+def test_approval_service_consumes_approved_request_once(tmp_path):
+    service = ApprovalService(JarvisEventStore(tmp_path / "jarvis.db"))
+    request = service.request(
+        session_id="session-1",
+        summary="Run targeted tests",
+        operation="uv run pytest",
+    )
+    approved = service.respond(approval_id=request.approval["id"], status="approved")
+
+    consumed = service.consume(approval_id=approved.approval["id"], reason="used for pty.create")
+
+    assert consumed.approval["status"] == "used"
+    assert consumed.event.event_type == "approval.consumed"
+    with pytest.raises(ApprovalError):
+        service.consume(approval_id=approved.approval["id"])
+
+
 def test_approval_service_rejects_invalid_requests(tmp_path):
     service = ApprovalService(JarvisEventStore(tmp_path / "jarvis.db"))
 

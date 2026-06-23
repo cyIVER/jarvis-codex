@@ -60,10 +60,12 @@ This note backs the morning HTML dashboard.
 - Implemented private-network PWA shell affordances: manifest, SVG icon, service worker, and HUD PWA status metric.
 - Committed and pushed private-network PWA shell affordances in `b70ad56`.
 - Added production readiness runbook covering implemented surface, remaining release gaps, safety invariants, validation, browser smoke checks, and mobile gates.
+- Ran AG challenge review against runtime/HUD/readiness files.
+- Implemented safety hardening for AG findings: one-shot approvals, server-configured STT adapter, narrowed dev-loop execution, and telemetry-only Codeburn HUD path.
 
 ## Pending
 
-- Validate and commit production readiness runbook updates.
+- Validate and commit AG-triggered safety hardening and readiness updates.
 - Run final integrated smoke checks.
 - Keep dashboard current as phases progress.
 

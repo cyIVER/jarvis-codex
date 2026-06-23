@@ -100,3 +100,27 @@ def test_unknown_dev_loop_command_requires_approval():
 def test_uv_run_pytest_is_allowed_but_uv_run_server_is_gated():
     assert classify_command("uv run pytest tests/test_policy.py", "dev-loop").allowed is True
     assert classify_command("uv run python -m http.server", "dev-loop").approval_required is True
+
+
+def test_dev_loop_does_not_allow_arbitrary_python_or_node_execution():
+    python_decision = classify_command("python3 -c \"import shutil; shutil.rmtree('/tmp/example')\"", "dev-loop")
+    node_decision = classify_command("node -e \"require('fs').rmSync('/tmp/example', {recursive: true})\"", "dev-loop")
+
+    assert python_decision.approval_required is True
+    assert node_decision.approval_required is True
+
+
+def test_read_only_wrappers_do_not_bypass_execution_or_mutation_gates():
+    find_exec = classify_command("find . -exec python3 -c 'print(1)' ;", "observe")
+    find_delete = classify_command("find . -name '*.tmp' -delete", "observe")
+    sed_in_place = classify_command("sed -i 's/a/b/' file.txt", "observe")
+
+    assert find_exec.approval_required is True
+    assert find_delete.approval_required is True
+    assert sed_in_place.approval_required is True
+
+
+def test_git_branch_mutation_is_not_read_only():
+    assert classify_command("git branch --show-current", "observe").allowed is True
+    assert classify_command("git branch -D old-branch", "observe").approval_required is True
+    assert classify_command("git branch new-branch", "observe").approval_required is True

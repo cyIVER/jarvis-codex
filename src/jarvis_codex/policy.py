@@ -33,14 +33,6 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "worktree",
 }
 
-DEV_LOOP_ALLOWED_ROOTS = READ_ONLY_COMMANDS | {
-    "python",
-    "python3",
-    "pytest",
-    "uv",
-    "node",
-}
-
 SHELL_CONTROL_PATTERN = re.compile(r"(;|&&|\|\||\||<|>|`|\$\()")
 
 HARDLINE_PATTERNS = (
@@ -200,7 +192,11 @@ def _is_read_only_command(command: str) -> bool:
     if root not in READ_ONLY_COMMANDS:
         return False
     if root == "git":
-        return len(parts) >= 2 and parts[1] in READ_ONLY_GIT_SUBCOMMANDS and not _is_mutating_worktree_command(parts)
+        return len(parts) >= 2 and parts[1] in READ_ONLY_GIT_SUBCOMMANDS and not _is_mutating_git_command(parts)
+    if root == "find":
+        return not _is_mutating_find_command(parts)
+    if root == "sed":
+        return not _is_mutating_sed_command(parts)
     return True
 
 
@@ -209,11 +205,51 @@ def _is_known_dev_loop_command(command: str) -> bool:
         parts = shlex.split(command)
     except ValueError:
         return False
-    return bool(parts) and parts[0] in DEV_LOOP_ALLOWED_ROOTS
+    if not parts:
+        return False
+    if _is_read_only_command(command):
+        return True
+    if parts[0] == "pytest":
+        return True
+    return len(parts) >= 3 and parts[0] == "uv" and parts[1] == "run" and parts[2] == "pytest"
 
 
-def _is_mutating_worktree_command(parts: list[str]) -> bool:
-    return len(parts) >= 3 and parts[1] == "worktree" and parts[2] not in {"list"}
+def _is_mutating_git_command(parts: list[str]) -> bool:
+    if len(parts) >= 3 and parts[1] == "worktree":
+        return parts[2] not in {"list"}
+    if len(parts) >= 3 and parts[1] == "branch":
+        return not _is_read_only_git_branch(parts[2:])
+    return False
+
+
+def _is_read_only_git_branch(args: list[str]) -> bool:
+    if not args:
+        return True
+    safe_exact = {
+        "--all",
+        "--contains",
+        "--list",
+        "--merged",
+        "--no-merged",
+        "--remotes",
+        "--show-current",
+        "--verbose",
+        "-a",
+        "-r",
+        "-v",
+        "-vv",
+    }
+    safe_value_prefixes = ("--format=", "--sort=")
+    return all(arg in safe_exact or arg.startswith(safe_value_prefixes) for arg in args)
+
+
+def _is_mutating_find_command(parts: list[str]) -> bool:
+    mutating = {"-delete", "-exec", "-execdir", "-ok", "-okdir"}
+    return any(part in mutating for part in parts[1:])
+
+
+def _is_mutating_sed_command(parts: list[str]) -> bool:
+    return any(part == "--in-place" or part.startswith("-i") for part in parts[1:])
 
 
 def _looks_like_runtime_launch(command: str) -> bool:

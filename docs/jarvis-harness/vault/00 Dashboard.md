@@ -38,6 +38,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Live Codeburn telemetry committed and pushed as `fa1d8b1`.
 - Mobile/PWA shell affordances committed and pushed as `b70ad56`.
 - Production readiness runbook is in progress with current implementation state, safety invariants, validation, and mobile gates.
+- AG challenge review triggered safety hardening: one-shot approvals, server-configured STT adapter, narrowed dev-loop execution, and Codeburn telemetry-only HUD path.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -59,6 +60,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Validate and commit production readiness runbook updates.
+1. Validate and commit AG-triggered safety hardening and readiness updates.
 2. Run final integrated smoke checks.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

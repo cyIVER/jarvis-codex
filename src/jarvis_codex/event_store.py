@@ -497,6 +497,19 @@ class JarvisEventStore:
             )
             return
 
+        if event_type == "approval.consumed":
+            approval_id = str(payload["approval_id"])
+            connection.execute(
+                """
+                UPDATE approvals
+                SET status = 'used',
+                    decided_at = ?
+                WHERE id = ?
+                """,
+                (created_at, approval_id),
+            )
+            return
+
         connection.execute(
             """
             UPDATE sessions

@@ -374,7 +374,7 @@ HUD_HTML = """<!doctype html>
         <div class="panel-body pane-list">
           <div class="agent-pane"><div><strong>Codex</strong><span>Implementation and verification lane</span></div><button data-pane="codex">Prepare</button></div>
           <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
-          <div class="agent-pane"><div><strong>Codeburn</strong><span>Usage and cost telemetry lane</span></div><button data-pane="codeburn">Prepare</button><button id="refresh-codeburn" type="button">Status</button></div>
+          <div class="agent-pane"><div><strong>Codeburn</strong><span>Fixed no-shell usage telemetry lane</span></div><button id="refresh-codeburn" type="button">Status</button></div>
         </div>
         <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
       </div>
@@ -451,12 +451,6 @@ HUD_JS = r"""(() => {
       risk: "high",
       summary: "Launch Antigravity in a runtime-supervised PTY pane"
     },
-    codeburn: {
-      label: "Codeburn",
-      command: "node /home/iveri/.local/share/ai-env/native-tools/codeburn/dist/cli.js status",
-      risk: "medium",
-      summary: "Launch Codeburn telemetry in a runtime-supervised PTY pane"
-    }
   };
 
   function log(line) {

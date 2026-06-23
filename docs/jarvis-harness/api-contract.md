@@ -41,7 +41,7 @@ Session:
 - `initialize`
 - `session.create`
 - `session.list`
-- `session.load`
+- `session.get`
 - `session.resume`
 - `session.fork`
 - `session.archive`
@@ -62,7 +62,7 @@ PTY:
 - `pty.kill`
 - `pty.restart`
 
-`pty.create` accepts an optional `approval_id`. The approval must already be approved and must exactly match the requested command through its operation or scoped command. This does not bypass hardline policy blocks.
+`pty.create` accepts an optional `approval_id`. The approval must already be approved and must exactly match the requested command through its operation or scoped command. Matching approvals are consumed on use and cannot be replayed. This does not bypass hardline policy blocks.
 
 Approval:
 
@@ -98,7 +98,7 @@ Loop and swarm:
 
 Telemetry:
 
-- `stats.codeburn`
+- `telemetry.codeburn_status`
 - `runtime.health`
 - `runtime.readiness`
 

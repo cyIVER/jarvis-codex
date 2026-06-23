@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from .event_store import JarvisEventStore, StoredEvent
 
-ApprovalStatus = Literal["pending", "approved", "rejected"]
+ApprovalStatus = Literal["pending", "approved", "rejected", "used"]
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,34 @@ class ApprovalService:
             payload={
                 "approval_id": approval_id,
                 "status": status,
+                "reason": reason,
+            },
+        )
+        updated = self.store.approval(approval_id)
+        if updated is None:
+            raise ApprovalError("approval projection was not updated")
+        return ApprovalResult(approval=updated, event=event)
+
+    def consume(
+        self,
+        *,
+        approval_id: str,
+        actor_id: str = "runtime",
+        source_client: str = "rpc",
+        reason: str = "",
+    ) -> ApprovalResult:
+        approval = self.store.approval(approval_id)
+        if approval is None:
+            raise ApprovalError("approval does not exist")
+        if approval["status"] != "approved":
+            raise ApprovalError("approval is not approved")
+        event = self.store.append_event(
+            session_id=str(approval["session_id"]),
+            actor_id=actor_id,
+            source_client=source_client,
+            event_type="approval.consumed",
+            payload={
+                "approval_id": approval_id,
                 "reason": reason,
             },
         )

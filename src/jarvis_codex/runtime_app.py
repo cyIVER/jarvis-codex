@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import queue
 import uuid
 from pathlib import Path
@@ -28,8 +29,26 @@ from .voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_loca
 from .voice_intent import propose_voice_intent
 
 POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
+LOCAL_STT_COMMAND_ENV = "JARVIS_LOCAL_STT_COMMAND"
 PLANNED_METHODS = {
+    "loop.pause",
+    "loop.resume",
+    "loop.start",
+    "loop.stop",
+    "message.list",
+    "profile.list",
+    "profile.set",
+    "prompt.cancel",
+    "prompt.send",
     "pty.restart",
+    "runtime.readiness",
+    "session.archive",
+    "session.cancel",
+    "session.fork",
+    "session.resume",
+    "swarm.plan",
+    "swarm.start",
+    "swarm.stop",
 }
 
 
@@ -373,6 +392,13 @@ def _dispatch_request(
         except PtyPolicyError as exc:
             if not _approval_allows_command(store, approval_id, command):
                 raise
+            consumed = approval_service.consume(
+                approval_id=approval_id,
+                actor_id=str(params.get("actor_id") or "runtime"),
+                source_client=str(params.get("source_client") or "rpc"),
+                reason="pty.create launched approved command",
+            )
+            event_broadcaster.publish(consumed.event)
             result = pty_supervisor.spawn(command, profile=profile, approval_granted=True)  # type: ignore[arg-type]
         data = result.to_dict()
         if result.approval_granted:
@@ -418,7 +444,7 @@ def _dispatch_request(
 
     if method == "approval.list":
         status = params.get("status")
-        if status is not None and status not in {"pending", "approved", "rejected"}:
+        if status is not None and status not in {"pending", "approved", "rejected", "used"}:
             return make_error_response(request_id, code="invalid_status", message="unknown approval status")
         return make_response(request_id, {"approvals": approval_service.list(status=status)})  # type: ignore[arg-type]
 
@@ -483,7 +509,7 @@ def _dispatch_request(
                     "local_stt_adapter": {
                         "status": "approval-gated",
                         "privacy": "local",
-                        "note": "Saved audio may be transcribed only when allow_audio_processing is true.",
+                        "note": "Saved audio may be transcribed only with a matching approval id and server-configured local STT command.",
                     },
                     "gemini_realtime": {
                         "status": "not_configured",
@@ -617,19 +643,30 @@ def _dispatch_request(
         )
 
     if method == "voice.transcribe_audio":
-        if not bool(params.get("allow_audio_processing") or False):
+        audio_file = Path(str(params.get("audio_file") or ""))
+        model_path = Path(str(params.get("model_path") or ""))
+        approval_id = str(params.get("approval_id") or "")
+        if not _approval_allows_audio_transcription(store, approval_id, audio_file, model_path):
             return make_error_response(
                 request_id,
                 code="approval_required",
-                message="local audio transcription requires explicit audio processing approval",
+                message="local audio transcription requires a matching approved audio processing approval",
                 retryable=False,
                 approval_required=True,
-                details={"required_param": "allow_audio_processing"},
+                details={"required_approval_scope": "voice.transcribe_audio"},
             )
+        stt_command = _local_stt_command()
+        consumed = approval_service.consume(
+            approval_id=approval_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason="voice.transcribe_audio processed approved audio",
+        )
+        event_broadcaster.publish(consumed.event)
         transcript = transcribe_with_local_adapter(
-            audio_file=Path(str(params.get("audio_file") or "")),
-            model_path=Path(str(params.get("model_path") or "")),
-            stt_command=str(params.get("stt_command") or ""),
+            audio_file=audio_file,
+            model_path=model_path,
+            stt_command=stt_command,
             timeout_seconds=int(params.get("timeout_seconds") or 120),
         )
         session_id = str(params.get("session_id") or "hud")
@@ -718,5 +755,39 @@ def _approval_allows_command(store: JarvisEventStore, approval_id: str, command:
     return expected in {operation, scoped_command}
 
 
+def _approval_allows_audio_transcription(
+    store: JarvisEventStore,
+    approval_id: str,
+    audio_file: Path,
+    model_path: Path,
+) -> bool:
+    if not approval_id.strip():
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    if str(approval.get("operation") or "") != "voice.transcribe_audio":
+        return False
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    return (
+        scope.get("source") == "voice.transcribe_audio"
+        and _normalize_path(str(scope.get("audio_file") or "")) == _normalize_path(str(audio_file))
+        and _normalize_path(str(scope.get("model_path") or "")) == _normalize_path(str(model_path))
+    )
+
+
 def _normalize_command(command: str) -> str:
     return " ".join(command.strip().split())
+
+
+def _normalize_path(path: str) -> str:
+    if not path.strip():
+        return ""
+    return str(Path(path).expanduser().resolve())
+
+
+def _local_stt_command() -> str:
+    command = os.environ.get(LOCAL_STT_COMMAND_ENV, "").strip()
+    if not command:
+        raise VoiceAudioError(f"{LOCAL_STT_COMMAND_ENV} is not configured")
+    return command

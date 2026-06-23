@@ -39,9 +39,11 @@ The following remain future or incomplete production gates:
 - The browser HUD must not execute shell commands directly.
 - Voice transcripts and voice intent proposals must not execute commands.
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
-- PTY launches that require approval must include an approved, command-matched approval id.
+- PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
+- Local STT transcription requires a matching approved audio-processing approval id and a server-configured `JARVIS_LOCAL_STT_COMMAND`; clients cannot supply adapter commands through RPC.
+- Runtime PTYs do not execute through a shell. Shell pipelines and shell operators are not supported execution semantics in the current supervisor.
 - The PWA service worker must not cache `/rpc`, `/ws`, or non-GET requests.
 - Public internet exposure is not part of v1.
 

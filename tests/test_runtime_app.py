@@ -208,13 +208,14 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    response = client.post("/rpc", json=make_request("pty.restart", request_id="req_1"))
+    for index, method in enumerate(("pty.restart", "session.resume", "prompt.send", "loop.start", "runtime.readiness")):
+        response = client.post("/rpc", json=make_request(method, request_id=f"req_{index}"))
 
-    assert response.status_code == 200
-    data = response.json()
-    assert data["type"] == "response"
-    assert data["error"]["code"] == "not_implemented"
-    assert "planned but not implemented" in data["error"]["message"]
+        assert response.status_code == 200
+        data = response.json()
+        assert data["type"] == "response"
+        assert data["error"]["code"] == "not_implemented"
+        assert "planned but not implemented" in data["error"]["message"]
 
 
 def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
@@ -225,7 +226,7 @@ def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
         "/rpc",
         json=make_request(
             "pty.create",
-            {"command": "python3 -c \"print('runtime pty')\"", "profile": "dev-loop"},
+            {"command": "pwd", "profile": "dev-loop"},
             request_id="req_1",
         ),
     )
@@ -237,7 +238,7 @@ def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
         app.state.pty_supervisor.get(channel_id).wait(timeout=2)
         deadline = time.time() + 2
         text = ""
-        while time.time() < deadline and "runtime pty" not in text:
+        while time.time() < deadline and "/" not in text:
             text += "".join(chunk.chunk for chunk in app.state.pty_supervisor.drain_output(channel_id))
             time.sleep(0.02)
     finally:
@@ -245,7 +246,7 @@ def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
 
     assert data["type"] == "response"
     assert data["result"]["policy"]["status"] == "allow"
-    assert "runtime pty" in text
+    assert "/" in text
 
 
 def test_runtime_pty_create_surfaces_policy_blocks(tmp_path):
@@ -322,6 +323,14 @@ def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
             request_id="req_3",
         ),
     )
+    replay_response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": command, "profile": "observe", "approval_id": approval["id"]},
+            request_id="req_4",
+        ),
+    )
 
     try:
         data = create_response.json()["result"]
@@ -339,6 +348,8 @@ def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
     assert data["approval_id"] == approval["id"]
     assert data["policy"]["status"] == "approval_required"
     assert "approved pty" in text
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+    assert replay_response.json()["error"]["code"] == "approval_required"
 
 
 def test_runtime_pty_create_rejects_mismatched_or_blocked_approval(tmp_path):
@@ -646,6 +657,37 @@ def test_runtime_voice_audio_chunk_rejects_bad_base64(tmp_path):
     assert response.json()["error"]["code"] == "invalid_audio_chunk"
 
 
+def _approve_voice_transcription(client: TestClient, audio: Path, model: Path) -> str:
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-voice",
+                "summary": "Transcribe local audio",
+                "operation": "voice.transcribe_audio",
+                "risk": "medium",
+                "scope": {
+                    "source": "voice.transcribe_audio",
+                    "audio_file": str(audio),
+                    "model_path": str(model),
+                },
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            request_id="approval_resp",
+        ),
+    )
+    return str(approval["id"])
+
+
 def test_runtime_voice_transcribe_audio_requires_explicit_approval(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -665,7 +707,7 @@ def test_runtime_voice_transcribe_audio_requires_explicit_approval(tmp_path):
     assert data["error"]["approval_required"] is True
 
 
-def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path):
+def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path, monkeypatch):
     state = tmp_path / "state"
     audio = tmp_path / "sample.webm"
     model = tmp_path / "model.bin"
@@ -683,6 +725,8 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path):
     )
     app = create_app(state)
     client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model)
+    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
 
     response = client.post(
         "/rpc",
@@ -692,8 +736,8 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path):
                 "session_id": "session-voice",
                 "audio_file": str(audio),
                 "model_path": str(model),
-                "stt_command": f"{sys.executable} {adapter}",
-                "allow_audio_processing": True,
+                "stt_command": "python3 /tmp/malicious_client_supplied_stt.py",
+                "approval_id": approval_id,
                 "timeout_seconds": 5,
             },
             request_id="req_1",
@@ -713,17 +757,18 @@ def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path):
     assert payload["audio_processed"] is True
     assert payload["external_services"] is False
     assert payload["execution_authority"] is False
+    assert app.state.event_store.approval(approval_id)["status"] == "used"
 
 
-def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path):
+def test_runtime_voice_transcribe_audio_requires_server_configured_adapter(tmp_path, monkeypatch):
     audio = tmp_path / "sample.webm"
     model = tmp_path / "model.bin"
-    adapter = tmp_path / "empty_stt.py"
     audio.write_bytes(b"audio")
     model.write_bytes(b"model")
-    adapter.write_text("print('')\n", encoding="utf-8")
     app = create_app(tmp_path / "state")
     client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model)
+    monkeypatch.delenv("JARVIS_LOCAL_STT_COMMAND", raising=False)
 
     response = client.post(
         "/rpc",
@@ -733,8 +778,39 @@ def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path):
                 "session_id": "session-voice",
                 "audio_file": str(audio),
                 "model_path": str(model),
-                "stt_command": f"{sys.executable} {adapter}",
-                "allow_audio_processing": True,
+                "approval_id": approval_id,
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_audio_chunk"
+    assert "JARVIS_LOCAL_STT_COMMAND" in response.json()["error"]["message"]
+    assert app.state.event_store.approval(approval_id)["status"] == "approved"
+
+
+def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path, monkeypatch):
+    audio = tmp_path / "sample.webm"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "empty_stt.py"
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text("print('')\n", encoding="utf-8")
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    approval_id = _approve_voice_transcription(client, audio, model)
+    monkeypatch.setenv("JARVIS_LOCAL_STT_COMMAND", f"{sys.executable} {adapter}")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_path": str(model),
+                "approval_id": approval_id,
                 "timeout_seconds": 5,
             },
             request_id="req_1",
@@ -788,7 +864,7 @@ def test_runtime_websocket_streams_pty_output(tmp_path):
         websocket.send_json(
             make_request(
                 "pty.create",
-                {"command": "python3 -c \"print('streamed pty')\"", "profile": "dev-loop"},
+                {"command": "pwd", "profile": "dev-loop"},
                 request_id="req_1",
             )
         )
@@ -800,7 +876,7 @@ def test_runtime_websocket_streams_pty_output(tmp_path):
 
     assert "response" in frame_types
     assert "stream" in frame_types
-    assert "streamed pty" in "".join(frame["chunk"] for frame in stream_frames)
+    assert "/" in "".join(frame["chunk"] for frame in stream_frames)
 
 
 def test_runtime_websocket_pushes_semantic_events(tmp_path):
