@@ -75,6 +75,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "release.gate_status" in data["result"]["capabilities"]
     assert "release.gate_acceptance_brief" in data["result"]["capabilities"]
     assert "release.readiness_checklist" in data["result"]["capabilities"]
+    assert "release.packaging_evidence_brief" in data["result"]["capabilities"]
     assert "release.gate_accept" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
@@ -1438,6 +1439,29 @@ def test_runtime_gemini_evidence_brief_is_read_only_and_non_executing(tmp_path, 
     assert data["release_gate_closed"] is False
     assert "networked_gemini_live_validation" in data["release_evidence_command"]
     assert any("cloud spend" in action for action in data["unsafe_actions"])
+    assert not state.exists()
+
+
+def test_runtime_packaging_evidence_brief_is_read_only_and_non_executing(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("release.packaging_evidence_brief", request_id="req_1"))
+
+    data = response.json()["result"]
+    assert data["label"] == "Jarvis packaging and signing operator evidence brief"
+    assert data["writes_files"] is False
+    assert data["execution_authority"] is False
+    assert data["install_performed"] is False
+    assert data["package_build_performed"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["publication_performed"] is False
+    assert data["service_launch_performed"] is False
+    assert data["release_gate_closed"] is False
+    assert any("release_packaging_and_signing" in command for command in data["release_evidence_commands"])
+    assert any("do not run npm install" in action for action in data["unsafe_actions"])
     assert not state.exists()
 
 

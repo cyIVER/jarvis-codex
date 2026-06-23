@@ -735,6 +735,7 @@ HUD_HTML = """<!doctype html>
                 <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
                 <div id="mobile-evidence-panel" class="log">Mobile evidence brief pending. No runtime is launched from this panel.</div>
                 <div id="gemini-evidence-panel" class="log">Gemini evidence brief pending. No OAuth, WebSocket, or network probe is launched from this panel.</div>
+                <div id="packaging-evidence-panel" class="log">Packaging evidence brief pending. No install, build, signing, copy, upload, or publish runs from this panel.</div>
                 <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
                 <div id="release-acceptance-brief-panel" class="log">Release acceptance brief pending. Proposed commands are display-only.</div>
                 <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
@@ -854,6 +855,7 @@ HUD_JS = r"""(() => {
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const mobileEvidencePanel = document.getElementById("mobile-evidence-panel");
   const geminiEvidencePanel = document.getElementById("gemini-evidence-panel");
+  const packagingEvidencePanel = document.getElementById("packaging-evidence-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
   const releaseAcceptanceBriefPanel = document.getElementById("release-acceptance-brief-panel");
@@ -1040,6 +1042,7 @@ HUD_JS = r"""(() => {
       request("runtime.readiness");
       request("mobile.evidence_brief");
       request("gemini.evidence_brief");
+      request("release.packaging_evidence_brief");
       request("release.gate_status");
       request("release.gate_acceptance_brief");
       request("release.readiness_checklist");
@@ -1207,6 +1210,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.release_evidence_command && frame.result.recommended_path) {
         renderGeminiEvidenceBrief(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.release_evidence_commands)) {
+        renderPackagingEvidenceBrief(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -1653,6 +1661,7 @@ HUD_JS = r"""(() => {
     request("runtime.readiness");
     request("mobile.evidence_brief");
     request("gemini.evidence_brief");
+    request("release.packaging_evidence_brief");
     request("release.gate_status");
     request("release.gate_acceptance_brief");
     request("release.readiness_checklist");
@@ -2155,6 +2164,23 @@ HUD_JS = r"""(() => {
       </section>
     `;
     log(`Gemini evidence brief loaded: ${brief.status || "unknown"}. It does not prove Gemini Live validation or close the gate.`);
+  }
+
+  function renderPackagingEvidenceBrief(brief) {
+    const required = Array.isArray(brief.required_operator_evidence) ? brief.required_operator_evidence : [];
+    const commands = Array.isArray(brief.release_evidence_commands) ? brief.release_evidence_commands : [];
+    const unsafe = Array.isArray(brief.unsafe_actions) ? brief.unsafe_actions : [];
+    packagingEvidencePanel.innerHTML = `
+      <section class="approval-item">
+        <strong>${escapeHtml(brief.label || "Packaging evidence brief")}</strong>
+        <div>Status: ${escapeHtml(brief.status || "unknown")} | Preflight: ${escapeHtml(brief.packaging_preflight_status || "unknown")} | Artifact evidence: ${escapeHtml(brief.artifact_evidence_status || "unknown")}</div>
+        <div>Required evidence: ${escapeHtml(required.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>Release evidence command: <code>${escapeHtml(commands[0] || "Record accepted packaging/signing evidence after human review.")}</code></div>
+        <div>Unsafe actions not authorized: ${escapeHtml(unsafe.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>No install, package build, signing, copy, upload, publish, service launch, or gate closure was performed.</div>
+      </section>
+    `;
+    log(`Packaging evidence brief loaded: ${brief.status || "unknown"}. It does not build, sign, publish, or close release gates.`);
   }
 
   function renderReleaseGateStatus(status) {

@@ -33,7 +33,7 @@ The current release is a governed local operating substrate:
 - mobile operator evidence brief for private iPhone/PWA validation collection, surfaced in the HUD without launching runtime services
 - Gemini Live operator evidence brief for redacted network-validation collection, surfaced in the HUD without OAuth, WebSockets, network probes, or cloud-spend authority
 - Nango/Gemini Live integration plan for future governed credential and ephemeral-token design
-- packaging/signing operator evidence brief for signed artifact and publication review
+- packaging/signing operator evidence brief for signed artifact and publication review, surfaced in the HUD without install, build, signing, copy, upload, or publish authority
 - external security reviewer evidence brief for accepted attestation collection
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
