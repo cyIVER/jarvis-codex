@@ -42,6 +42,7 @@ Current runtime support is intentionally state-first:
 - `swarm.plan` records planned lane assignments.
 - `swarm.start` records an approved lifecycle start for a plan.
 - `swarm.stop` records an approved lifecycle stop for a recorded swarm event.
+- `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` record approved loop lifecycle state for a session.
 
 These records do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
 
@@ -96,6 +97,7 @@ Before commit or push:
 ## Acceptance Criteria
 
 - `/loop` can run a delivery phase with a durable event trail.
+- `/loop` lifecycle methods can record approved state without starting execution.
 - `/swarm` can record role-labeled lifecycle state with scoped approvals.
 - Actual role-labeled pane spawning remains a future implementation gate.
 - High-risk work triggers adversarial review.

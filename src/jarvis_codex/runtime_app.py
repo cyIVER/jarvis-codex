@@ -57,10 +57,6 @@ POLICY_PROFILES = set(POLICY_PROFILE_DETAILS)
 LOCAL_STT_COMMAND_ENV = "JARVIS_LOCAL_STT_COMMAND"
 LOCAL_TTS_COMMAND_ENV = "JARVIS_LOCAL_TTS_COMMAND"
 PLANNED_METHODS = {
-    "loop.pause",
-    "loop.resume",
-    "loop.start",
-    "loop.stop",
     "prompt.cancel",
     "pty.restart",
     "session.cancel",
@@ -392,13 +388,14 @@ def _dispatch_request(
                     "electron_hud_scaffold": True,
                     "mobile_preflight": True,
                     "gemini_feasibility": True,
+                    "loop_lifecycle_records": True,
                 },
                 "remaining_gaps": [
                     "electron_packaging_and_signing",
                     "iphone_private_network_validation",
                     "networked_gemini_live_validation",
                     "actual_swarm_agent_launch",
-                    "loop_command_surfaces",
+                    "actual_loop_execution",
                     "release_packaging",
                 ],
             },
@@ -819,6 +816,82 @@ def _dispatch_request(
             request_id,
             {
                 "swarm_lifecycle_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "lifecycle_state": lifecycle_state,
+                "writes_state": True,
+                "approval_consumed": True,
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
+                "pty_launch": False,
+                "command_execution": False,
+                "runtime_workflow_execution": False,
+            },
+        )
+
+    if method in {"loop.start", "loop.pause", "loop.resume", "loop.stop"}:
+        session_id = str(params.get("session_id") or "")
+        approval_id = str(params.get("approval_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if store.session(session_id) is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        if not _approval_allows_loop_lifecycle(store, approval_id=approval_id, operation=method, session_id=session_id):
+            return make_error_response(
+                request_id,
+                code="approval_required",
+                message=f"{method} requires a matching approved loop lifecycle approval",
+                approval_required=True,
+                details={"required_approval_scope": method, "session_id": session_id},
+            )
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message=f"approved {method} requires the HUD runtime token",
+                retryable=False,
+            )
+        consumed = approval_service.consume(
+            approval_id=approval_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason=f"{method} recorded approved loop lifecycle state",
+        )
+        event_broadcaster.publish(consumed.event)
+        lifecycle_state = {
+            "loop.start": "started",
+            "loop.pause": "paused",
+            "loop.resume": "resumed",
+            "loop.stop": "stopped",
+        }[method]
+        parent_event_id = str(params.get("loop_event_id") or "").strip() or None
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type=f"loop.{lifecycle_state}",
+            parent_event_id=parent_event_id,
+            payload={
+                "approval_id": approval_id,
+                "lifecycle_state": lifecycle_state,
+                "objective": str(params.get("objective") or "").strip()[:2000],
+                "reason": str(params.get("reason") or "").strip()[:2000],
+                "loop_event_id": parent_event_id,
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
+                "pty_launch": False,
+                "command_execution": False,
+                "runtime_workflow_execution": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "loop_lifecycle_event_id": event.id,
                 "session_id": session_id,
                 "sequence": event.sequence,
                 "lifecycle_state": lifecycle_state,
@@ -1467,6 +1540,24 @@ def _approval_allows_swarm_lifecycle(
         and scope.get("session_id") == session_id
         and scope.get(target_key) == target_event_id
     )
+
+
+def _approval_allows_loop_lifecycle(
+    store: JarvisEventStore,
+    *,
+    approval_id: str,
+    operation: str,
+    session_id: str,
+) -> bool:
+    if not approval_id.strip():
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    if str(approval.get("operation") or "") != operation:
+        return False
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    return scope.get("source") == operation and scope.get("session_id") == session_id
 
 
 def _normalize_command(command: str) -> str:

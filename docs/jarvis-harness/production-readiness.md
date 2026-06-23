@@ -20,6 +20,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only semantic history search through `message.search`.
 - Planning-only swarm lane proposal records through `swarm.plan` without agent launch, PTY launch, Worktrunk mutation, or command execution.
 - Approval-gated swarm lifecycle records through `swarm.start` and `swarm.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
+- Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
@@ -48,7 +49,7 @@ The following remain future or incomplete production gates:
 - Electron desktop app packaging, installer generation, and signing.
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
-- Dynamic `/loop` command surfaces and actual multi-agent launch orchestration.
+- Actual loop execution and actual multi-agent launch orchestration.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
@@ -63,6 +64,7 @@ The following remain future or incomplete production gates:
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
 - Swarm plans are planning records only; they must not be treated as permission to launch agents, mutate Worktrunk, start PTYs, or run commands.
 - Swarm lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
+- Loop lifecycle records require matching approvals and the HUD runtime token, but they remain state records only and must not be treated as autonomous execution, agent launch, Worktrunk mutation, PTY launch, runtime workflow execution, or command execution.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.
@@ -94,7 +96,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-225 passed
+228 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

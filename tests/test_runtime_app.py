@@ -814,6 +814,185 @@ def test_runtime_swarm_stop_records_approved_lifecycle_without_execution(tmp_pat
     assert app.state.event_store.approval(approval["id"])["status"] == "used"
 
 
+def test_runtime_loop_start_records_approved_lifecycle_without_execution(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-loop"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-loop",
+                "summary": "Record loop start",
+                "operation": "loop.start",
+                "risk": "medium",
+                "scope": {"source": "loop.start", "session_id": "session-loop"},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "loop.start",
+            {
+                "session_id": "session-loop",
+                "objective": "Continue verified implementation loop",
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_2",
+        ),
+    )
+
+    result = response.json()["result"]
+    event = list(app.state.event_store.iter_events(session_id="session-loop"))[-1]
+    assert result["lifecycle_state"] == "started"
+    assert result["writes_state"] is True
+    assert result["approval_consumed"] is True
+    assert result["execution_authority"] is False
+    assert result["agent_launch"] is False
+    assert result["worktrunk_mutation"] is False
+    assert result["pty_launch"] is False
+    assert result["command_execution"] is False
+    assert result["runtime_workflow_execution"] is False
+    assert event.event_type == "loop.started"
+    assert event.payload["objective"] == "Continue verified implementation loop"
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+
+
+def test_runtime_loop_lifecycle_requires_matching_approval_and_runtime_token(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-loop"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-loop",
+                "summary": "Record loop pause",
+                "operation": "loop.pause",
+                "risk": "medium",
+                "scope": {"source": "loop.pause", "session_id": "session-loop"},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    missing_token = client.post(
+        "/rpc",
+        json=make_request(
+            "loop.pause",
+            {"session_id": "session-loop", "approval_id": approval["id"]},
+            request_id="req_2",
+        ),
+    )
+    mismatch = client.post(
+        "/rpc",
+        json=make_request(
+            "loop.stop",
+            {"session_id": "session-loop", "approval_id": approval["id"], "runtime_token": token},
+            request_id="req_3",
+        ),
+    )
+
+    assert missing_token.json()["error"]["code"] == "unauthorized"
+    assert mismatch.json()["error"]["code"] == "approval_required"
+    assert app.state.event_store.approval(approval["id"])["status"] == "approved"
+
+
+def test_runtime_loop_stop_records_parent_lifecycle_reference_without_stopping_processes(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-loop"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-loop",
+                "summary": "Record loop stop",
+                "operation": "loop.stop",
+                "risk": "medium",
+                "scope": {"source": "loop.stop", "session_id": "session-loop"},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "loop.stop",
+            {
+                "session_id": "session-loop",
+                "loop_event_id": "evt_loop_started",
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_2",
+        ),
+    )
+
+    result = response.json()["result"]
+    event = list(app.state.event_store.iter_events(session_id="session-loop"))[-1]
+    assert result["lifecycle_state"] == "stopped"
+    assert result["execution_authority"] is False
+    assert result["runtime_workflow_execution"] is False
+    assert event.event_type == "loop.stopped"
+    assert event.parent_event_id == "evt_loop_started"
+    assert event.payload["loop_event_id"] == "evt_loop_started"
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+
+
 def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -863,8 +1042,10 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["electron_hud_scaffold"] is True
     assert data["checks"]["mobile_preflight"] is True
     assert data["checks"]["gemini_feasibility"] is True
+    assert data["checks"]["loop_lifecycle_records"] is True
     assert "electron_packaging_and_signing" in data["remaining_gaps"]
     assert "networked_gemini_live_validation" in data["remaining_gaps"]
+    assert "actual_loop_execution" in data["remaining_gaps"]
     assert not state.exists()
 
 
@@ -1088,7 +1269,7 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    for index, method in enumerate(("pty.restart", "session.cancel", "prompt.cancel", "loop.start")):
+    for index, method in enumerate(("pty.restart", "session.cancel", "prompt.cancel")):
         response = client.post("/rpc", json=make_request(method, request_id=f"req_{index}"))
 
         assert response.status_code == 200

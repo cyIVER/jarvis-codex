@@ -48,6 +48,8 @@ Required v1 capabilities:
 - `loop.resume`
 - `loop.stop`
 
+Loop lifecycle methods record approved state only. They do not launch agents, start PTYs, execute shell commands, mutate Worktrunk, run runtime workflows, or grant execution authority.
+
 The wire model should separate:
 
 - JSON-RPC request and response frames.

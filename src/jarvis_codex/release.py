@@ -374,7 +374,7 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             "actual_mobile_device_validation",
             "networked_gemini_live_validation",
             "actual_swarm_agent_launch",
-            "loop_command_surfaces",
+            "actual_loop_execution",
             "release_packaging_and_signing",
             "external_security_review",
         ],
