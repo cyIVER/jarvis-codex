@@ -261,6 +261,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "runtime_token: runtimeToken" in response.text
     assert "<pre>Scope:" in response.text
     assert 'request("pty.create"' in response.text
+    assert "session_id: currentSessionId()" in response.text
     assert "renderApprovedLaunches(frame.result.approvals)" in response.text
     assert "approvedLaunchCommand" in response.text
     assert "Launch Approved PTY" in response.text

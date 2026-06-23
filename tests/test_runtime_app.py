@@ -674,7 +674,8 @@ def test_runtime_swarm_start_records_approved_lifecycle_without_launching_agents
     )
 
     result = response.json()["result"]
-    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    events = list(app.state.event_store.iter_events(session_id="session-swarm"))
+    event = next(event for event in events if event.event_type == "swarm.started")
     assert result["lifecycle_state"] == "started"
     assert result["writes_state"] is True
     assert result["approval_consumed"] is True
@@ -808,7 +809,8 @@ def test_runtime_swarm_stop_records_approved_lifecycle_without_execution(tmp_pat
     )
 
     result = response.json()["result"]
-    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    events = list(app.state.event_store.iter_events(session_id="session-swarm"))
+    event = next(event for event in events if event.event_type == "swarm.stopped")
     assert result["lifecycle_state"] == "stopped"
     assert result["execution_authority"] is False
     assert result["agent_launch"] is False
@@ -887,7 +889,13 @@ def test_runtime_swarm_launch_starts_approved_role_labeled_pty_panes(tmp_path):
     finally:
         app.state.pty_supervisor.close_all()
 
-    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    events = list(app.state.event_store.iter_events(session_id="session-swarm"))
+    event = next(event for event in events if event.event_type == "swarm.launched")
+    output_events = [
+        event
+        for event in events
+        if event.event_type == "pty.output" and event.payload.get("channel_id") == channel_id
+    ]
     assert result["role_count"] == 1
     assert result["execution_authority"] is True
     assert result["agent_launch"] is True
@@ -901,6 +909,10 @@ def test_runtime_swarm_launch_starts_approved_role_labeled_pty_panes(tmp_path):
     assert "codex role" in text
     assert event.event_type == "swarm.launched"
     assert event.parent_event_id == "evt_started"
+    assert output_events
+    assert "codex role" in "".join(str(event.payload.get("chunk") or "") for event in output_events)
+    assert output_events[0].payload["pty_transcript_projection"] is True
+    assert output_events[0].payload["execution_authority"] is False
     assert app.state.event_store.approval(approval["id"])["status"] == "used"
 
 
@@ -1331,6 +1343,7 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["websocket_origin_validation"] is True
     assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
+    assert data["checks"]["pty_transcript_projection"] is True
     assert data["checks"]["agent_provider_status"] is True
     assert data["checks"]["swarm_role_launch"] is True
     assert data["checks"]["electron_hud_scaffold"] is True
@@ -1721,6 +1734,15 @@ def test_runtime_pty_create_returns_channel_for_allowed_command(tmp_path):
     assert data["type"] == "response"
     assert data["result"]["policy"]["status"] == "allow"
     assert "/" in text
+    output_events = [
+        event
+        for event in app.state.event_store.events("runtime")
+        if event.event_type == "pty.output" and event.payload.get("channel_id") == channel_id
+    ]
+    assert output_events
+    assert "/" in "".join(str(event.payload.get("chunk") or "") for event in output_events)
+    assert output_events[0].payload["pty_transcript_projection"] is True
+    assert output_events[0].payload["execution_authority"] is False
 
 
 def test_runtime_pty_create_surfaces_policy_blocks(tmp_path):

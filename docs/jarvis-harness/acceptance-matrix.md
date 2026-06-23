@@ -7,9 +7,9 @@ Current implementation note: the local FastAPI runtime, browser HUD, approval-ga
 | Area | V1 Acceptance | Current validation | Boundary |
 | --- | --- | --- | --- |
 | Runtime | FastAPI runtime starts locally and exposes ACP-style JSON-RPC. | Runtime integration tests and HUD browser smoke tests. | Loopback by default; non-loopback serving requires explicit operator approval. |
-| Event store | SQLite/WAL event store appends canonical events and rebuilds projections. | Event-store unit tests. | State writes stay under the selected state directory. |
+| Event store | SQLite/WAL event store appends canonical events, PTY output transcript events, and rebuilds projections. | Event-store, runtime PTY, and supervisor hook tests. | State writes stay under the selected state directory; transcript events are evidence, not execution authority. |
 | Sessions | Sessions can create, resume, fork, archive, and replay. | Protocol and projection tests. | Replay is local evidence, not external execution authority. |
-| PTYs | Runtime-managed panes stream output and accept gated input. | PTY integration tests. | High-risk commands remain blocked by policy even with approval records. |
+| PTYs | Runtime-managed panes stream output, project transcript chunks into session events, and accept gated input. | PTY integration tests and runtime transcript projection tests. | High-risk commands remain blocked by policy even with approval records. |
 | Policy | Observe, Dev Loop, Swarm, and High-Risk Runtime profiles enforce gates. | Policy unit and safety tests. | Hardline blocks apply to git mutation, Worktrunk mutation, services, daemons, installs, secrets, and destructive actions. |
 | Approvals | High-risk actions create structured approval prompts. | Approval lifecycle tests. | Approvals are scoped records, not blanket permission to run adjacent commands. |
 | HUD | Browser HUD surfaces runtime, voice, swarm, release gate, release evidence, release checklist, mobile, and loop state. | HUD unit tests and browser smoke tests. | Displayed commands and release checklists are proposals/evidence only. |

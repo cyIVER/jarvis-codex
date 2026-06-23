@@ -10,6 +10,7 @@ import subprocess
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -73,10 +74,13 @@ class ManagedPty:
         process: subprocess.Popen[bytes],
         master_fd: int,
         output_queue: queue.Queue[PtyOutputChunk],
+        session_id: str = "runtime",
+        output_hook: Callable[[PtyOutputChunk, "ManagedPty"], None] | None = None,
     ) -> None:
         self.channel_id = channel_id
         self.command = command
         self.profile = profile
+        self.session_id = session_id
         self.process = process
         self.master_fd = master_fd
         self.created_at = time.time()
@@ -84,6 +88,7 @@ class ManagedPty:
         self._closed = False
         self._output: queue.Queue[PtyOutputChunk] = queue.Queue()
         self._shared_output = output_queue
+        self._output_hook = output_hook
         self._reader = threading.Thread(target=self._read_loop, name=f"pty-reader-{channel_id}", daemon=True)
         self._reader.start()
 
@@ -167,15 +172,21 @@ class ManagedPty:
                     )
                 )
                 self._shared_output.put(chunk)
+                if self._output_hook is not None:
+                    try:
+                        self._output_hook(chunk, self)
+                    except Exception:
+                        pass
         finally:
             self.process.poll()
 
 
 class PtySupervisor:
-    def __init__(self) -> None:
+    def __init__(self, output_hook: Callable[[PtyOutputChunk, ManagedPty], None] | None = None) -> None:
         self._channels: dict[str, ManagedPty] = {}
         self._output: queue.Queue[PtyOutputChunk] = queue.Queue()
         self._lock = threading.Lock()
+        self._output_hook = output_hook
 
     def spawn(
         self,
@@ -184,6 +195,7 @@ class PtySupervisor:
         profile: PolicyProfile = "observe",
         cwd: Path | str | None = None,
         approval_granted: bool = False,
+        session_id: str = "runtime",
     ) -> PtySpawnResult:
         decision = classify_command(command, profile)
         if decision.blocked or (not decision.allowed and not (approval_granted and decision.approval_required)):
@@ -223,6 +235,8 @@ class PtySupervisor:
                 process=process,
                 master_fd=master_fd,
                 output_queue=self._output,
+                session_id=session_id or "runtime",
+                output_hook=self._output_hook,
             )
             with self._lock:
                 self._channels[channel_id] = managed

@@ -109,6 +109,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "swarm_lifecycle_records": True,
             "swarm_role_launch": True,
             "loop_lifecycle_records": True,
+            "pty_transcript_projection": True,
             "bounded_loop_run_once": True,
             "agent_provider_status": True,
             "electron_hud_scaffold": True,
@@ -188,8 +189,29 @@ def build_agent_provider_status() -> dict[str, Any]:
 def create_app(state_dir: Path) -> FastAPI:
     app = FastAPI(title="Jarvis Runtime", version="0.1.0")
     store = JarvisEventStore(state_dir / "runtime" / "jarvis.db")
-    pty_supervisor = PtySupervisor()
     event_broadcaster = RuntimeEventBroadcaster()
+
+    def record_pty_output(chunk, managed) -> None:
+        event = store.append_event(
+            session_id=str(getattr(managed, "session_id", "runtime") or "runtime"),
+            actor_id="runtime",
+            source_client="pty.supervisor",
+            event_type="pty.output",
+            payload={
+                "channel_id": chunk.channel_id,
+                "stream_type": chunk.stream_type,
+                "pty_sequence": chunk.sequence,
+                "chunk": chunk.chunk,
+                "command": managed.command,
+                "profile": managed.profile,
+                "pid": managed.pid,
+                "execution_authority": False,
+                "pty_transcript_projection": True,
+            },
+        )
+        event_broadcaster.publish(event)
+
+    pty_supervisor = PtySupervisor(output_hook=record_pty_output)
     approval_service = ApprovalService(store)
     voice_audio = VoiceAudioBuffer(state_dir)
     runtime_token = secrets.token_urlsafe(32)
@@ -1041,6 +1063,7 @@ def _dispatch_request(
                     profile=role["profile"],  # type: ignore[arg-type]
                     cwd=role["cwd"] or None,
                     approval_granted=decision.approval_required,
+                    session_id=session_id,
                 )
                 pane = result.to_dict()
                 pane.update(
@@ -1253,11 +1276,12 @@ def _dispatch_request(
     if method == "pty.create":
         command = str(params.get("command") or "")
         profile = str(params.get("profile") or "observe")
+        session_id = str(params.get("session_id") or "runtime")
         if profile not in POLICY_PROFILES:
             return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
         approval_id = str(params.get("approval_id") or "")
         try:
-            result = pty_supervisor.spawn(command, profile=profile)  # type: ignore[arg-type]
+            result = pty_supervisor.spawn(command, profile=profile, session_id=session_id)  # type: ignore[arg-type]
         except PtyPolicyError as exc:
             if not _approval_allows_command(store, approval_id, command):
                 raise
@@ -1275,7 +1299,12 @@ def _dispatch_request(
                 reason="pty.create launched approved command",
             )
             event_broadcaster.publish(consumed.event)
-            result = pty_supervisor.spawn(command, profile=profile, approval_granted=True)  # type: ignore[arg-type]
+            result = pty_supervisor.spawn(
+                command,
+                profile=profile,
+                approval_granted=True,
+                session_id=session_id,
+            )  # type: ignore[arg-type]
         data = result.to_dict()
         if result.approval_granted:
             data["approval_id"] = approval_id

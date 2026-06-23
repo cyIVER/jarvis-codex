@@ -1696,7 +1696,8 @@ HUD_JS = r"""(() => {
     request("pty.create", privilegedParams({
       command,
       profile,
-      approval_id: approvalId
+      approval_id: approvalId,
+      session_id: currentSessionId()
     }));
     log(`Approved launch requested for ${approvalId}. Runtime policy gate still applies.`);
   });

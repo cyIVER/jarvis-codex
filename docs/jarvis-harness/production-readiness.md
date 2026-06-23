@@ -31,6 +31,7 @@ Implemented and validated in the local FastAPI runtime:
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
+- Persistent PTY output projection into session-scoped `pty.output` runtime events for replay, search, and local transcript evidence.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
 - Runtime-served screen-sized HUD shell with operator navigation pages for Codex, Antigravity, Codeburn, approvals, voice, sessions, loops, release gates, and PWA status.
@@ -87,7 +88,6 @@ The following remain future or incomplete production gates:
 - Full mobile device validation over Tailscale or WireGuard.
 - Networked Gemini Live validation and cloud voice provider integration.
 - Higher-level unattended or background loop operation beyond bounded foreground `loop schedule`, read-only policy reporting, and read-only evidence briefing.
-- Persistent PTY transcript projection beyond streamed output.
 - Release packaging, installer, and signed artifacts.
 - External security review.
 - External security review beyond local dependency audit evidence.

@@ -102,6 +102,29 @@ def test_next_output_reads_shared_stream_queue():
     assert "/" in chunk.chunk
 
 
+def test_output_hook_receives_chunks_with_session_metadata():
+    records = []
+
+    def hook(chunk, managed):
+        records.append((chunk, managed.session_id, managed.command))
+
+    supervisor = PtySupervisor(output_hook=hook)
+    result = supervisor.spawn("pwd", profile="dev-loop", session_id="session-hook")
+
+    try:
+        supervisor.get(result.channel_id).wait(timeout=2)
+        _collect_text(supervisor, result.channel_id)
+    finally:
+        supervisor.close_all()
+
+    assert records
+    chunk, session_id, command = records[0]
+    assert chunk.channel_id == result.channel_id
+    assert "/" in chunk.chunk
+    assert session_id == "session-hook"
+    assert command == "pwd"
+
+
 def test_resize_and_kill_running_process():
     supervisor = PtySupervisor()
     result = supervisor.spawn("cat", profile="observe")
