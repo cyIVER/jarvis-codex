@@ -32,11 +32,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated live WebSocket PTY stream multiplexing.
 - Committed and pushed live WebSocket PTY stream multiplexing in `276b5ab`.
 - Implemented and validated runtime-served HUD shell with Codex, Antigravity, Codeburn panes, approval refresh, WebSocket connection, and microphone permission button.
+- Committed and pushed runtime HUD shell in `7cbc5c5`.
+- Implemented and validated browser STT final transcript submission through `voice.submit`.
 
 ## Pending
 
-- Commit and push runtime HUD shell.
-- Continue STT provider adapter and browser audio pipeline.
+- Commit and push browser STT transcript submission.
+- Continue server-side audio streaming and local STT adapter wiring.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

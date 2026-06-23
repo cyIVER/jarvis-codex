@@ -28,6 +28,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert response.headers["content-type"].startswith("application/javascript")
     assert "new WebSocket" in response.text
     assert "getUserMedia({ audio: true })" in response.text
+    assert "SpeechRecognition" in response.text
+    assert 'request("voice.submit"' in response.text
+    assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert "Execution requires an explicit runtime command and policy decision" in response.text

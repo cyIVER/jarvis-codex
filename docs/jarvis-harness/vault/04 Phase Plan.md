@@ -40,10 +40,11 @@ Completed:
 - Approval lifecycle service with persistent request/respond events, approval projections, runtime RPC methods, and `event.subscribe` replay framing.
 - Live WebSocket PTY stream frames multiplexed with request/response traffic.
 - Runtime-served Jarvis HUD shell with Codex, Antigravity, Codeburn panes, WebSocket client, approval refresh, and microphone permission button.
+- Browser `SpeechRecognition` STT integration when available, with final transcripts submitted through runtime `voice.submit`.
 
 In progress:
 
-- STT provider adapter and browser audio pipeline.
+- Server-side `MediaRecorder` audio streaming and local STT adapter.
 
 ## Phase 2 Managed PTYs
 
@@ -91,6 +92,7 @@ Completed:
 
 - Browser microphone permission button in HUD.
 - Local-only capture framing until STT streaming is connected.
+- Browser-managed STT final transcript submission through runtime events.
 
 ## Phase 5 Swarm And Loops
 

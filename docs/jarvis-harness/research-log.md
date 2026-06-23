@@ -98,3 +98,24 @@ Jarvis decision:
 
 - Formalize loop runbook, Codeburn monitoring, AG challenge review, and phase commits.
 
+### Browser STT And Audio Capture
+
+Sources:
+
+- MDN Web Speech API: `https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API`
+- MDN SpeechRecognition: `https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition`
+- MDN MediaRecorder: `https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder`
+- FastAPI WebSockets: `https://fastapi.tiangolo.com/advanced/websockets/`
+
+Findings:
+
+- `SpeechRecognition` can provide browser-side speech-to-text, but MDN marks it limited availability, so Jarvis must detect it at runtime.
+- `MediaRecorder` is broadly available and is the right next step for server-side audio chunk streaming to local STT.
+- Browser STT must be visibly labeled as browser-managed because privacy behavior depends on the browser implementation.
+- FastAPI WebSockets are suitable for the bidirectional control channel already used by the HUD.
+
+Jarvis decision:
+
+- Implement immediate click-to-mic browser STT through `SpeechRecognition` when available.
+- Persist final browser transcripts through runtime `voice.submit` events with no execution authority.
+- Keep server audio streaming via `MediaRecorder` as the next local STT adapter slice.

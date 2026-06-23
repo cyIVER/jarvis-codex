@@ -338,6 +338,7 @@ HUD_JS = r"""(() => {
   let socket;
   let requestSeq = 0;
   let micStream = null;
+  let recognition = null;
 
   function log(line) {
     const stamp = new Date().toLocaleTimeString();
@@ -362,6 +363,7 @@ HUD_JS = r"""(() => {
       log("Connected to Jarvis runtime.");
       request("initialize");
       request("approval.list", { status: "pending" });
+      request("voice.provider_status");
     });
     socket.addEventListener("close", () => {
       socketStatus.textContent = "offline";
@@ -398,11 +400,16 @@ HUD_JS = r"""(() => {
 
   micToggle.addEventListener("click", async () => {
     if (micStream) {
+      if (recognition) {
+        recognition.stop();
+        recognition = null;
+      }
       micStream.getTracks().forEach((track) => track.stop());
       micStream = null;
       micToggle.classList.remove("active");
       voiceStatus.textContent = "idle";
-      voiceLog.textContent = "Microphone stopped. No audio is sent until STT wiring is enabled.";
+      voiceLog.textContent = "Microphone stopped. No audio is sent to the Jarvis runtime.";
+      request("voice.stop", { session_id: "hud", provider: "browser-web-speech" });
       return;
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -414,14 +421,65 @@ HUD_JS = r"""(() => {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micToggle.classList.add("active");
       voiceStatus.textContent = "permission granted";
-      voiceLog.textContent = "Microphone permission granted. Audio capture is local-only until STT streaming is connected.";
+      voiceLog.textContent = "Microphone permission granted. Browser speech recognition will be used when available.";
       log("Microphone permission granted by browser.");
+      request("voice.start", { session_id: "hud", provider: "browser-web-speech" });
+      startSpeechRecognition();
     } catch (error) {
       voiceStatus.textContent = "blocked";
       voiceLog.textContent = `Microphone permission failed: ${error.name}`;
       log(`Microphone permission failed: ${error.name}`);
     }
   });
+
+  function startSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      voiceStatus.textContent = "mic only";
+      voiceLog.textContent = "Microphone is active, but browser SpeechRecognition is unavailable. Server audio streaming is planned next.";
+      log("Browser SpeechRecognition unavailable. No transcript sent.");
+      return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onstart = () => {
+      voiceStatus.textContent = "listening";
+      voiceLog.textContent = "Listening. Final transcripts are sent to Jarvis as voice.submit events.";
+    };
+    recognition.onerror = (event) => {
+      voiceStatus.textContent = "stt error";
+      voiceLog.textContent = `Speech recognition error: ${event.error}`;
+      log(`Speech recognition error: ${event.error}`);
+    };
+    recognition.onend = () => {
+      if (micStream) {
+        voiceStatus.textContent = "mic active";
+      }
+    };
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const text = event.results[i][0].transcript.trim();
+        if (event.results[i].isFinal && text) {
+          voiceLog.textContent = `Final transcript: ${text}`;
+          request("voice.submit", {
+            session_id: "hud",
+            provider: "browser-web-speech",
+            transcript: text
+          });
+          log(`Voice transcript submitted: ${text}`);
+        } else if (text) {
+          interim += `${text} `;
+        }
+      }
+      if (interim.trim()) {
+        voiceLog.textContent = `Interim transcript: ${interim.trim()}`;
+      }
+    };
+    recognition.start();
+  }
 
   connect();
 })();

@@ -241,7 +241,7 @@
         <div class="card">
           <div class="label">Telemetry</div>
           <div class="value">$497.82</div>
-          <div class="note">Latest Codeburn month snapshot: 5521 calls. Daily counter reset after midnight.</div>
+          <div class="note">Latest Codeburn month snapshot: 5551 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">Runtime, PTY supervision, approvals, streams, and runtime-served HUD shell are green.</div>
+          <div class="note">Runtime, PTY supervision, approvals, streams, HUD shell, and browser STT submission are green.</div>
         </div>
       </div>
     </section>
@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>.</li>
         </ul>
       </div>
       <div>
@@ -295,7 +295,7 @@
         <div class="step"><strong>Phase 1</strong><span>SQLite event store, ACP protocol, policy classifier, and FastAPI runtime RPC skeleton.</span></div>
         <div class="step"><strong>Phase 2</strong><span>Managed PTY supervisor, runtime RPC wiring, and WebSocket PTY streams are validated.</span></div>
         <div class="step"><strong>Phase 3</strong><span>Approval lifecycle and event replay are validated; live approval push remains next.</span></div>
-        <div class="step"><strong>Phase 4</strong><span>Runtime-served HUD shell and microphone permission button are validated; STT streaming remains next.</span></div>
+        <div class="step"><strong>Phase 4</strong><span>HUD microphone permission and browser STT transcript submission are validated; server audio streaming remains next.</span></div>
         <div class="step"><strong>Phase 5</strong><span>Dynamic swarm, delivery loop, AG adversaries, Codeburn telemetry.</span></div>
         <div class="step"><strong>Phase 6</strong><span>Private-network iPhone PWA.</span></div>
         <div class="step"><strong>Phase 7</strong><span>Production readiness validation and release report.</span></div>

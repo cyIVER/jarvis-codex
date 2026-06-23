@@ -31,6 +31,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.create" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
+    assert "voice.submit" in data["result"]["capabilities"]
 
 
 def test_runtime_session_create_writes_event_store(tmp_path):
@@ -273,6 +274,66 @@ def test_runtime_approval_errors_are_structured(tmp_path):
 
     assert response.status_code == 200
     assert response.json()["error"]["code"] == "invalid_approval"
+
+
+def test_runtime_voice_provider_status_and_transcript_submit(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    status_response = client.post(
+        "/rpc",
+        json=make_request("voice.provider_status", request_id="req_1"),
+    )
+    start_response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.start",
+            {"session_id": "session-voice", "provider": "browser-web-speech"},
+            request_id="req_2",
+        ),
+    )
+    submit_response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.submit",
+            {
+                "session_id": "session-voice",
+                "provider": "browser-web-speech",
+                "transcript": "Draft the Jarvis mobile plan.",
+            },
+            request_id="req_3",
+        ),
+    )
+    stop_response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.stop",
+            {"session_id": "session-voice", "provider": "browser-web-speech"},
+            request_id="req_4",
+        ),
+    )
+
+    assert status_response.json()["result"]["providers"]["browser_web_speech"]["status"] == "client-managed"
+    assert start_response.json()["result"]["event"]["event_type"] == "voice.start_requested"
+    submit = submit_response.json()["result"]
+    assert submit["characters"] == len("Draft the Jarvis mobile plan.")
+    assert submit["execution_authority"] is False
+    assert submit["routed_as_command"] is False
+    assert submit["event"]["event_type"] == "voice.transcript_final"
+    assert stop_response.json()["result"]["event"]["event_type"] == "voice.stopped"
+
+
+def test_runtime_voice_submit_rejects_empty_transcript(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("voice.submit", {"session_id": "session-voice", "transcript": "  "}, request_id="req_1"),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["error"]["code"] == "invalid_transcript"
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):

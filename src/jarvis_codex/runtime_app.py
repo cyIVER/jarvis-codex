@@ -193,6 +193,10 @@ def _dispatch_request(
                     "pty.input",
                     "pty.resize",
                     "pty.kill",
+                    "voice.provider_status",
+                    "voice.start",
+                    "voice.stop",
+                    "voice.submit",
                 ],
                 "writes_reports": False,
             },
@@ -326,6 +330,88 @@ def _dispatch_request(
                 "subscribed": True,
                 "replay": events,
                 "current_sequence": store.current_sequence(),
+            },
+        )
+
+    if method == "voice.provider_status":
+        return make_response(
+            request_id,
+            {
+                "providers": {
+                    "browser_web_speech": {
+                        "status": "client-managed",
+                        "privacy": "browser-dependent",
+                        "note": "Used only after microphone click and browser permission.",
+                    },
+                    "local_audio_file": {
+                        "status": "available",
+                        "privacy": "local",
+                        "note": "CLI/local adapter path remains approval-gated for audio processing.",
+                    },
+                    "server_audio_stream": {
+                        "status": "planned",
+                        "privacy": "local",
+                        "note": "MediaRecorder/WebSocket audio chunks are not enabled yet.",
+                    },
+                    "gemini_realtime": {
+                        "status": "not_configured",
+                        "privacy": "cloud",
+                        "note": "Requires explicit OAuth feasibility check and visible cloud indicator.",
+                    },
+                },
+                "execution_authority": False,
+            },
+        )
+
+    if method == "voice.start":
+        event = store.append_event(
+            session_id=str(params.get("session_id") or "hud"),
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "hud"),
+            event_type="voice.start_requested",
+            payload={
+                "provider": str(params.get("provider") or "browser-web-speech"),
+                "execution_authority": False,
+            },
+        )
+        return make_response(request_id, {"event": _stored_event_to_dict(event), "execution_authority": False})
+
+    if method == "voice.stop":
+        event = store.append_event(
+            session_id=str(params.get("session_id") or "hud"),
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "hud"),
+            event_type="voice.stopped",
+            payload={
+                "provider": str(params.get("provider") or "browser-web-speech"),
+                "execution_authority": False,
+            },
+        )
+        return make_response(request_id, {"event": _stored_event_to_dict(event), "execution_authority": False})
+
+    if method == "voice.submit":
+        transcript = str(params.get("transcript") or "").strip()
+        if not transcript:
+            return make_error_response(request_id, code="invalid_transcript", message="voice transcript is required")
+        event = store.append_event(
+            session_id=str(params.get("session_id") or "hud"),
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "hud"),
+            event_type="voice.transcript_final",
+            payload={
+                "text": transcript,
+                "provider": str(params.get("provider") or "browser-web-speech"),
+                "execution_authority": False,
+                "routed_as_command": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "event": _stored_event_to_dict(event),
+                "characters": len(transcript),
+                "execution_authority": False,
+                "routed_as_command": False,
             },
         )
 
