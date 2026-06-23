@@ -13,11 +13,76 @@ HUD_CSP = (
 )
 
 
+HUD_MANIFEST = """{
+  "name": "Jarvis Harness",
+  "short_name": "Jarvis",
+  "description": "Private-network Jarvis harness for Codex, Antigravity, voice, approvals, and telemetry.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#02050a",
+  "theme_color": "#06131d",
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+"""
+
+
+HUD_ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#02050a"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#4cdcff" stroke-width="16"/>
+  <circle cx="256" cy="256" r="112" fill="none" stroke="#64f2af" stroke-width="12" stroke-dasharray="24 18"/>
+  <circle cx="256" cy="256" r="48" fill="#4cdcff"/>
+  <path d="M256 76v62M256 374v62M76 256h62M374 256h62" stroke="#e7faff" stroke-width="18" stroke-linecap="round"/>
+</svg>
+"""
+
+
+HUD_SERVICE_WORKER = r"""const CACHE_NAME = "jarvis-hud-v1";
+const PRECACHE = ["/", "/assets/hud.js", "/manifest.webmanifest", "/assets/icon.svg"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)));
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.pathname === "/rpc" || url.pathname === "/ws") {
+    return;
+  }
+  if (!PRECACHE.includes(url.pathname)) {
+    return;
+  }
+  event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
+});
+"""
+
+
 HUD_HTML = """<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06131d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Jarvis">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
   <title>Jarvis Harness</title>
   <style>
     :root {
@@ -300,6 +365,7 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Voice</small><strong id="voice-status">idle</strong></div>
           <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
           <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
+          <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
         </div>
       </div>
 
@@ -360,6 +426,7 @@ HUD_JS = r"""(() => {
   const createSession = document.getElementById("create-session");
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
+  const pwaStatus = document.getElementById("pwa-status");
   let socket;
   let requestSeq = 0;
   const requestIndex = new Map();
@@ -506,6 +573,21 @@ HUD_JS = r"""(() => {
       }
       log(`Frame: ${JSON.stringify(frame)}`);
     });
+  }
+
+  async function registerPwa() {
+    if (!("serviceWorker" in navigator)) {
+      pwaStatus.textContent = "unavailable";
+      return;
+    }
+    try {
+      await navigator.serviceWorker.register("/service-worker.js");
+      pwaStatus.textContent = "ready";
+      log("PWA service worker registered for HUD shell assets.");
+    } catch (error) {
+      pwaStatus.textContent = "failed";
+      log(`PWA service worker registration failed: ${error.message}`);
+    }
   }
 
   document.querySelectorAll("[data-pane]").forEach((button) => {
@@ -852,5 +934,6 @@ HUD_JS = r"""(() => {
   }
 
   connect();
+  registerPwa();
 })();
 """

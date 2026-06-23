@@ -22,6 +22,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="sessions-list"' in response.text
     assert 'id="codeburn-status"' in response.text
     assert 'id="refresh-codeburn"' in response.text
+    assert 'id="pwa-status"' in response.text
+    assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
+    assert 'rel="icon" href="/assets/icon.svg"' in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -71,6 +74,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "renderSessions(frame.result.sessions)" in response.text
     assert "renderCodeburnStatus(frame.result.codeburn)" in response.text
     assert "Codeburn month usage" in response.text
+    assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text
+    assert "PWA service worker registered" in response.text
     assert "currentSessionId()" in response.text
     assert "Use Session" in response.text
     assert "escapeHtml" in response.text

@@ -23,6 +23,28 @@ def test_runtime_health_does_not_initialize_state(tmp_path):
     assert not (tmp_path / "state").exists()
 
 
+def test_runtime_serves_pwa_assets_without_initializing_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    manifest = client.get("/manifest.webmanifest")
+    icon = client.get("/assets/icon.svg")
+    service_worker = client.get("/service-worker.js")
+
+    assert manifest.status_code == 200
+    assert manifest.headers["content-type"].startswith("application/manifest+json")
+    assert manifest.json()["display"] == "standalone"
+    assert icon.status_code == 200
+    assert icon.headers["content-type"].startswith("image/svg+xml")
+    assert "<svg" in icon.text
+    assert service_worker.status_code == 200
+    assert service_worker.headers["service-worker-allowed"] == "/"
+    assert "CACHE_NAME" in service_worker.text
+    assert 'url.pathname === "/rpc"' in service_worker.text
+    assert not state.exists()
+
+
 def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

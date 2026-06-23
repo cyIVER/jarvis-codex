@@ -13,7 +13,7 @@ from .approval import ApprovalError, ApprovalService
 from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
-from .hud import HUD_CSP, HUD_HTML, HUD_JS
+from .hud import HUD_CSP, HUD_HTML, HUD_ICON_SVG, HUD_JS, HUD_MANIFEST, HUD_SERVICE_WORKER
 from .policy import classify_command
 from .protocol import (
     ProtocolError,
@@ -54,6 +54,22 @@ def create_app(state_dir: Path) -> FastAPI:
     @app.get("/assets/hud.js")
     def hud_js() -> Response:
         return Response(HUD_JS, media_type="application/javascript")
+
+    @app.get("/manifest.webmanifest")
+    def hud_manifest() -> Response:
+        return Response(HUD_MANIFEST, media_type="application/manifest+json")
+
+    @app.get("/assets/icon.svg")
+    def hud_icon() -> Response:
+        return Response(HUD_ICON_SVG, media_type="image/svg+xml")
+
+    @app.get("/service-worker.js")
+    def service_worker() -> Response:
+        return Response(
+            HUD_SERVICE_WORKER,
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/"},
+        )
 
     @app.get("/health")
     def health() -> dict[str, object]:
