@@ -47,6 +47,8 @@ Session:
 - `session.archive`
 - `session.cancel`
 
+`session.archive` is implemented as a state-only lifecycle operation. It appends `session.archived`, updates the session projection, and does not execute shell, PTY, Worktrunk, or runtime workflow commands.
+
 Messaging:
 
 - `prompt.send`

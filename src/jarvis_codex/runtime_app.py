@@ -63,7 +63,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "prompt.send",
     "pty.restart",
-    "session.archive",
     "session.cancel",
     "session.fork",
     "session.resume",
@@ -336,6 +335,7 @@ def _dispatch_request(
                     "approval.respond",
                     "event.subscribe",
                     "message.list",
+                    "session.archive",
                     "session.create",
                     "session.get",
                     "session.list",
@@ -461,6 +461,44 @@ def _dispatch_request(
         if session is None:
             return make_error_response(request_id, code="unknown_session", message="session does not exist")
         return make_response(request_id, {"session": session})
+
+    if method == "session.archive":
+        session_id = str(params.get("session_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        session = store.session(session_id)
+        if session is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        if session.get("status") == "archived":
+            return make_response(
+                request_id,
+                {
+                    "archived_session_id": session_id,
+                    "already_archived": True,
+                    "writes_state": False,
+                    "session": session,
+                },
+            )
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="session.archived",
+            payload={"reason": str(params.get("reason") or "session archived")},
+        )
+        archived = store.session(session_id)
+        return make_response(
+            request_id,
+            {
+                "archived_session_id": session_id,
+                "event_id": event.id,
+                "sequence": event.sequence,
+                "writes_state": True,
+                "session": archived or session,
+            },
+        )
 
     if method == "message.list":
         session_id = params.get("session_id")

@@ -62,6 +62,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert data["type"] == "response"
     assert data["result"]["runtime"] == "jarvis"
     assert "session.create" in data["result"]["capabilities"]
+    assert "session.archive" in data["result"]["capabilities"]
     assert "session.get" in data["result"]["capabilities"]
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
@@ -146,6 +147,87 @@ def test_runtime_session_get_reports_unknown_session(tmp_path):
 
     assert response.json()["error"]["code"] == "unknown_session"
     assert (state / "runtime" / "jarvis.db").exists()
+
+
+def test_runtime_session_archive_updates_projection_and_history(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request(
+            "session.create",
+            {"session_id": "session-archive", "title": "Archive me", "source_client": "pytest"},
+            request_id="req_1",
+        ),
+    )
+
+    archive_response = client.post(
+        "/rpc",
+        json=make_request(
+            "session.archive",
+            {"session_id": "session-archive", "reason": "test cleanup", "source_client": "pytest"},
+            request_id="req_2",
+        ),
+    )
+    active_response = client.post(
+        "/rpc",
+        json=make_request("session.list", {"status": "active"}, request_id="req_3"),
+    )
+    archived_response = client.post(
+        "/rpc",
+        json=make_request("session.list", {"status": "archived"}, request_id="req_4"),
+    )
+    history_response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-archive"}, request_id="req_5"),
+    )
+
+    archived = archive_response.json()["result"]
+    assert archived["archived_session_id"] == "session-archive"
+    assert archived["writes_state"] is True
+    assert archived["session"]["status"] == "archived"
+    assert active_response.json()["result"]["sessions"] == []
+    assert archived_response.json()["result"]["sessions"][0]["id"] == "session-archive"
+    assert [event["event_type"] for event in history_response.json()["result"]["messages"]] == [
+        "session.created",
+        "session.archived",
+    ]
+
+
+def test_runtime_session_archive_is_idempotent_for_archived_session(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-archive"}, request_id="req_1"),
+    )
+    first = client.post(
+        "/rpc",
+        json=make_request("session.archive", {"session_id": "session-archive"}, request_id="req_2"),
+    )
+    second = client.post(
+        "/rpc",
+        json=make_request("session.archive", {"session_id": "session-archive"}, request_id="req_3"),
+    )
+
+    assert first.json()["result"]["writes_state"] is True
+    assert second.json()["result"]["already_archived"] is True
+    assert second.json()["result"]["writes_state"] is False
+    assert app.state.event_store.current_sequence() == 2
+
+
+def test_runtime_session_archive_validates_session_id(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    missing_response = client.post("/rpc", json=make_request("session.archive", request_id="req_1"))
+    unknown_response = client.post(
+        "/rpc",
+        json=make_request("session.archive", {"session_id": "missing"}, request_id="req_2"),
+    )
+
+    assert missing_response.json()["error"]["code"] == "missing_session_id"
+    assert unknown_response.json()["error"]["code"] == "unknown_session"
 
 
 def test_runtime_message_list_reports_empty_history_without_writing_state(tmp_path):

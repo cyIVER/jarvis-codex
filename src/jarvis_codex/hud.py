@@ -548,6 +548,13 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && frame.result.archived_session_id) {
+        log(`Archived session ${frame.result.archived_session_id}.`);
+        request("session.list", { status: "active", limit: 25 });
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.sessions) {
         renderSessions(frame.result.sessions);
         requestIndex.delete(frame.id);
@@ -676,6 +683,17 @@ HUD_JS = r"""(() => {
   sessionsList.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
+    const archiveSessionId = target.dataset.archiveSessionId;
+    if (archiveSessionId) {
+      request("session.archive", {
+        session_id: archiveSessionId,
+        reason: "HUD archive request",
+        source_client: "hud",
+        actor_id: "user"
+      });
+      log(`Session archive requested for ${archiveSessionId}.`);
+      return;
+    }
     const sessionId = target.dataset.sessionId;
     if (!sessionId) return;
     activeSessionId = sessionId;
@@ -885,6 +903,7 @@ HUD_JS = r"""(() => {
         <div>ID: ${escapeHtml(session.id)}</div>
         <div>Profile: ${escapeHtml(session.profile_id || "observe")} | Updated: ${escapeHtml(session.updated_at || "")}</div>
         <button type="button" data-session-id="${escapeHtml(session.id)}">Use Session</button>
+        <button type="button" class="danger" data-archive-session-id="${escapeHtml(session.id)}">Archive Session</button>
       </section>
     `).join("");
   }

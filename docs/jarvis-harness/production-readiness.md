@@ -9,6 +9,7 @@ Implemented and validated in the local FastAPI runtime:
 - ACP-style JSON-RPC request, response, event, and stream frames.
 - SQLite/WAL runtime event store with session and approval projections.
 - Runtime policy classification and hardline command blocking.
+- State-only session archive lifecycle through `session.archive`.
 - Non-writing policy profile catalog through `profile.list`.
 - Session-scoped semantic history through `message.list`.
 - HUD session history panel backed by `message.list`.

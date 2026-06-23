@@ -65,6 +65,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("message.list", { session_id: currentSessionId(), limit: 25 })' in response.text
     assert "renderSessionHistory(frame.result.messages" in response.text
     assert "Session history refresh requested" in response.text
+    assert 'request("session.archive"' in response.text
+    assert "Archive Session" in response.text
+    assert "Session archive requested" in response.text
+    assert "Archived session" in response.text
     assert "No semantic history" in response.text
     assert "semantic history" in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
