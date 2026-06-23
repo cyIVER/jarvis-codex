@@ -5,6 +5,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import jarvis_codex.runtime_app as runtime_app
+from jarvis_codex.codeburn import CodeburnStatus
 from jarvis_codex.protocol import make_request
 from jarvis_codex.runtime_app import create_app
 
@@ -34,6 +36,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.create" in data["result"]["capabilities"]
     assert "session.get" in data["result"]["capabilities"]
     assert "session.list" in data["result"]["capabilities"]
+    assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -112,6 +115,36 @@ def test_runtime_session_get_reports_unknown_session(tmp_path):
 
     assert response.json()["error"]["code"] == "unknown_session"
     assert (state / "runtime" / "jarvis.db").exists()
+
+
+def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    monkeypatch.setattr(
+        runtime_app,
+        "read_codeburn_status",
+        lambda: CodeburnStatus(
+            available=True,
+            today_cost=0.0,
+            today_calls=0,
+            month_cost=527.99,
+            month_calls=5787,
+            raw="Today  $0.00  0 calls    Month  $527.99  5787 calls",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request("telemetry.codeburn_status", request_id="req_1"),
+    )
+
+    data = response.json()["result"]["codeburn"]
+    assert data["available"] is True
+    assert data["month_cost"] == 527.99
+    assert data["month_calls"] == 5787
+    assert data["writes_state"] is False
+    assert data["shell"] is False
 
 
 def test_runtime_session_create_rejects_unknown_profile(tmp_path):

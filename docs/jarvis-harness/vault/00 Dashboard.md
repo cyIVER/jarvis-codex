@@ -35,6 +35,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - HUD approval response controls committed and pushed as `4ce3839`.
 - Approved PTY launch controls committed and pushed as `b6f5fbf`.
 - Session continuity controls committed and pushed as `2405333`.
+- Live Codeburn telemetry is in progress via a fixed runtime adapter and HUD status metric.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -56,6 +57,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Add mobile/PWA shell affordances.
-2. Add live Codeburn status into the runtime HUD.
+1. Validate and commit live Codeburn status in the runtime HUD.
+2. Add mobile/PWA shell affordances.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

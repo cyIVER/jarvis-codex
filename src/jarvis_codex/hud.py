@@ -299,6 +299,7 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Policy</small><strong>gated</strong></div>
           <div class="metric"><small>Voice</small><strong id="voice-status">idle</strong></div>
           <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
+          <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
         </div>
       </div>
 
@@ -307,7 +308,7 @@ HUD_HTML = """<!doctype html>
         <div class="panel-body pane-list">
           <div class="agent-pane"><div><strong>Codex</strong><span>Implementation and verification lane</span></div><button data-pane="codex">Prepare</button></div>
           <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
-          <div class="agent-pane"><div><strong>Codeburn</strong><span>Usage and cost telemetry lane</span></div><button data-pane="codeburn">Prepare</button></div>
+          <div class="agent-pane"><div><strong>Codeburn</strong><span>Usage and cost telemetry lane</span></div><button data-pane="codeburn">Prepare</button><button id="refresh-codeburn" type="button">Status</button></div>
         </div>
         <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
       </div>
@@ -357,6 +358,8 @@ HUD_JS = r"""(() => {
   const activeSession = document.getElementById("active-session");
   const sessionsList = document.getElementById("sessions-list");
   const createSession = document.getElementById("create-session");
+  const codeburnStatus = document.getElementById("codeburn-status");
+  const refreshCodeburn = document.getElementById("refresh-codeburn");
   let socket;
   let requestSeq = 0;
   const requestIndex = new Map();
@@ -431,6 +434,7 @@ HUD_JS = r"""(() => {
       request("approval.list", { status: "pending" });
       request("approval.list", { status: "approved" });
       request("voice.provider_status");
+      request("telemetry.codeburn_status");
     });
     socket.addEventListener("close", () => {
       socketStatus.textContent = "offline";
@@ -464,6 +468,11 @@ HUD_JS = r"""(() => {
         activeSession.textContent = `Active session: ${activeSessionId}`;
         log(`HUD session active: ${activeSessionId}.`);
         request("session.list", { status: "active", limit: 25 });
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.codeburn) {
+        renderCodeburnStatus(frame.result.codeburn);
         requestIndex.delete(frame.id);
         return;
       }
@@ -532,6 +541,11 @@ HUD_JS = r"""(() => {
       actor_id: "user"
     });
     log("HUD session creation requested.");
+  });
+
+  refreshCodeburn.addEventListener("click", () => {
+    request("telemetry.codeburn_status");
+    log("Codeburn telemetry refresh requested.");
   });
 
   sessionsList.addEventListener("click", (event) => {
@@ -743,6 +757,16 @@ HUD_JS = r"""(() => {
         <button type="button" data-session-id="${escapeHtml(session.id)}">Use Session</button>
       </section>
     `).join("");
+  }
+
+  function renderCodeburnStatus(status) {
+    if (!status || !status.available) {
+      codeburnStatus.textContent = "unavailable";
+      log(`Codeburn status unavailable: ${status && status.error ? status.error : "unknown"}.`);
+      return;
+    }
+    codeburnStatus.textContent = `$${status.month_cost} / ${status.month_calls}`;
+    log(`Codeburn month usage: $${status.month_cost} across ${status.month_calls} calls.`);
   }
 
   function approvedLaunchCommand(approval) {

@@ -84,6 +84,7 @@ Completed:
 - HUD approval list with approve/reject controls wired to `approval.respond`.
 - HUD approved-launch list that calls `pty.create` only with an already approved, command-matched approval id.
 - Runtime `session.list` and `session.get`, plus HUD session selection and explicit HUD session creation controls.
+- Runtime `telemetry.codeburn_status` and HUD Codeburn status metric using a fixed no-shell adapter.
 
 ## Phase 4 Voice
 

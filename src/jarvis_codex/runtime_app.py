@@ -10,6 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, Response
 
 from .approval import ApprovalError, ApprovalService
+from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
 from .hud import HUD_CSP, HUD_HTML, HUD_JS
@@ -258,6 +259,7 @@ def _dispatch_request(
                     "session.create",
                     "session.get",
                     "session.list",
+                    "telemetry.codeburn_status",
                     "runtime.health",
                     "command.classify",
                     "pty.create",
@@ -284,6 +286,9 @@ def _dispatch_request(
                 "current_sequence": store.current_sequence(),
             },
         )
+
+    if method == "telemetry.codeburn_status":
+        return make_response(request_id, {"codeburn": read_codeburn_status().to_dict()})
 
     if method == "session.create":
         session_id = str(params.get("session_id") or f"session_{uuid.uuid4().hex[:12]}")
