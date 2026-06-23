@@ -39,6 +39,7 @@ Implemented and validated in the local FastAPI runtime:
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
+- Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
 
 ## Not Yet Production-Complete
 
@@ -46,7 +47,7 @@ The following remain future or incomplete production gates:
 
 - Electron desktop app packaging, installer generation, and signing.
 - Full mobile device validation over Tailscale or WireGuard.
-- Gemini realtime OAuth feasibility and cloud voice provider integration.
+- Networked Gemini Live validation and cloud voice provider integration.
 - Dynamic `/loop` command surfaces and actual multi-agent launch orchestration.
 - AG adversary panes inside the HUD.
 - Persistent PTY transcript projection beyond streamed output.
@@ -75,6 +76,7 @@ The following remain future or incomplete production gates:
 - Public internet exposure is not part of v1.
 - Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
+- Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 
 ## Required Local Validation
 
@@ -82,7 +84,7 @@ Run from the repo root:
 
 ```bash
 python3 scripts/validate-jarvis-codex-phase1.py
-uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py
+uv run pytest tests/test_codeburn.py tests/test_event_stream.py tests/test_voice_intent.py tests/test_plan_viewer.py tests/test_voice_audio.py tests/test_hud.py tests/test_hud_browser.py tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py
 ```
 
 Expected current baseline:
@@ -92,7 +94,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-218 passed
+225 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

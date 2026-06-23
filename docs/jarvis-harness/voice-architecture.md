@@ -22,6 +22,12 @@ Blocked if:
 - Available OAuth cannot access realtime voice.
 - Auth would require paid API-key setup not approved by the user.
 
+Implemented feasibility surface:
+
+- `jarvis-codex gemini feasibility --json` reports local Gemini credential signals without exposing secret values.
+- The check performs no OAuth flow, network probe, WebSocket connection, service launch, or state write.
+- Current integration preference is server-mediated runtime first; browser-direct Gemini Live requires ephemeral-token design before implementation.
+
 ### Local Privacy Lane
 
 Goal: private/offline-capable voice command and conversation fallback.

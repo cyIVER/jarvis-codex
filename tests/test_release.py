@@ -33,11 +33,13 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     write(tmp_path / "docs/jarvis-harness/acceptance-matrix.md")
     write(tmp_path / "docs/jarvis-harness/mobile-access.md")
     write(tmp_path / "docs/jarvis-harness/voice-mode.md")
+    write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
     write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
     write(tmp_path / "src/jarvis_codex/runtime_app.py")
     write(tmp_path / "src/jarvis_codex/hud.py")
     write(tmp_path / "src/jarvis_codex/cli.py")
     write(tmp_path / "src/jarvis_codex/mobile.py")
+    write(tmp_path / "src/jarvis_codex/gemini.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
     write(tmp_path / "tools/electron-hud/main.js")
@@ -69,8 +71,10 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "docs/WHISPER_CPP_STT_RUNBOOK.md" in manifest["release_candidates_present"]
     assert "docs/SAFE_HANDOFF_GATEWAY_PRD.md" in manifest["release_candidates_present"]
     assert "docs/jarvis-harness/production-readiness.md" in manifest["release_candidates_present"]
+    assert "docs/jarvis-harness/gemini-live-feasibility.md" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/runtime_app.py" in manifest["release_candidates_present"]
     assert "src/jarvis_codex/mobile.py" in manifest["release_candidates_present"]
+    assert "src/jarvis_codex/gemini.py" in manifest["release_candidates_present"]
     assert "tests/test_hud_browser.py" in manifest["release_candidates_present"]
     assert "tools/electron-hud/main.js" in manifest["release_candidates_present"]
     assert "electron_packaging_and_signing" in manifest["remaining_release_gates"]
@@ -78,6 +82,7 @@ def test_release_manifest_is_read_only_and_marks_generated_assets_unapproved(tmp
     assert "npm run typecheck" not in manifest["required_validation"]
     assert "tests/test_electron_hud_scaffold.py" in manifest["required_validation"][1]
     assert "tests/test_mobile.py" in manifest["required_validation"][1]
+    assert "tests/test_gemini.py" in manifest["required_validation"][1]
     assert all(item["release_candidate"] is False for item in generated)
     assert all(item["requires_approval"] is True for item in generated)
     assert before == after
@@ -117,11 +122,13 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
     write(tmp_path / "docs/jarvis-harness/acceptance-matrix.md")
     write(tmp_path / "docs/jarvis-harness/mobile-access.md")
     write(tmp_path / "docs/jarvis-harness/voice-mode.md")
+    write(tmp_path / "docs/jarvis-harness/gemini-live-feasibility.md")
     write(tmp_path / "docs/jarvis-harness/morning-dashboard.html")
     write(tmp_path / "src/jarvis_codex/runtime_app.py")
     write(tmp_path / "src/jarvis_codex/hud.py")
     write(tmp_path / "src/jarvis_codex/cli.py")
     write(tmp_path / "src/jarvis_codex/mobile.py")
+    write(tmp_path / "src/jarvis_codex/gemini.py")
     write(tmp_path / "tests/test_hud_browser.py")
     write(tmp_path / "tools/electron-hud/package.json")
     write(tmp_path / "tools/electron-hud/main.js")

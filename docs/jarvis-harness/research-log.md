@@ -37,6 +37,28 @@ Jarvis decision:
 - Do not silently switch to paid API-key usage.
 - Keep local `faster-whisper` GPU and local TTS fallback.
 
+### Gemini Live Feasibility Refresh
+
+Sources:
+
+- [Gemini Live API overview](https://ai.google.dev/gemini-api/docs/live-api)
+- [Gemini Live API WebSocket guide](https://ai.google.dev/gemini-api/docs/live-api/get-started-websocket)
+- [Gemini API OAuth quickstart](https://ai.google.dev/gemini-api/docs/oauth)
+- [Gemini API key guidance](https://ai.google.dev/gemini-api/docs/api-key)
+
+Findings:
+
+- Gemini Live is still a stateful WebSocket API for low-latency voice and vision interaction.
+- Browser-direct Live API should use ephemeral tokens rather than exposing long-lived API keys.
+- OAuth is available for stricter access control, but the quickstart is testing-oriented.
+- API-key behavior is changing in 2026, so unrestricted standard keys are not a production-safe default.
+
+Jarvis decision:
+
+- Add a read-only `jarvis-codex gemini feasibility --json` check that reports credential signals without showing secrets or connecting to Gemini.
+- Keep actual Gemini Live network validation behind a separate approval gate.
+- Prefer a server-mediated runtime adapter first; browser-direct Gemini Live waits for an ephemeral-token backend design.
+
 ### Electron Security
 
 Source: [Electron security tutorial](https://www.electronjs.org/docs/latest/tutorial/security)

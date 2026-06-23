@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from jarvis_codex.gemini import build_gemini_feasibility
+
+
+def test_gemini_feasibility_without_credentials_is_read_only(tmp_path: Path) -> None:
+    feasibility = build_gemini_feasibility({}, tmp_path / "missing-adc.json")
+
+    assert feasibility.status == "NEEDS_CREDENTIALS"
+    assert feasibility.auth_modes_present == []
+    assert feasibility.network_probe_performed is False
+    assert feasibility.service_launch_performed is False
+    assert feasibility.oauth_flow_started is False
+    assert feasibility.writes_state is False
+    assert feasibility.secret_values_exposed is False
+    assert "No Gemini credential signal" in feasibility.warnings[0]
+
+
+def test_gemini_feasibility_detects_api_key_without_exposing_value(tmp_path: Path) -> None:
+    feasibility = build_gemini_feasibility({"GEMINI_API_KEY": "secret-value"}, tmp_path / "missing-adc.json")
+
+    assert feasibility.status == "READY_FOR_SERVER_PROTOTYPE"
+    assert feasibility.auth_modes_present == ["GEMINI_API_KEY"]
+    assert feasibility.gemini_api_key_present is True
+    assert feasibility.secret_values_exposed is False
+    assert "secret-value" not in str(feasibility.to_dict())
+    assert feasibility.browser_direct_requires_ephemeral_tokens is True
+    assert any("ephemeral tokens" in warning for warning in feasibility.warnings)
+
+
+def test_gemini_feasibility_warns_about_google_api_key_precedence(tmp_path: Path) -> None:
+    feasibility = build_gemini_feasibility(
+        {"GEMINI_API_KEY": "gemini-secret", "GOOGLE_API_KEY": "google-secret"},
+        tmp_path / "missing-adc.json",
+    )
+
+    assert feasibility.auth_modes_present == ["GEMINI_API_KEY", "GOOGLE_API_KEY"]
+    assert any("GOOGLE_API_KEY precedence" in warning for warning in feasibility.warnings)
+    assert "gemini-secret" not in str(feasibility.to_dict())
+    assert "google-secret" not in str(feasibility.to_dict())
+
+
+def test_gemini_feasibility_detects_adc_without_starting_oauth(tmp_path: Path) -> None:
+    adc_path = tmp_path / "application_default_credentials.json"
+    adc_path.write_text("{}", encoding="utf-8")
+
+    feasibility = build_gemini_feasibility({}, adc_path)
+
+    assert feasibility.status == "READY_FOR_SERVER_PROTOTYPE"
+    assert feasibility.auth_modes_present == ["application_default_credentials"]
+    assert feasibility.application_default_credentials_file_present is True
+    assert feasibility.oauth_flow_started is False
+    assert any("does not start an OAuth flow" in warning for warning in feasibility.warnings)
+
+
+def test_gemini_feasibility_keeps_actual_live_connection_as_gate(tmp_path: Path) -> None:
+    feasibility = build_gemini_feasibility({"GOOGLE_APPLICATION_CREDENTIALS": "/tmp/creds.json"}, tmp_path / "missing-adc.json")
+
+    assert feasibility.google_application_credentials_present is True
+    assert "run an explicit networked Gemini Live connection test only after operator approval" in feasibility.remaining_gates
+    assert "https://ai.google.dev/gemini-api/docs/live-api" in feasibility.sources

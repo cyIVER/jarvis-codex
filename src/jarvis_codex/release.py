@@ -209,6 +209,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "docs/jarvis-harness/gemini-live-feasibility.md",
+            "gemini-live-feasibility-doc",
+            True,
+            False,
+            "Documents current Gemini Live auth, browser token, and network validation gates.",
+        ),
+        _artifact(
+            root,
             "docs/jarvis-harness/morning-dashboard.html",
             "operator-dashboard",
             True,
@@ -246,6 +254,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
             True,
             False,
             "Read-only mobile private-network preflight classifier for iPhone/PWA access planning.",
+        ),
+        _artifact(
+            root,
+            "src/jarvis_codex/gemini.py",
+            "gemini-feasibility-source",
+            True,
+            False,
+            "Read-only Gemini Live feasibility classifier that exposes no secrets and starts no auth flow.",
         ),
         _artifact(
             root,
@@ -350,13 +366,13 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
                 "tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py "
                 "tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py "
                 "tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py "
-                "tests/test_electron_hud_scaffold.py tests/test_mobile.py"
+                "tests/test_electron_hud_scaffold.py tests/test_mobile.py tests/test_gemini.py"
             ),
         ],
         "remaining_release_gates": [
             "electron_packaging_and_signing",
             "actual_mobile_device_validation",
-            "gemini_oauth_realtime_feasibility",
+            "networked_gemini_live_validation",
             "actual_swarm_agent_launch",
             "loop_command_surfaces",
             "release_packaging_and_signing",

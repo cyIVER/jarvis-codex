@@ -862,7 +862,9 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["voice_execution_authority"] is False
     assert data["checks"]["electron_hud_scaffold"] is True
     assert data["checks"]["mobile_preflight"] is True
+    assert data["checks"]["gemini_feasibility"] is True
     assert "electron_packaging_and_signing" in data["remaining_gaps"]
+    assert "networked_gemini_live_validation" in data["remaining_gaps"]
     assert not state.exists()
 
 

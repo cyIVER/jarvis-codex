@@ -34,6 +34,7 @@ Build a local-first agent command center that can:
 - [event-store.md](event-store.md): SQLite event store, projections, exports, and retention.
 - [hud-electron-pwa.md](hud-electron-pwa.md): desktop HUD, mobile PWA, modes, and visual system.
 - [voice-mode.md](voice-mode.md): realtime voice, local fallback, turn-taking, and safety.
+- [gemini-live-feasibility.md](gemini-live-feasibility.md): current Gemini Live auth, token, and validation gates.
 - [permissions-policy.md](permissions-policy.md): policy profiles, command gates, and hard blocks.
 - [swarm-and-loops.md](swarm-and-loops.md): `/loop`, `/swarm`, adversarial review, and Codeburn telemetry.
 - [mobile-access.md](mobile-access.md): private iPhone access and future native app boundary.

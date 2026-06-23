@@ -391,11 +391,12 @@ def _dispatch_request(
                     "swarm_lifecycle_records": True,
                     "electron_hud_scaffold": True,
                     "mobile_preflight": True,
+                    "gemini_feasibility": True,
                 },
                 "remaining_gaps": [
                     "electron_packaging_and_signing",
                     "iphone_private_network_validation",
-                    "gemini_oauth_feasibility",
+                    "networked_gemini_live_validation",
                     "actual_swarm_agent_launch",
                     "loop_command_surfaces",
                     "release_packaging",
