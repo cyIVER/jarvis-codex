@@ -81,7 +81,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Unsigned Electron AppImage generation produced a local ignored `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage` artifact.
 - Electron Builder uses committed `tools/electron-hud/assets/icon.png`; local make validation no longer reports the default Electron icon warning.
 - Read-only release artifact evidence reports size/SHA-256 for the committed icon and ignored Electron artifacts.
-- Current Codeburn snapshot: month `$641.80`, 6804 calls.
+- The HUD renders a non-writing Codex, Antigravity, and Codeburn provider status matrix.
+- Current Codeburn snapshot: month `$644.73`, 6828 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -110,6 +111,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Loop lifecycle records consume matching approvals but remain state only; they do not launch agents, Worktrunk, PTYs, shell commands, or runtime workflows.
 - HUD loop lifecycle controls request approval and record approved state only; they do not auto-approve or execute.
 - HUD swarm lifecycle controls request approvals and record approved lifecycle state only; they do not auto-approve or execute.
+- Agent provider status is a readiness matrix only; it does not launch Codex, Antigravity, Codeburn, PTYs, shell commands, Worktrunk, services, or runtime workflows.
 - Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
 - Electron package-lock pins dependency resolution only; it does not install dependencies, build packages, sign artifacts, copy outputs, or launch services.
 - Electron Builder config and package/make scripts define the reviewed local packaging path only; they do not prove package execution, signing, distribution, or artifact security review.

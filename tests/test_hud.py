@@ -16,6 +16,8 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="speak-status"' in response.text
     assert 'id="proposal-preview"' in response.text
     assert 'id="request-proposal-approval"' in response.text
+    assert 'id="agent-provider-status"' in response.text
+    assert 'id="agent-provider-list"' in response.text
     assert 'id="approvals-list"' in response.text
     assert 'id="approved-launches"' in response.text
     assert 'id="active-session"' in response.text
@@ -157,6 +159,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No semantic history" in response.text
     assert "semantic history" in response.text
     assert 'request("telemetry.codeburn_status")' in response.text
+    assert 'request("agent.provider_status")' in response.text
     assert 'request("runtime.readiness")' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
@@ -185,6 +188,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Runtime policy gate still applies" in response.text
     assert "renderSessions(frame.result.sessions)" in response.text
     assert "renderCodeburnStatus(frame.result.codeburn)" in response.text
+    assert "renderAgentProviders(frame.result)" in response.text
+    assert "Agent provider status loaded" in response.text
+    assert "No agents launched" in response.text
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
     assert "Remaining release gaps" in response.text

@@ -167,7 +167,7 @@ This note backs the morning HTML dashboard.
 - Installed Electron HUD local dependencies under ignored `tools/electron-hud/node_modules/`; verified `electron --version` reports `v42.4.1`.
 - Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
 - Ran final integrated validation: governance PASS, 248 tests passed.
-- Refreshed Codeburn snapshot: month `$641.80`, 6804 calls.
+- Refreshed Codeburn snapshot: month `$644.73`, 6828 calls.
 - Added Electron Builder `26.15.3`, `electron-builder.json`, and reviewed package/make scripts so packaging preflight can recommend `npm run package` and `npm run make` while keeping package execution, signing, and artifact distribution gated.
 - Ran `npm run package`; Electron Builder produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact. The artifact is not signed, copied, reviewed for distribution, or publication-ready.
 - Added read-only `jarvis-codex voice discover --json` for local `whisper-cli` and ggml model discovery without microphone access, audio processing, downloads, cloud calls, runtime start, or state writes.
@@ -178,6 +178,8 @@ This note backs the morning HTML dashboard.
 - Added committed Electron icon metadata at `tools/electron-hud/assets/icon.png`; reran `npm run make` and confirmed the default Electron icon warning is gone.
 - Ran final integrated validation: governance PASS, 259 tests passed.
 - Added read-only `jarvis-codex release artifact-evidence --json` for size/SHA-256 review of the committed icon and ignored local Electron artifacts without building, signing, copying, publishing, launching services, mutating Git, or writing files.
+- Added non-writing Codex, Antigravity, and Codeburn provider status matrix to runtime RPC, readiness, and HUD. It reports provider roles and boundaries without launching providers, PTYs, shell commands, Worktrunk, services, or workflows.
+- Ran final integrated validation: governance PASS, 263 tests passed.
 
 ## Pending
 

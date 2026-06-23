@@ -87,10 +87,13 @@ Approval:
 
 Policy:
 
+- `agent.provider_status`
 - `profile.list`
 - `profile.set`
 - `command.classify`
 - `command.propose`
+
+`agent.provider_status` is implemented as a non-writing provider matrix for Codex, Antigravity, and Codeburn. It reports role, command availability, and execution boundary only; it does not launch providers, start PTYs, write state, or grant execution authority.
 
 `profile.list` is implemented as a non-writing profile catalog. `profile.set` is implemented as a state-only session metadata update that appends `session.profile_set` and updates the session projection. Setting a profile does not by itself execute commands or grant approval authority.
 

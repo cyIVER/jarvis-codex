@@ -37,6 +37,7 @@ Implemented and validated in the local FastAPI runtime:
 - Plan-viewer route safety for display-only plan context.
 - Session listing, session lookup, HUD session selection, and explicit HUD session creation.
 - Fixed no-shell Codeburn telemetry adapter exposed through runtime RPC.
+- Non-writing Codex/Antigravity/Codeburn provider status matrix exposed through runtime RPC and HUD.
 - Private-network PWA shell assets: manifest, SVG icon, service worker, and mobile viewport support.
 - Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
 - Non-writing `jarvis-codex runtime readiness --json` CLI summary that exposes the same operator readiness surface without starting the runtime server.
@@ -86,6 +87,7 @@ The following remain future or incomplete production gates:
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.
 - Hardline policy blocks must continue to override approvals.
 - Codeburn telemetry uses a fixed adapter command with `shell=False`; it is not a generic command runner.
+- Agent provider status is a readiness matrix only; it must not launch Codex, Antigravity, Codeburn, PTYs, shell commands, Worktrunk, services, or runtime workflows.
 - Local STT transcription requires a matching approved audio-processing approval id, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_STT_COMMAND`, a runtime-owned audio file, and a runtime-owned model path; clients cannot supply adapter commands through RPC.
 - Local STT discovery is read-only; it does not approve transcription or select hidden cloud/model fallbacks.
 - Local TTS synthesis requires a matching approved audio-processing approval id bound to the requested text SHA-256, the per-runtime HUD token, a server-configured `JARVIS_LOCAL_TTS_COMMAND`, and a runtime-owned output path; clients cannot supply adapter commands or output paths through RPC.

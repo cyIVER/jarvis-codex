@@ -62,6 +62,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     data = response.json()
     assert data["type"] == "response"
     assert data["result"]["runtime"] == "jarvis"
+    assert "agent.provider_status" in data["result"]["capabilities"]
     assert "session.create" in data["result"]["capabilities"]
     assert "session.archive" in data["result"]["capabilities"]
     assert "session.get" in data["result"]["capabilities"]
@@ -1023,6 +1024,25 @@ def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch
     assert data["shell"] is False
 
 
+def test_runtime_agent_provider_status_is_read_only(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("agent.provider_status", request_id="req_1"))
+
+    result = response.json()["result"]
+    providers = {provider["id"]: provider for provider in result["providers"]}
+    assert result["status"] == "ready"
+    assert result["writes_state"] is False
+    assert result["launch_performed"] is False
+    assert result["execution_authority"] is False
+    assert providers["codex"]["launch_performed"] is False
+    assert providers["antigravity"]["launch_performed"] is False
+    assert providers["codeburn"]["execution_boundary"] == "fixed no-shell telemetry adapter"
+    assert not state.exists()
+
+
 def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     state = tmp_path / "state"
     app = create_app(state)
@@ -1039,6 +1059,7 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["websocket_origin_validation"] is True
     assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
+    assert data["checks"]["agent_provider_status"] is True
     assert data["checks"]["electron_hud_scaffold"] is True
     assert data["checks"]["electron_lockfile"] is True
     assert data["checks"]["mobile_preflight"] is True

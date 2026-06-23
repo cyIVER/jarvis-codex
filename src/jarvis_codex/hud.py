@@ -365,6 +365,7 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Policy</small><strong>gated</strong></div>
           <div class="metric"><small>Voice</small><strong id="voice-status">idle</strong></div>
           <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
+          <div class="metric"><small>Agents</small><strong id="agent-provider-status">unknown</strong></div>
           <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
           <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
           <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
@@ -380,6 +381,7 @@ HUD_HTML = """<!doctype html>
           <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
           <div class="agent-pane"><div><strong>Codeburn</strong><span>Fixed no-shell usage telemetry lane</span></div><button id="refresh-codeburn" type="button">Status</button></div>
         </div>
+        <div id="agent-provider-list" class="log">Agent provider readiness pending. Status checks do not launch providers.</div>
         <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
       </div>
 
@@ -458,6 +460,8 @@ HUD_JS = r"""(() => {
   const speakStatus = document.getElementById("speak-status");
   const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
+  const agentProviderStatus = document.getElementById("agent-provider-status");
+  const agentProviderList = document.getElementById("agent-provider-list");
   const approvalsList = document.getElementById("approvals-list");
   const approvedLaunches = document.getElementById("approved-launches");
   const activeSession = document.getElementById("active-session");
@@ -583,6 +587,7 @@ HUD_JS = r"""(() => {
       request("approval.list", { status: "pending" });
       request("approval.list", { status: "approved" });
       request("voice.provider_status");
+      request("agent.provider_status");
       request("telemetry.codeburn_status");
       request("runtime.readiness");
     });
@@ -716,6 +721,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.codeburn) {
         renderCodeburnStatus(frame.result.codeburn);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.providers)) {
+        renderAgentProviders(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -1339,6 +1349,25 @@ HUD_JS = r"""(() => {
     }
     codeburnStatus.textContent = `$${status.month_cost} / ${status.month_calls}`;
     log(`Codeburn month usage: $${status.month_cost} across ${status.month_calls} calls.`);
+  }
+
+  function renderAgentProviders(status) {
+    const providers = Array.isArray(status.providers) ? status.providers : [];
+    agentProviderStatus.textContent = `${providers.filter((provider) => provider.command_available).length}/${providers.length}`;
+    if (!providers.length) {
+      agentProviderList.textContent = "No agent providers reported. No launch performed.";
+      return;
+    }
+    agentProviderList.innerHTML = providers.map((provider) => `
+      <section class="approval-item">
+        <strong>${escapeHtml(provider.label || provider.id)}</strong>
+        <div>Role: ${escapeHtml(provider.role || "")}</div>
+        <div>Command: ${escapeHtml(provider.command || "")} | Available: ${provider.command_available ? "yes" : "no"}</div>
+        <div>Boundary: ${escapeHtml(provider.execution_boundary || "")}</div>
+        <div>Launch performed: ${provider.launch_performed ? "yes" : "no"} | Writes state: ${provider.writes_state ? "yes" : "no"}</div>
+      </section>
+    `).join("");
+    log(`Agent provider status loaded for ${providers.length} providers. No agents launched.`);
   }
 
   function renderReadiness(readiness) {

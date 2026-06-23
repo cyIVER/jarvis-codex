@@ -5,6 +5,7 @@ import hashlib
 import os
 import queue
 import secrets
+import shutil
 import uuid
 from pathlib import Path
 from typing import Any
@@ -98,6 +99,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "codeburn_shell": False,
             "swarm_lifecycle_records": True,
             "loop_lifecycle_records": True,
+            "agent_provider_status": True,
             "electron_hud_scaffold": True,
             "electron_lockfile": True,
             "mobile_preflight": True,
@@ -112,6 +114,50 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "mobile_host_discovery": True,
         },
         "remaining_gaps": remaining_gaps,
+    }
+
+
+def build_agent_provider_status() -> dict[str, Any]:
+    """Report harness provider roles without launching agents or commands."""
+    providers = [
+        {
+            "id": "codex",
+            "label": "Codex",
+            "role": "implementation, verification, and main-thread integration",
+            "command": "codex",
+            "command_available": shutil.which("codex") is not None,
+            "execution_boundary": "approval-gated runtime PTY only",
+            "launch_performed": False,
+            "writes_state": False,
+        },
+        {
+            "id": "antigravity",
+            "label": "Antigravity",
+            "role": "architecture challenge, adversarial review, and large-context planning",
+            "command": "agy",
+            "command_available": shutil.which("agy") is not None,
+            "execution_boundary": "approval-gated runtime PTY only; bridge outputs are not trusted execution authority",
+            "launch_performed": False,
+            "writes_state": False,
+        },
+        {
+            "id": "codeburn",
+            "label": "Codeburn",
+            "role": "usage telemetry",
+            "command": "fixed native telemetry adapter",
+            "command_available": True,
+            "execution_boundary": "fixed no-shell telemetry adapter",
+            "launch_performed": False,
+            "writes_state": False,
+        },
+    ]
+    return {
+        "label": "Jarvis agent provider status",
+        "status": "ready",
+        "writes_state": False,
+        "launch_performed": False,
+        "execution_authority": False,
+        "providers": providers,
     }
 
 
@@ -373,6 +419,7 @@ def _dispatch_request(
                 "protocol": "acp-style-json-rpc",
                 "capabilities": [
                     "initialize",
+                    "agent.provider_status",
                     "approval.list",
                     "approval.request",
                     "approval.respond",
@@ -422,6 +469,9 @@ def _dispatch_request(
 
     if method == "runtime.readiness":
         return make_response(request_id, build_runtime_readiness())
+
+    if method == "agent.provider_status":
+        return make_response(request_id, build_agent_provider_status())
 
     if method == "telemetry.codeburn_status":
         return make_response(request_id, {"codeburn": read_codeburn_status().to_dict()})
