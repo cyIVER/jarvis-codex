@@ -124,7 +124,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed HUD swarm lifecycle controls in `fa94e00`.
 - Ran final integrated validation: governance PASS, 207 tests passed with browser smoke covering the start flow.
 - Ran AG HUD safety review; no auto-approval or execution authority issue was found.
-- Refreshed Codeburn snapshot: month `$594.69`, 6404 calls.
+- Implemented and validated a hardened Electron HUD scaffold pinned to Electron `42.4.1`, with loopback runtime default, sandboxing, context isolation, disabled Node integration, denied navigation/window-open, and no renderer shell authority.
+- Committed and pushed hardened Electron HUD scaffold in `95b8221`.
+- Ran final integrated validation: governance PASS, 211 tests passed.
+- Ran AG Electron scaffold security review; no renderer authority or packaging gate issue was found.
+- Refreshed Codeburn snapshot: month `$597.36`, 6422 calls.
 
 ## Pending
 

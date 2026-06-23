@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:03 EDT
+updated: 2026-06-23 03:09 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -62,7 +62,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Current harness release manifest committed and pushed as `b5fda5e`.
 - Approval-gated swarm lifecycle records committed and pushed as `3e9d9d0`.
 - HUD swarm lifecycle controls committed and pushed as `fa94e00`.
-- Current Codeburn snapshot: month `$594.69`, 6404 calls.
+- Hardened Electron HUD scaffold committed and pushed as `95b8221`.
+- Current Codeburn snapshot: month `$597.36`, 6422 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -89,6 +90,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Swarm plans are semantic planning records only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - Swarm lifecycle records consume matching approvals but remain state only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - HUD swarm lifecycle controls request approvals and record approved lifecycle state only; they do not auto-approve or execute.
+- Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
