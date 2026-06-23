@@ -66,4 +66,4 @@ The current release is a governed local operating substrate:
 
 ## Recommendation
 
-Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The next PM-approved slice should be an end-to-end local workflow rehearsal followed by a safe handoff gateway design.
+Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is now covered by `tests/test_workflow_rehearsal.py`; the next PM-approved slice should use `docs/SAFE_HANDOFF_GATEWAY_PRD.md` to implement a read-only handoff generator before any command runner is considered.
