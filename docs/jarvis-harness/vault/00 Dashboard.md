@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:09 EDT
+updated: 2026-06-23 02:12 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -51,7 +51,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - State-only session archive controls committed and pushed as `49f6fe9`.
 - State-only session profile updates committed and pushed as `e08dbac`.
 - Semantic prompt history composer committed and pushed as `8b893ed`.
-- Current Codeburn snapshot: month `$566.69`, 6162 calls.
+- State-only session fork controls committed and pushed as `59b30f8`.
+- Current Codeburn snapshot: month `$569.62`, 6181 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -72,6 +73,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Session archive is state lifecycle only; it does not execute shell, PTY, Worktrunk, or runtime workflows.
 - Session profile changes are metadata only; they do not grant execution or approval authority.
 - Prompt composer records semantic intent only; it does not launch Codex, Antigravity, PTY, Worktrunk, shell, or workflows.
+- Session forks create lineage state only; they do not launch agents or commands.
 - Gemini realtime OAuth feasibility is unproven.
 - Electron security model must keep shell execution in runtime, not renderer.
 - Rezun gap coverage must remain explicit: voice, memory, tools, and mobile continuity.

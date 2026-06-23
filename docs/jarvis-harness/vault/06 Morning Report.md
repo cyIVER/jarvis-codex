@@ -85,8 +85,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed state-only session profile updates in `e08dbac`.
 - Implemented and validated semantic prompt history composer through `prompt.send`.
 - Committed and pushed semantic prompt history composer in `8b893ed`.
-- Ran final integrated validation: governance PASS, 176 tests passed.
-- Refreshed Codeburn snapshot: month `$566.69`, 6162 calls.
+- Implemented and validated state-only session fork lineage controls.
+- Committed and pushed state-only session fork controls in `59b30f8`.
+- Ran final integrated validation: governance PASS, 178 tests passed.
+- Refreshed Codeburn snapshot: month `$569.62`, 6181 calls.
 
 ## Pending
 
