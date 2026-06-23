@@ -48,6 +48,7 @@ Build a local-first agent command center that can:
 - [memory-architecture.md](memory-architecture.md): working, project, meta, and episodic memory layers.
 - [voice-architecture.md](voice-architecture.md): cloud realtime and local fallback voice lanes.
 - [continuity-model.md](continuity-model.md): cross-session, cross-client, and cross-agent continuity model.
+- [production-readiness.md](production-readiness.md): current implementation state, validation commands, smoke checks, and release gates.
 
 ## Obsidian Vault
 

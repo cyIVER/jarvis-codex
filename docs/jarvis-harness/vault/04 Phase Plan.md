@@ -86,6 +86,7 @@ Completed:
 - Runtime `session.list` and `session.get`, plus HUD session selection and explicit HUD session creation controls.
 - Runtime `telemetry.codeburn_status` and HUD Codeburn status metric using a fixed no-shell adapter.
 - Runtime-served PWA manifest, SVG icon, service worker, and HUD PWA status metric.
+- Production readiness runbook documenting implemented surface, remaining release gaps, validation baseline, browser smoke checks, and mobile gates.
 
 ## Phase 4 Voice
 

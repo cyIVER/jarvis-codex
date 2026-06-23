@@ -2,6 +2,8 @@
 
 This matrix defines production-readiness checks for the harness.
 
+Current implementation note: the local FastAPI runtime and browser HUD foundation are validated, but Electron packaging, full mobile-device validation, full swarm commands, and release packaging remain future gates.
+
 | Area | V1 Acceptance | Validation |
 | --- | --- | --- |
 | Runtime | FastAPI runtime starts locally and exposes ACP-style JSON-RPC. | Runtime integration tests. |
@@ -37,4 +39,3 @@ This matrix defines production-readiness checks for the harness.
 - Mobile HUD is functional but less cinematic than desktop.
 - Codeburn telemetry unavailable or incomplete.
 - AG challenge unavailable; replace with local adversary review.
-
