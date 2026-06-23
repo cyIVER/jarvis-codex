@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 06:05 EDT
+updated: 2026-06-23 06:15 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -44,7 +44,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Runtime readiness RPC committed and pushed as `c176976`.
 - Runtime boundary hardening committed and pushed as `7d3e0b5`.
 - HUD readiness panel committed and pushed as `495e7a9`.
-- Current Codeburn snapshot: month `$553.30`, 6022 calls.
+- Browser-managed voice status output committed and pushed as `7d8685f`.
+- Current Codeburn snapshot: month `$554.87`, 6035 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.

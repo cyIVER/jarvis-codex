@@ -71,7 +71,9 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 164 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
 - Implemented and validated HUD runtime readiness status and remaining-gap summary.
 - Committed and pushed HUD readiness panel in `495e7a9`.
-- Refreshed Codeburn snapshot: month `$553.30`, 6022 calls.
+- Implemented and validated browser-managed voice status output. This does not run local TTS or grant approval authority.
+- Committed and pushed browser voice status output in `7d8685f`.
+- Refreshed Codeburn snapshot: month `$554.87`, 6035 calls.
 
 ## Pending
 
