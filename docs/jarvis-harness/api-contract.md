@@ -51,6 +51,8 @@ Session:
 
 `session.fork` is implemented as a state-only lineage operation. It creates a child session with `parent_session_id`, inherited route/profile defaults, and no execution authority.
 
+`session.resume` is implemented as read-only context rehydration. It returns session metadata plus recent semantic history and does not create state, execute commands, or grant approval authority.
+
 Messaging:
 
 - `prompt.send`

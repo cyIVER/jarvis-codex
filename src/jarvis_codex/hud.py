@@ -558,6 +558,14 @@ HUD_JS = r"""(() => {
         }
         return;
       }
+      if (frame.type === "response" && frame.result && frame.result.resumed_session_id) {
+        activeSessionId = frame.result.resumed_session_id;
+        activeSession.textContent = `Active session: ${activeSessionId}`;
+        renderSessionHistory(frame.result.messages || [], frame.result.current_sequence);
+        log(`Resumed session ${activeSessionId}. No execution authority granted.`);
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && Array.isArray(frame.result.messages)) {
         renderSessionHistory(frame.result.messages, frame.result.current_sequence);
         requestIndex.delete(frame.id);
@@ -777,10 +785,8 @@ HUD_JS = r"""(() => {
     }
     const sessionId = target.dataset.sessionId;
     if (!sessionId) return;
-    activeSessionId = sessionId;
-    activeSession.textContent = `Active session: ${sessionId}`;
-    log(`Selected session ${sessionId}.`);
-    refreshSessionHistory();
+    request("session.resume", { session_id: sessionId, limit: 25 });
+    log(`Session resume requested for ${sessionId}.`);
   });
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {

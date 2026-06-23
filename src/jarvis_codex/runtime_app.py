@@ -62,7 +62,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "pty.restart",
     "session.cancel",
-    "session.resume",
     "swarm.plan",
     "swarm.start",
     "swarm.stop",
@@ -337,6 +336,7 @@ def _dispatch_request(
                     "session.fork",
                     "session.get",
                     "session.list",
+                    "session.resume",
                     "telemetry.codeburn_status",
                     "runtime.health",
                     "runtime.readiness",
@@ -508,6 +508,34 @@ def _dispatch_request(
         if session is None:
             return make_error_response(request_id, code="unknown_session", message="session does not exist")
         return make_response(request_id, {"session": session})
+
+    if method == "session.resume":
+        session_id = str(params.get("session_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if not store.db_path.exists():
+            return make_error_response(
+                request_id,
+                code="unknown_session",
+                message="session does not exist",
+                details={"writes_state": False},
+            )
+        session = store.session(session_id)
+        if session is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        limit = max(1, min(int(params.get("limit") or 25), 100))
+        messages = [_stored_event_to_dict(event) for event in store.iter_events(session_id=session_id)][-limit:]
+        return make_response(
+            request_id,
+            {
+                "resumed_session_id": session_id,
+                "session": session,
+                "messages": messages,
+                "current_sequence": store.current_sequence(),
+                "writes_state": False,
+                "execution_authority": False,
+            },
+        )
 
     if method == "session.archive":
         session_id = str(params.get("session_id") or "")

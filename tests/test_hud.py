@@ -72,6 +72,9 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Profile selection changes session metadata only" in response.text
     assert "Session profile update requested" in response.text
     assert 'request("session.create"' in response.text
+    assert 'request("session.resume"' in response.text
+    assert "Session resume requested" in response.text
+    assert "Resumed session" in response.text
     assert 'request("prompt.send"' in response.text
     assert "Prompt recorded" in response.text
     assert "No execution authority granted" in response.text

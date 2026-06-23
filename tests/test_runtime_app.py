@@ -149,6 +149,59 @@ def test_runtime_session_get_reports_unknown_session(tmp_path):
     assert (state / "runtime" / "jarvis.db").exists()
 
 
+def test_runtime_session_resume_returns_session_and_recent_history_without_writing(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-resume"}, request_id="req_1"),
+    )
+    client.post(
+        "/rpc",
+        json=make_request(
+            "prompt.send",
+            {"session_id": "session-resume", "text": "resume me"},
+            request_id="req_2",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request("session.resume", {"session_id": "session-resume"}, request_id="req_3"),
+    )
+
+    result = response.json()["result"]
+    assert result["resumed_session_id"] == "session-resume"
+    assert result["session"]["id"] == "session-resume"
+    assert [message["event_type"] for message in result["messages"]] == ["session.created", "prompt.sent"]
+    assert result["writes_state"] is False
+    assert result["execution_authority"] is False
+
+
+def test_runtime_session_resume_absent_store_does_not_write_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("session.resume", {"session_id": "missing"}, request_id="req_1"),
+    )
+
+    assert response.json()["error"]["code"] == "unknown_session"
+    assert response.json()["error"]["details"]["writes_state"] is False
+    assert not state.exists()
+
+
+def test_runtime_session_resume_validates_session_id(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("session.resume", request_id="req_1"))
+
+    assert response.json()["error"]["code"] == "missing_session_id"
+
+
 def test_runtime_session_archive_updates_projection_and_history(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -598,7 +651,7 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    for index, method in enumerate(("pty.restart", "session.resume", "prompt.cancel", "loop.start")):
+    for index, method in enumerate(("pty.restart", "session.cancel", "prompt.cancel", "loop.start")):
         response = client.post("/rpc", json=make_request(method, request_id=f"req_{index}"))
 
         assert response.status_code == 200
