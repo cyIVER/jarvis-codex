@@ -70,6 +70,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
+    assert "mobile.evidence_brief" in data["result"]["capabilities"]
     assert "release.gate_status" in data["result"]["capabilities"]
     assert "release.gate_acceptance_brief" in data["result"]["capabilities"]
     assert "release.readiness_checklist" in data["result"]["capabilities"]
@@ -1380,6 +1381,35 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
         assert "electron_package_sign_flow" in data["remaining_gaps"]
     assert "approved_gemini_live_network_test" in data["remaining_gaps"]
     assert "actual_loop_execution" not in data["remaining_gaps"]
+    assert not state.exists()
+
+
+def test_runtime_mobile_evidence_brief_is_read_only_and_non_executing(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "mobile.evidence_brief",
+            params={"host": "192.168.1.50", "port": 8765, "scheme": "http"},
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    assert data["label"] == "Jarvis mobile operator evidence brief"
+    assert data["status"] == "READY_FOR_OPERATOR_TEST"
+    assert data["target_url"] == "http://192.168.1.50:8765"
+    assert data["writes_state"] is False
+    assert data["network_probe_performed"] is False
+    assert data["service_launch_performed"] is False
+    assert data["browser_opened"] is False
+    assert data["execution_authority"] is False
+    assert data["release_gate_closed"] is False
+    assert "actual_mobile_device_validation" in data["release_evidence_command"]
+    assert any("screenshot of iPhone Safari" in item for item in data["required_operator_evidence"])
     assert not state.exists()
 
 

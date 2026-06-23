@@ -733,6 +733,7 @@ HUD_HTML = """<!doctype html>
               <div class="panel-body control-grid">
                 <div id="readiness-gaps" class="log">Readiness summary pending.</div>
                 <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
+                <div id="mobile-evidence-panel" class="log">Mobile evidence brief pending. No runtime is launched from this panel.</div>
                 <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
                 <div id="release-acceptance-brief-panel" class="log">Release acceptance brief pending. Proposed commands are display-only.</div>
                 <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
@@ -850,6 +851,7 @@ HUD_JS = r"""(() => {
   const readinessGaps = document.getElementById("readiness-gaps");
   const mobileAccessStatus = document.getElementById("mobile-access-status");
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
+  const mobileEvidencePanel = document.getElementById("mobile-evidence-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
   const releaseAcceptanceBriefPanel = document.getElementById("release-acceptance-brief-panel");
@@ -1034,6 +1036,7 @@ HUD_JS = r"""(() => {
       request("agent.provider_status");
       request("telemetry.codeburn_status");
       request("runtime.readiness");
+      request("mobile.evidence_brief");
       request("release.gate_status");
       request("release.gate_acceptance_brief");
       request("release.readiness_checklist");
@@ -1191,6 +1194,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "production_complete")) {
         renderReadiness(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.release_evidence_command && frame.result.target_url) {
+        renderMobileEvidenceBrief(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -1635,6 +1643,7 @@ HUD_JS = r"""(() => {
 
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
+    request("mobile.evidence_brief");
     request("release.gate_status");
     request("release.gate_acceptance_brief");
     request("release.readiness_checklist");
@@ -2099,6 +2108,23 @@ HUD_JS = r"""(() => {
         <div>No runtime was launched, no browser opened, no network probe ran, and displayed commands are not execution authority.</div>
       </section>
     `;
+  }
+
+  function renderMobileEvidenceBrief(brief) {
+    const evidence = Array.isArray(brief.required_operator_evidence) ? brief.required_operator_evidence : [];
+    const unsafe = Array.isArray(brief.unsafe_actions) ? brief.unsafe_actions : [];
+    mobileEvidencePanel.innerHTML = `
+      <section class="approval-item">
+        <strong>${escapeHtml(brief.label || "Mobile evidence brief")}</strong>
+        <div>Status: ${escapeHtml(brief.status || "unknown")} | Target: ${escapeHtml(brief.target_url || "")}</div>
+        <div>Runtime command proposal: <code>${escapeHtml(brief.runtime_command || "")}</code></div>
+        <div>Release evidence command: <code>${escapeHtml(brief.release_evidence_command || "")}</code></div>
+        <div>Required evidence: ${escapeHtml(evidence.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>Unsafe actions not authorized: ${escapeHtml(unsafe.slice(0, 3).join("; ") || "none reported")}</div>
+        <div>No runtime was launched, no browser opened, no network probe ran, no state was written, and the mobile gate remains open.</div>
+      </section>
+    `;
+    log(`Mobile evidence brief loaded for ${brief.target_url || "unknown target"}. It does not prove iPhone validation or close the gate.`);
   }
 
   function renderReleaseGateStatus(status) {

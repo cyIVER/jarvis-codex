@@ -54,7 +54,7 @@ Implemented and validated in the local FastAPI runtime:
 - Non-writing `jarvis-codex runtime readiness --json` CLI summary that exposes the same operator readiness surface without starting the runtime server.
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 - Read-only mobile host discovery through `jarvis-codex mobile discover --json`; it lists local private-interface candidates without probing, serving, opening browsers, or writing state.
-- HUD runtime readiness displays the recommended mobile candidate and proposed serve/preflight/validation commands as display-only planning text.
+- HUD runtime readiness displays the recommended mobile candidate, proposed serve/preflight/validation commands, and the mobile evidence brief as display-only planning text.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Electron HUD dependency lockfile generated separately with lifecycle scripts disabled.
 - Electron HUD local dependencies installed under ignored `tools/electron-hud/node_modules/` for operator validation; `node_modules` is not a release artifact.

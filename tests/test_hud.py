@@ -99,6 +99,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="release-checklist-status"' in response.text
     assert 'id="readiness-gaps"' in response.text
     assert 'id="mobile-access-panel"' in response.text
+    assert 'id="mobile-evidence-panel"' in response.text
     assert 'id="release-gate-panel"' in response.text
     assert 'id="release-acceptance-brief-panel"' in response.text
     assert 'id="release-checklist-panel"' in response.text
@@ -110,6 +111,7 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="release-accept-evidence-id"' in response.text
     assert 'id="accept-release-gate"' in response.text
     assert "Evidence records do not close gates" in response.text
+    assert "Mobile evidence brief pending" in response.text
     assert "Release acceptance brief pending" in response.text
     assert "Gate acceptance requires an existing evidence id" in response.text
     assert "Record Evidence Metadata" in response.text
@@ -238,6 +240,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "challenge_brief" in response.text
     assert "No AG process, PTY, shell command, Worktrunk, or workflow was launched" in response.text
     assert 'request("runtime.readiness")' in response.text
+    assert 'request("mobile.evidence_brief")' in response.text
     assert 'request("release.gate_status")' in response.text
     assert 'request("release.gate_acceptance_brief")' in response.text
     assert 'request("release.readiness_checklist")' in response.text
@@ -280,11 +283,13 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No agents launched" in response.text
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
+    assert "renderMobileEvidenceBrief(frame.result)" in response.text
     assert "renderReleaseGateStatus(frame.result)" in response.text
     assert "renderReleaseAcceptanceBrief(frame.result)" in response.text
     assert "renderReleaseChecklist(frame.result)" in response.text
     assert "renderMobileAccess(readiness.mobile_access || {})" in response.text
     assert "mobileAccessStatus.textContent" in response.text
+    assert "Mobile evidence brief loaded" in response.text
     assert "Runtime command proposal" in response.text
     assert "displayed commands are not execution authority" in response.text
     assert "Remaining release gaps" in response.text

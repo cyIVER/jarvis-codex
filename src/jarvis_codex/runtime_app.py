@@ -19,7 +19,7 @@ from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
 from .hud import HUD_CSP, HUD_HTML, HUD_ICON_SVG, HUD_JS, HUD_MANIFEST, HUD_SERVICE_WORKER
-from .mobile import discover_mobile_hosts
+from .mobile import build_mobile_evidence_brief, discover_mobile_hosts
 from .packaging import build_packaging_preflight
 from .policy import classify_command
 from .protocol import (
@@ -478,6 +478,7 @@ def _dispatch_request(
                     "event.subscribe",
                     "message.list",
                     "message.search",
+                    "mobile.evidence_brief",
                     "session.archive",
                     "session.create",
                     "session.fork",
@@ -527,6 +528,22 @@ def _dispatch_request(
 
     if method == "runtime.readiness":
         return make_response(request_id, build_runtime_readiness())
+
+    if method == "mobile.evidence_brief":
+        try:
+            port = int(params.get("port") or 8765)
+        except (TypeError, ValueError):
+            return make_error_response(request_id, code="invalid_mobile_brief", message="port must be an integer", retryable=False)
+        scheme = str(params.get("scheme") or "http").strip() or "http"
+        host = str(params.get("host") or "").strip()
+        if not host:
+            discovery = discover_mobile_hosts(port=port, scheme=scheme)
+            host = discovery.recommended_candidate.host if discovery.recommended_candidate else "127.0.0.1"
+        try:
+            brief = build_mobile_evidence_brief(host=host, port=port, scheme=scheme)
+        except ValueError as exc:
+            return make_error_response(request_id, code="invalid_mobile_brief", message=str(exc), retryable=False)
+        return make_response(request_id, brief.to_dict())
 
     if method == "release.gate_status":
         release_state = JarvisState(state_dir) if state_dir is not None else None
