@@ -162,6 +162,7 @@ This note backs the morning HTML dashboard.
 - Ran final integrated validation: governance PASS, 245 tests passed.
 - Ran AG Electron lock boundary review; no install, package, sign, artifact-copy, service-launch, or implied-authority issue was found.
 - Implemented and validated non-writing `jarvis-codex runtime readiness --json`, backed by the same readiness summary as the runtime RPC without starting the server.
+- Committed and pushed runtime readiness CLI summary in `2777f1f`.
 - Ran final integrated validation: governance PASS, 247 tests passed.
 - Refreshed Codeburn snapshot: month `$620.36`, 6619 calls.
 
