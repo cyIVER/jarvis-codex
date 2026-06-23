@@ -89,7 +89,7 @@ def build_runtime_readiness() -> dict[str, Any]:
             "packaging_preflight": True,
         },
         "remaining_gaps": [
-            "electron_dependency_install_package_sign_flow",
+            "electron_package_sign_flow",
             "iphone_private_network_validation",
             "approved_gemini_live_network_test",
             "actual_swarm_agent_launch",

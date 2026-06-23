@@ -164,11 +164,14 @@ This note backs the morning HTML dashboard.
 - Implemented and validated non-writing `jarvis-codex runtime readiness --json`, backed by the same readiness summary as the runtime RPC without starting the server.
 - Committed and pushed runtime readiness CLI summary in `2777f1f`.
 - Ran final integrated validation: governance PASS, 247 tests passed.
-- Refreshed Codeburn snapshot: month `$620.36`, 6619 calls.
+- Installed Electron HUD local dependencies under ignored `tools/electron-hud/node_modules/`; verified `electron --version` reports `v42.4.1`.
+- Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
+- Ran final integrated validation: governance PASS, 248 tests passed.
+- Refreshed Codeburn snapshot: month `$623.87`, 6645 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, approved Electron dependency install/package/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron package/sign flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

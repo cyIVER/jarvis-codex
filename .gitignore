@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+tools/electron-hud/node_modules/
 dist/
 build/
 *.egg-info/

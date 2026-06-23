@@ -75,10 +75,12 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     if not package_lock.exists():
         recommended_commands.append("npm install --package-lock-only")
         remaining_gates.append("approve dependency lockfile generation before npm writes package-lock.json")
-    recommended_commands.extend(["npm install", "npm run package", "npm run make"])
+    if not node_modules.exists():
+        recommended_commands.append("npm install")
+        remaining_gates.append("approve dependency installation before creating node_modules")
+    recommended_commands.extend(["npm run package", "npm run make"])
     remaining_gates.extend(
         [
-            "approve dependency installation before creating node_modules",
             "add reviewed Electron packaging scripts before running package or make commands",
             "choose Windows/macOS/Linux artifact targets",
             "configure and verify signing credentials without committing secrets",

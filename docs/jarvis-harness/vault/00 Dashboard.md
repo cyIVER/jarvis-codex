@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 04:30 EDT
+updated: 2026-06-23 04:43 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -72,7 +72,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only Gemini Live validation planner committed and pushed as `e546350`.
 - Electron HUD package-lock committed and pushed as `5577838`.
 - Runtime readiness CLI committed and pushed as `2777f1f`.
-- Current Codeburn snapshot: month `$620.36`, 6619 calls.
+- Electron HUD local dependencies are installed under ignored `tools/electron-hud/node_modules/` and awaiting commit of ignore/preflight/docs updates.
+- Current Codeburn snapshot: month `$623.87`, 6645 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -117,6 +118,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, approved Electron dependency install/package/sign flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron package/sign flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
