@@ -6,7 +6,7 @@
 
 - Phase 1 project-local governance is active under `.codex/` and `.agents/skills/`.
 - Project-local agents are read-only: `jarvis_explorer`, `jarvis_reviewer`, `jarvis_docs_researcher`, and `jarvis_worktrunk_planner`.
-- Repo-local Jarvis skills are instruction-only governance helpers: `jarvis-gate-stabilization`, `worktrunk-lane-governance`, `approval-handoff-briefing`, `local-state-continuity`, `ipc-orchestration-review`, `safe-cli-handoff`, `agent-skill-governance`, and `harness-evaluator`.
+- Repo-local Jarvis skills are instruction-only governance helpers: `jarvis-gate-stabilization`, `worktrunk-lane-governance`, `approval-handoff-briefing`, `local-state-continuity`, `ipc-orchestration-review`, `safe-cli-handoff`, `agent-skill-governance`, `harness-evaluator`, and `phd-research-analyst`.
 - Validations must be done automatically through local computational sensors where available. The tracked pre-commit sensor source is `scripts/harness/pre-commit-sensor.sh`; local clones must install it into `.git/hooks/pre-commit` because Git does not version hook files.
 - **Progressive Disclosure:** Do not read or include `mic-harness` specific rules unless actively working on the live voice planning sub-project. Refer to `scripts/harness/mic-harness-policy.md`.
 

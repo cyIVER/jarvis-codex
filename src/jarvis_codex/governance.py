@@ -34,6 +34,7 @@ EXPECTED_SKILLS = {
     "safe-cli-handoff",
     "agent-skill-governance",
     "harness-evaluator",
+    "phd-research-analyst",
 }
 
 REQUIRED_AGENT_POLICY_TEXT = {
