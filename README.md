@@ -8,7 +8,7 @@ This project turns the "JARVIS for coding agents" idea into a practical system:
 - **Persistent memory**: preserve project facts, preferences, decisions, and task episodes outside chat history.
 - **Tool boundary**: prepare Codex-ready handoffs while keeping execution, commits, deployments, and destructive actions behind explicit approval.
 
-The first version is intentionally small. It does not replace Codex; it gives Codex a durable inbox and memory substrate that can later be connected to speech recognition, Codex App Server, Worktrunk, and notifications.
+The current platform is a governed local harness foundation. It does not replace Codex or grant autonomous execution by default; it provides a runtime HUD, durable event/state surfaces, voice ingress, approval-gated PTY/swarm/loop controls, release evidence views, and explicit safety boundaries for operator-driven testing.
 
 ## Quick Start
 
@@ -52,6 +52,32 @@ jarvis-plan-viewer                        # serve the local plan and next-step s
 ```
 
 `jarvis-codex runtime serve` binds to loopback by default. Non-loopback binding for private-network use requires `--allow-non-loopback` and should be treated as an explicit operator decision.
+
+## Test The Local HUD
+
+Use this path for a local operator smoke test:
+
+```bash
+cd /home/iveri/repos/jarvis-codex
+uv run jarvis-codex runtime readiness --json
+uv run jarvis-codex runtime serve --host 127.0.0.1 --port 8765
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765
+```
+
+Expected status:
+
+- The HUD loads as a local runtime shell.
+- Runtime readiness reports `foundation-ready`, not production-complete.
+- Release panels show open gates, evidence briefs, and display-only next actions.
+- Microphone access is requested only after an operator click.
+- Approval and launch flows remain separate; displayed commands are not execution authority.
+
+Do not treat a successful HUD smoke test as release approval. The remaining release gates still require separate human evidence and acceptance for actual iPhone validation, approved Gemini Live network validation, Electron/release signing, external security review, and unattended/background scheduling policy.
 
 ## Safety Boundary
 
