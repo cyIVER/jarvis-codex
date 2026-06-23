@@ -30,11 +30,13 @@ V1 PWA includes:
 - Private-network access must be explicitly enabled.
 - Runtime should bind to loopback unless mobile mode is enabled.
 - Use `jarvis-codex mobile discover --json` to list local private-network host candidates without starting the runtime, probing the network, opening browsers, or writing state.
+- The HUD runtime readiness panel also displays the recommended mobile candidate, proposed runtime serve command, preflight command, and validation-plan command from the same non-writing discovery path.
 - Use `jarvis-codex mobile preflight --host <private-ip-or-vpn-ip> --json` before serving a non-loopback runtime.
 - The mobile preflight is read-only. It does not launch services, probe the network, write state, or prove that an iPhone can connect.
 - Use `jarvis-codex mobile validation-plan --host <private-ip-or-vpn-ip> --json` to prepare the operator evidence checklist for a real iPhone/PWA validation session.
 - On this WSL host, discovery currently recommends `172.28.39.152` as the private-interface candidate. Treat this as local evidence only; the operator still has to approve the serve command and verify reachability from the iPhone.
 - The validation-plan command is also read-only. It does not launch the runtime, open a browser, contact the phone, probe the network, write state, or grant permission to execute displayed commands.
+- HUD-displayed mobile commands are display-only proposals. They are not buttons, shell execution, Worktrunk execution, git execution, local ML execution, service launch authority, or approval to bind non-loopback.
 - Mobile sessions are separate clients with their own session IDs.
 - Mobile approvals must show the same action details as desktop.
 - Public tunnel support is not v1.

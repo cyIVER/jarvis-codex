@@ -61,8 +61,11 @@ pattern: product-readiness-triage
 - [x] PM-018 - HUD approved local STT controls
   Loop action: added HUD controls to request approval for the last captured local audio chunk and run approved local STT transcription through `model_id`.
   Human decision: the HUD still separates microphone permission, audio storage, approval, and transcription; no command execution authority is granted.
-- [ ] PM-019 - Next product slice
-  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, and broader release readiness review.
+- [x] PM-019 - HUD mobile access readiness
+  Loop action: surfaced non-writing mobile host discovery in runtime readiness and the HUD, including recommended private URL and display-only serve/preflight/validation command proposals.
+  Human decision: real iPhone private-network validation and non-loopback runtime serving still require explicit operator approval and evidence.
+- [ ] PM-020 - Next product slice
+  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, actual swarm launch design, and actual loop execution design.
   Human decision: not selected yet.
 
 ## Watch List
@@ -83,3 +86,4 @@ Run log: 2026-06-23 | findings: voice ingress needed actual STT instead of trans
 Run log: 2026-06-23 | findings: local STT cache was missing | actions: installed whisper.cpp v1.9.1 user-cache binary, downloaded `ggml-tiny.en.bin`, probed JFK sample, captured approved sample transcript into temp state | escalations: 0
 Run log: 2026-06-23 | findings: runtime STT needed a model cache path that did not let clients pass arbitrary filesystem paths | actions: added server-resolved `model_id` support under `JARVIS_LOCAL_STT_MODELS_DIR` with traversal and direct-cache-path tests | escalations: 0
 Run log: 2026-06-23 | findings: HUD lacked a button path from captured audio chunks to approved local STT | actions: added transcription approval request and approved transcription controls for the latest captured audio path | escalations: 0
+Run log: 2026-06-23 | findings: mobile host discovery existed only in CLI/docs and was not visible in the harness | actions: added non-writing mobile access evidence to runtime readiness and HUD display-only command proposals | escalations: 0

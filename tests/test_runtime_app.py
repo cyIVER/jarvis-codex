@@ -1070,6 +1070,17 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["packaging_preflight"] is True
     assert data["checks"]["local_stt_discovery"] is True
     assert data["checks"]["mobile_host_discovery"] is True
+    assert data["mobile_access"]["writes_state"] is False
+    assert data["mobile_access"]["network_probe_performed"] is False
+    assert data["mobile_access"]["service_launch_performed"] is False
+    assert data["mobile_access"]["browser_opened"] is False
+    assert data["mobile_access"]["execution_authority"] is False
+    assert isinstance(data["mobile_access"]["candidate_count"], int)
+    if data["mobile_access"]["recommended_candidate"]:
+        assert data["mobile_access"]["recommended_candidate"]["iphone_reachable_candidate"] is True
+        assert data["mobile_access"]["recommended_candidate"]["runtime_command"].startswith(
+            "jarvis-codex runtime serve"
+        )
     assert "electron_installer_artifact" in data["checks"]
     assert "electron_icon" in data["checks"]
     if data["checks"]["electron_package_artifact"]:

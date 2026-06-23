@@ -369,8 +369,10 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
           <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
           <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
+          <div class="metric"><small>Mobile</small><strong id="mobile-access-status">unknown</strong></div>
         </div>
         <div id="readiness-gaps" class="log">Readiness summary pending.</div>
+        <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
         <button id="refresh-readiness" type="button">Refresh Readiness</button>
       </div>
 
@@ -511,6 +513,8 @@ HUD_JS = r"""(() => {
   const pwaStatus = document.getElementById("pwa-status");
   const readinessStatus = document.getElementById("readiness-status");
   const readinessGaps = document.getElementById("readiness-gaps");
+  const mobileAccessStatus = document.getElementById("mobile-access-status");
+  const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const refreshReadiness = document.getElementById("refresh-readiness");
   let socket;
   let requestSeq = 0;
@@ -1467,7 +1471,31 @@ HUD_JS = r"""(() => {
     readinessGaps.textContent = gaps.length
       ? `Remaining release gaps: ${gaps.join(", ")}`
       : "No remaining release gaps reported.";
+    renderMobileAccess(readiness.mobile_access || {});
     log(`Runtime readiness: ${readiness.status || "unknown"}; production complete: ${Boolean(readiness.production_complete)}.`);
+  }
+
+  function renderMobileAccess(mobileAccess) {
+    const candidate = mobileAccess.recommended_candidate || null;
+    mobileAccessStatus.textContent = mobileAccess.status || "unknown";
+    if (!candidate) {
+      const warnings = Array.isArray(mobileAccess.warnings) && mobileAccess.warnings.length
+        ? mobileAccess.warnings.join(" ")
+        : "No private-network candidate reported.";
+      mobileAccessPanel.textContent = `Mobile access is ${mobileAccess.status || "unknown"}. ${warnings} No runtime was launched, no network probe ran, and no approval was granted.`;
+      return;
+    }
+    mobileAccessPanel.innerHTML = `
+      <section class="approval-item">
+        <strong>Private mobile candidate</strong>
+        <div>URL: ${escapeHtml(candidate.url || "")}</div>
+        <div>Interface: ${escapeHtml(candidate.interface || "")} | Host class: ${escapeHtml(candidate.host_class || "")}</div>
+        <div>Runtime command proposal: <code>${escapeHtml(candidate.runtime_command || "")}</code></div>
+        <div>Preflight command: <code>${escapeHtml(candidate.preflight_command || "")}</code></div>
+        <div>Validation plan: <code>${escapeHtml(candidate.validation_plan_command || "")}</code></div>
+        <div>No runtime was launched, no browser opened, no network probe ran, and displayed commands are not execution authority.</div>
+      </section>
+    `;
   }
 
   function speakRuntimeStatus() {

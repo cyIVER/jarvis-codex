@@ -28,6 +28,7 @@ Implemented and validated in the local FastAPI runtime:
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
 - Runtime-served HUD shell for Codex, Antigravity, Codeburn, approvals, voice, sessions, and PWA status.
 - HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
+- HUD mobile access readiness panel backed by non-writing mobile host discovery.
 - Browser click-to-arm microphone flow with browser STT where available.
 - Browser-managed spoken runtime status through `speechSynthesis` after a user click.
 - Local audio chunk storage, approval request controls, approved local STT adapter execution controls, and server-resolved STT model ids.
@@ -43,6 +44,7 @@ Implemented and validated in the local FastAPI runtime:
 - Non-writing `jarvis-codex runtime readiness --json` CLI summary that exposes the same operator readiness surface without starting the runtime server.
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
 - Read-only mobile host discovery through `jarvis-codex mobile discover --json`; it lists local private-interface candidates without probing, serving, opening browsers, or writing state.
+- HUD runtime readiness displays the recommended mobile candidate and proposed serve/preflight/validation commands as display-only planning text.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Electron HUD dependency lockfile generated separately with lifecycle scripts disabled.
 - Electron HUD local dependencies installed under ignored `tools/electron-hud/node_modules/` for operator validation; `node_modules` is not a release artifact.
@@ -97,6 +99,7 @@ The following remain future or incomplete production gates:
 - Public internet exposure is not part of v1.
 - Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
 - Mobile host discovery is candidate selection only; it does not prove iPhone reachability or approve runtime serving.
+- HUD-displayed mobile commands are not execution authority and must not be treated as approval to bind non-loopback, run Worktrunk, mutate git, start local ML, launch Docker, start services, or run daemons.
 - Mobile validation plans are evidence checklists only; they must not launch the runtime, probe the network, open browsers, or grant execution authority.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
 - The Electron lockfile is not proof of an installed or packaged app; dependency installation, package builds, signing, and artifact copy remain separate gated actions.

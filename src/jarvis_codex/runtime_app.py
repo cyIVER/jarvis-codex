@@ -19,6 +19,7 @@ from .codeburn import read_codeburn_status
 from .event_store import JarvisEventStore, StoredEvent
 from .event_stream import RuntimeEventBroadcaster
 from .hud import HUD_CSP, HUD_HTML, HUD_ICON_SVG, HUD_JS, HUD_MANIFEST, HUD_SERVICE_WORKER
+from .mobile import discover_mobile_hosts
 from .packaging import build_packaging_preflight
 from .policy import classify_command
 from .protocol import (
@@ -76,6 +77,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
     """Return current harness readiness without touching runtime state."""
     root = Path(__file__).resolve().parents[2] if repo_root is None else repo_root
     packaging_preflight = build_packaging_preflight(root)
+    mobile_discovery = discover_mobile_hosts()
     electron_package_artifact = packaging_preflight.package_artifact_present
     electron_installer_artifact = packaging_preflight.installer_artifact_present
     electron_icon = packaging_preflight.electron_icon_present
@@ -119,6 +121,19 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "electron_icon": electron_icon,
             "local_stt_discovery": True,
             "mobile_host_discovery": True,
+        },
+        "mobile_access": {
+            "status": mobile_discovery.status,
+            "recommended_candidate": (
+                mobile_discovery.recommended_candidate.to_dict() if mobile_discovery.recommended_candidate else None
+            ),
+            "candidate_count": len(mobile_discovery.candidates),
+            "writes_state": mobile_discovery.writes_state,
+            "network_probe_performed": mobile_discovery.network_probe_performed,
+            "service_launch_performed": mobile_discovery.service_launch_performed,
+            "browser_opened": mobile_discovery.browser_opened,
+            "execution_authority": mobile_discovery.execution_authority,
+            "warnings": mobile_discovery.warnings,
         },
         "remaining_gaps": remaining_gaps,
     }

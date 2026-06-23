@@ -65,7 +65,10 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="refresh-codeburn"' in response.text
     assert 'id="pwa-status"' in response.text
     assert 'id="readiness-status"' in response.text
+    assert 'id="mobile-access-status"' in response.text
     assert 'id="readiness-gaps"' in response.text
+    assert 'id="mobile-access-panel"' in response.text
+    assert "Displayed commands are proposals only" in response.text
     assert 'id="refresh-readiness"' in response.text
     assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
     assert 'rel="icon" href="/assets/icon.svg"' in response.text
@@ -202,6 +205,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No agents launched" in response.text
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
+    assert "renderMobileAccess(readiness.mobile_access || {})" in response.text
+    assert "mobileAccessStatus.textContent" in response.text
+    assert "Runtime command proposal" in response.text
+    assert "displayed commands are not execution authority" in response.text
     assert "Remaining release gaps" in response.text
     assert "Runtime readiness refresh requested" in response.text
     assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text
