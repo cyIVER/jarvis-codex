@@ -221,7 +221,7 @@
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 22</strong>Swarm Lifecycle</div>
+        <div class="ring-text"><strong>PHASE 23</strong>HUD Swarm</div>
       </div>
     </header>
 
@@ -240,8 +240,8 @@
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$592.63</div>
-          <div class="note">Latest Codeburn month snapshot: 6387 calls. Daily counter reset after midnight.</div>
+          <div class="value">$594.69</div>
+          <div class="note">Latest Codeburn month snapshot: 6404 calls. Daily counter reset after midnight.</div>
         </div>
         <div class="card">
           <div class="label">Reviewer</div>
@@ -256,7 +256,7 @@
         <div class="card">
           <div class="label">Runtime Core</div>
           <div class="value">Validated</div>
-          <div class="note">Runtime, PTY supervision, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, approval-gated swarm lifecycle records, state-only command proposals, automated HUD browser smoke, loopback runtime serve, release artifact review, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, approval-gated local TTS, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
+          <div class="note">Runtime, PTY supervision, profile catalog, profile metadata updates, prompt history composer, semantic history search, planning-only swarm plans, approval-gated swarm lifecycle records, HUD swarm lifecycle controls, state-only command proposals, automated HUD browser smoke, loopback runtime serve, release artifact review, HUD session history, session resume/fork/archive controls, approvals, origin checks, token-gated approval use, PTY streams, live semantic events, HUD shell, browser STT, browser speech output, local STT, approval-gated local TTS, plan-viewer routes, voice intent, session continuity, readiness status, Codeburn telemetry, and PWA shell assets are green.</div>
         </div>
       </div>
     </section>
@@ -273,7 +273,7 @@
           <li>Gemini realtime voice through OAuth if feasible; local faster-whisper GPU fallback.</li>
           <li>Runtime-managed PTYs for Codex, Antigravity, shell, and Codeburn.</li>
           <li>Dynamic risk-scaled swarm and phase commit/push workflow.</li>
-          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>; message history <code>efe573e</code>; HUD history <code>3e46529</code>; session archive <code>49f6fe9</code>; profile set <code>e08dbac</code>; prompt composer <code>8b893ed</code>; session fork <code>59b30f8</code>; session resume <code>9d581a4</code>; history search <code>e8ca6e4</code>; swarm plan <code>f315583</code>; command proposals <code>ed9e22e</code>; HUD browser smoke <code>79897e0</code>; local TTS <code>4c747cb</code>; runtime serve <code>c3db6ad</code>; release manifest <code>b5fda5e</code>; swarm lifecycle <code>3e9d9d0</code>.</li>
+          <li>Specs <code>5bcd036</code>; event/protocol <code>5442ab5</code>; policy <code>faa97b3</code>; runtime API <code>6a9d518</code>; PTY <code>21ef4ab</code>; approvals <code>1332552</code>; streams <code>276b5ab</code>; HUD <code>7cbc5c5</code>; browser STT <code>11aa08b</code>; audio chunks <code>162b9b6</code>; local STT <code>b8be669</code>; plan-viewer route <code>13f2b06</code>; voice intent <code>dc9eb7f</code>; live events <code>479aeda</code>; proposal approval UI <code>29c3c65</code>; PTY gate <code>6923200</code>; HUD approval controls <code>4ce3839</code>; approved launch controls <code>b6f5fbf</code>; session continuity <code>2405333</code>; Codeburn telemetry <code>fa1d8b1</code>; PWA shell <code>b70ad56</code>; AG safety hardening <code>89b09fc</code>; readiness RPC <code>c176976</code>; boundary hardening <code>7d3e0b5</code>; HUD readiness <code>495e7a9</code>; browser voice output <code>7d8685f</code>; profile catalog <code>0b23f80</code>; message history <code>efe573e</code>; HUD history <code>3e46529</code>; session archive <code>49f6fe9</code>; profile set <code>e08dbac</code>; prompt composer <code>8b893ed</code>; session fork <code>59b30f8</code>; session resume <code>9d581a4</code>; history search <code>e8ca6e4</code>; swarm plan <code>f315583</code>; command proposals <code>ed9e22e</code>; HUD browser smoke <code>79897e0</code>; local TTS <code>4c747cb</code>; runtime serve <code>c3db6ad</code>; release manifest <code>b5fda5e</code>; swarm lifecycle <code>3e9d9d0</code>; HUD swarm controls <code>fa94e00</code>.</li>
         </ul>
       </div>
       <div>
@@ -317,6 +317,7 @@
         <div class="step"><strong>Phase 20</strong><span>Loopback runtime serve CLI starts the HUD runtime on 127.0.0.1 by default and requires explicit --allow-non-loopback for private-network binding.</span></div>
         <div class="step"><strong>Phase 21</strong><span>Release artifact manifest now reflects current harness docs and runtime/HUD source while performing no package build, runtime launch, or artifact copy.</span></div>
         <div class="step"><strong>Phase 22</strong><span>Swarm start/stop record approval-gated lifecycle state with scoped approval consumption and no agent, PTY, Worktrunk, shell, or workflow execution.</span></div>
+        <div class="step"><strong>Phase 23</strong><span>HUD exposes swarm lifecycle approval request and approved start/stop record controls, with browser smoke covering the start flow.</span></div>
       </div>
     </section>
 

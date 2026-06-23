@@ -120,7 +120,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed approval-gated swarm lifecycle records in `3e9d9d0`.
 - Ran final integrated validation: governance PASS, 207 tests passed.
 - Ran AG safety review for swarm lifecycle records; no execution authority issue was found.
-- Refreshed Codeburn snapshot: month `$592.63`, 6387 calls.
+- Implemented and validated HUD controls for requesting swarm lifecycle approvals and recording approved swarm start/stop lifecycle state.
+- Committed and pushed HUD swarm lifecycle controls in `fa94e00`.
+- Ran final integrated validation: governance PASS, 207 tests passed with browser smoke covering the start flow.
+- Ran AG HUD safety review; no auto-approval or execution authority issue was found.
+- Refreshed Codeburn snapshot: month `$594.69`, 6404 calls.
 
 ## Pending
 
