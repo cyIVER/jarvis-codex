@@ -144,11 +144,15 @@ This note backs the morning HTML dashboard.
 - Committed and pushed HUD loop lifecycle controls in `f9f240e`.
 - Ran final integrated validation: governance PASS, 228 tests passed with browser smoke covering loop start approval and record flow.
 - Ran AG HUD loop control safety review; no auto-approval or execution-authority issue was found.
-- Refreshed Codeburn snapshot: month `$607.31`, 6510 calls.
+- Implemented and validated read-only release packaging preflight. It reports Electron package, dependency, and signing readiness without npm install, package build, signing, artifact copy, service launch, secret exposure, or file writes.
+- Committed and pushed release packaging preflight in `b9dcfb1`.
+- Ran final integrated validation: governance PASS, 234 tests passed.
+- Ran AG packaging preflight safety review; no package-authority issue was found.
+- Refreshed Codeburn snapshot: month `$610.38`, 6527 calls.
 
 ## Pending
 
-- Remaining production gaps: Electron packaging, actual iPhone private-network validation, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, and release packaging.
+- Remaining production gaps: approved Electron dependency lock/install, actual iPhone private-network validation, networked Gemini Live validation, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
