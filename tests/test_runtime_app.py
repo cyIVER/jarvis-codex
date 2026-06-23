@@ -611,6 +611,209 @@ def test_runtime_swarm_plan_validates_session_objective_and_lanes(tmp_path):
     assert invalid_lanes.json()["error"]["code"] == "invalid_lanes"
 
 
+def test_runtime_swarm_start_records_approved_lifecycle_without_launching_agents(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    plan_response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.plan",
+            {"session_id": "session-swarm", "objective": "Plan review lanes", "lanes": ["Review runtime"]},
+            request_id="req_2",
+        ),
+    )
+    plan_event_id = plan_response.json()["result"]["swarm_plan_event_id"]
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Record swarm start",
+                "operation": "swarm.start",
+                "risk": "medium",
+                "scope": {"source": "swarm.start", "session_id": "session-swarm", "plan_event_id": plan_event_id},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.start",
+            {
+                "session_id": "session-swarm",
+                "plan_event_id": plan_event_id,
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_3",
+        ),
+    )
+
+    result = response.json()["result"]
+    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    assert result["lifecycle_state"] == "started"
+    assert result["writes_state"] is True
+    assert result["approval_consumed"] is True
+    assert result["execution_authority"] is False
+    assert result["agent_launch"] is False
+    assert result["worktrunk_mutation"] is False
+    assert result["pty_launch"] is False
+    assert result["command_execution"] is False
+    assert result["runtime_workflow_execution"] is False
+    assert event.event_type == "swarm.started"
+    assert event.parent_event_id == plan_event_id
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+
+
+def test_runtime_swarm_lifecycle_requires_matching_approval_and_runtime_token(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    plan_response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.plan",
+            {"session_id": "session-swarm", "objective": "Plan review lanes"},
+            request_id="req_2",
+        ),
+    )
+    plan_event_id = plan_response.json()["result"]["swarm_plan_event_id"]
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Record swarm start",
+                "operation": "swarm.start",
+                "risk": "medium",
+                "scope": {"source": "swarm.start", "session_id": "session-swarm", "plan_event_id": plan_event_id},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    missing_token = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.start",
+            {"session_id": "session-swarm", "plan_event_id": plan_event_id, "approval_id": approval["id"]},
+            request_id="req_3",
+        ),
+    )
+    mismatch = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.start",
+            {
+                "session_id": "session-swarm",
+                "plan_event_id": "evt_other",
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_4",
+        ),
+    )
+
+    assert missing_token.json()["error"]["code"] == "unauthorized"
+    assert mismatch.json()["error"]["code"] == "approval_required"
+    assert app.state.event_store.approval(approval["id"])["status"] == "approved"
+
+
+def test_runtime_swarm_stop_records_approved_lifecycle_without_execution(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    token = app.state.runtime_token
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-swarm",
+                "summary": "Record swarm stop",
+                "operation": "swarm.stop",
+                "risk": "medium",
+                "scope": {"source": "swarm.stop", "session_id": "session-swarm", "swarm_event_id": "evt_started"},
+            },
+            request_id="approval_req",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {
+                "approval_id": approval["id"],
+                "status": "approved",
+                "reason": "operator approved",
+                "runtime_token": token,
+            },
+            request_id="approval_resp",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.stop",
+            {
+                "session_id": "session-swarm",
+                "swarm_event_id": "evt_started",
+                "approval_id": approval["id"],
+                "runtime_token": token,
+            },
+            request_id="req_2",
+        ),
+    )
+
+    result = response.json()["result"]
+    event = list(app.state.event_store.iter_events(session_id="session-swarm"))[-1]
+    assert result["lifecycle_state"] == "stopped"
+    assert result["execution_authority"] is False
+    assert result["agent_launch"] is False
+    assert result["worktrunk_mutation"] is False
+    assert result["runtime_workflow_execution"] is False
+    assert event.event_type == "swarm.stopped"
+    assert event.parent_event_id == "evt_started"
+    assert app.state.event_store.approval(approval["id"])["status"] == "used"
+
+
 def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

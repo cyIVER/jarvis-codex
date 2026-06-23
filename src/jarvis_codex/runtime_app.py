@@ -64,8 +64,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "pty.restart",
     "session.cancel",
-    "swarm.start",
-    "swarm.stop",
 }
 
 
@@ -390,13 +388,14 @@ def _dispatch_request(
                     "stt_runtime_path_constraints": True,
                     "voice_execution_authority": False,
                     "codeburn_shell": False,
+                    "swarm_lifecycle_records": True,
                 },
                 "remaining_gaps": [
                     "electron_packaging",
                     "iphone_private_network_validation",
                     "gemini_oauth_feasibility",
-                    "local_tts_adapter",
-                    "swarm_command_surfaces",
+                    "actual_swarm_agent_launch",
+                    "loop_command_surfaces",
                     "release_packaging",
                 ],
             },
@@ -749,6 +748,85 @@ def _dispatch_request(
                 "execution_authority": False,
                 "agent_launch": False,
                 "worktrunk_mutation": False,
+            },
+        )
+
+    if method in {"swarm.start", "swarm.stop"}:
+        session_id = str(params.get("session_id") or "")
+        approval_id = str(params.get("approval_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if store.session(session_id) is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        target_key = "plan_event_id" if method == "swarm.start" else "swarm_event_id"
+        target_event_id = str(params.get(target_key) or "").strip()
+        if not target_event_id:
+            return make_error_response(request_id, code=f"missing_{target_key}", message=f"{target_key} is required")
+        if not _approval_allows_swarm_lifecycle(
+            store,
+            approval_id=approval_id,
+            operation=method,
+            session_id=session_id,
+            target_key=target_key,
+            target_event_id=target_event_id,
+        ):
+            return make_error_response(
+                request_id,
+                code="approval_required",
+                message=f"{method} requires a matching approved swarm lifecycle approval",
+                approval_required=True,
+                details={"required_approval_scope": method, target_key: target_event_id},
+            )
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message=f"approved {method} requires the HUD runtime token",
+                retryable=False,
+            )
+        consumed = approval_service.consume(
+            approval_id=approval_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason=f"{method} recorded approved swarm lifecycle state",
+        )
+        event_broadcaster.publish(consumed.event)
+        lifecycle_state = "started" if method == "swarm.start" else "stopped"
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type=f"swarm.{lifecycle_state}",
+            parent_event_id=target_event_id,
+            payload={
+                target_key: target_event_id,
+                "approval_id": approval_id,
+                "lifecycle_state": lifecycle_state,
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
+                "pty_launch": False,
+                "command_execution": False,
+                "runtime_workflow_execution": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "swarm_lifecycle_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "lifecycle_state": lifecycle_state,
+                "writes_state": True,
+                "approval_consumed": True,
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
+                "pty_launch": False,
+                "command_execution": False,
+                "runtime_workflow_execution": False,
             },
         )
 
@@ -1362,6 +1440,30 @@ def _approval_allows_audio_synthesis(store: JarvisEventStore, approval_id: str, 
         return False
     scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
     return scope.get("source") == "voice.synthesize_audio" and scope.get("text_sha256") == text_sha256
+
+
+def _approval_allows_swarm_lifecycle(
+    store: JarvisEventStore,
+    *,
+    approval_id: str,
+    operation: str,
+    session_id: str,
+    target_key: str,
+    target_event_id: str,
+) -> bool:
+    if not approval_id.strip() or not target_event_id:
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    if str(approval.get("operation") or "") != operation:
+        return False
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    return (
+        scope.get("source") == operation
+        and scope.get("session_id") == session_id
+        and scope.get(target_key) == target_event_id
+    )
 
 
 def _normalize_command(command: str) -> str:

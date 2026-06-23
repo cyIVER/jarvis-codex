@@ -123,6 +123,8 @@ Loop and swarm:
 
 `swarm.plan` is implemented as a planning-only semantic event. It appends `swarm.planned` for an existing session and records proposed lane assignments without launching agents, starting PTYs, mutating Worktrunk, running shell commands, or granting execution authority.
 
+`swarm.start` and `swarm.stop` are implemented as approval-gated lifecycle records. They require a matching scoped approval and the HUD runtime token, consume that approval on use, and append `swarm.started` or `swarm.stopped`. They do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
+
 Telemetry:
 
 - `telemetry.codeburn_status`

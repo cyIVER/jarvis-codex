@@ -1,6 +1,6 @@
 # Swarm And Loop Operation
 
-Jarvis supports autonomous loops and dynamic swarms after an approved plan.
+Jarvis supports autonomous-loop planning and governed swarm lifecycle records after an approved plan.
 
 ## Default Loop
 
@@ -36,6 +36,14 @@ Roles are dynamic and risk-scaled:
 - Codeburn telemetry reviewer.
 
 Small work may use only main thread plus executor. High-risk or production work requires multiple challengers before commit or push.
+
+Current runtime support is intentionally state-first:
+
+- `swarm.plan` records planned lane assignments.
+- `swarm.start` records an approved lifecycle start for a plan.
+- `swarm.stop` records an approved lifecycle stop for a recorded swarm event.
+
+These records do not launch agents, start PTYs, mutate Worktrunk, run shell commands, execute runtime workflows, or grant execution authority.
 
 ## Risk-Scaled Spawning
 
@@ -88,7 +96,7 @@ Before commit or push:
 ## Acceptance Criteria
 
 - `/loop` can run a delivery phase with a durable event trail.
-- `/swarm` can spawn role-labeled panes.
+- `/swarm` can record role-labeled lifecycle state with scoped approvals.
+- Actual role-labeled pane spawning remains a future implementation gate.
 - High-risk work triggers adversarial review.
 - Commit/push steps are visible, logged, and policy-gated.
-
