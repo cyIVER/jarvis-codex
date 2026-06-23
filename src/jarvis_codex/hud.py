@@ -414,6 +414,11 @@ HUD_HTML = """<!doctype html>
         <button id="send-prompt" type="button">Record Prompt</button>
         <textarea id="swarm-objective" class="log" rows="4" placeholder="Record a planning-only swarm objective. This does not launch agents, Worktrunk, PTYs, or commands."></textarea>
         <button id="record-swarm-plan" type="button">Record Swarm Plan</button>
+        <button id="request-swarm-start-approval" type="button">Request Swarm Start Approval</button>
+        <input id="swarm-lifecycle-approval-id" type="text" placeholder="Paste approved swarm lifecycle approval id">
+        <button id="record-swarm-start" type="button">Record Approved Swarm Start</button>
+        <button id="request-swarm-stop-approval" type="button">Request Swarm Stop Approval</button>
+        <button id="record-swarm-stop" type="button">Record Approved Swarm Stop</button>
         <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
         <textarea id="command-proposal" class="log" rows="3" placeholder="Propose a command for policy review. This records a proposal only; it does not request approval or execute."></textarea>
         <button id="record-command-proposal" type="button">Record Command Proposal</button>
@@ -455,6 +460,11 @@ HUD_JS = r"""(() => {
   const sendPrompt = document.getElementById("send-prompt");
   const swarmObjective = document.getElementById("swarm-objective");
   const recordSwarmPlan = document.getElementById("record-swarm-plan");
+  const requestSwarmStartApproval = document.getElementById("request-swarm-start-approval");
+  const swarmLifecycleApprovalId = document.getElementById("swarm-lifecycle-approval-id");
+  const recordSwarmStart = document.getElementById("record-swarm-start");
+  const requestSwarmStopApproval = document.getElementById("request-swarm-stop-approval");
+  const recordSwarmStop = document.getElementById("record-swarm-stop");
   const swarmPlanStatus = document.getElementById("swarm-plan-status");
   const commandProposal = document.getElementById("command-proposal");
   const recordCommandProposal = document.getElementById("record-command-proposal");
@@ -480,6 +490,8 @@ HUD_JS = r"""(() => {
   let stoppingRecorder = false;
   let lastVoiceProposal = null;
   let lastReadiness = null;
+  let lastSwarmPlanEventId = "";
+  let lastSwarmLifecycleEventId = "";
   const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
     codex: {
@@ -616,10 +628,20 @@ HUD_JS = r"""(() => {
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.swarm_plan_event_id) {
+        lastSwarmPlanEventId = frame.result.swarm_plan_event_id;
         log(`Swarm plan recorded for ${frame.result.session_id}. No agents launched; no Worktrunk mutation occurred.`);
-        swarmPlanStatus.textContent = `Swarm plan recorded at sequence ${frame.result.sequence}. This is planning state only.`;
+        swarmPlanStatus.textContent = `Swarm plan recorded at sequence ${frame.result.sequence}. Plan event: ${lastSwarmPlanEventId}. This is planning state only.`;
         swarmObjective.value = "";
         refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.swarm_lifecycle_event_id) {
+        lastSwarmLifecycleEventId = frame.result.swarm_lifecycle_event_id;
+        log(`Swarm lifecycle ${frame.result.lifecycle_state} recorded for ${frame.result.session_id}. No agents, PTYs, Worktrunk, commands, or workflows executed.`);
+        swarmPlanStatus.textContent = `Swarm lifecycle ${frame.result.lifecycle_state} recorded at sequence ${frame.result.sequence}. Event: ${lastSwarmLifecycleEventId}. State only.`;
+        refreshSessionHistory();
+        request("approval.list", { status: "approved" });
         requestIndex.delete(frame.id);
         return;
       }
@@ -802,6 +824,86 @@ HUD_JS = r"""(() => {
     });
     swarmPlanStatus.textContent = "Swarm plan record requested. This does not start agents, Worktrunk, PTYs, or commands.";
     log("Swarm plan record requested. Planning state only; no agents launched.");
+  });
+
+  requestSwarmStartApproval.addEventListener("click", () => {
+    if (!lastSwarmPlanEventId) {
+      log("Record a swarm plan before requesting swarm start approval.");
+      swarmPlanStatus.textContent = "Start approval requires a recorded swarm plan event id.";
+      return;
+    }
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: "Record approved swarm lifecycle start",
+      operation: "swarm.start",
+      risk: "medium",
+      scope: {
+        source: "swarm.start",
+        session_id: currentSessionId(),
+        plan_event_id: lastSwarmPlanEventId
+      },
+      source_client: "hud",
+      actor_id: "user"
+    });
+    swarmPlanStatus.textContent = "Swarm start approval requested. Approval does not launch agents or commands.";
+    log("Swarm start approval requested for recorded plan. No lifecycle state changed yet.");
+  });
+
+  recordSwarmStart.addEventListener("click", () => {
+    const approvalId = swarmLifecycleApprovalId.value.trim();
+    if (!lastSwarmPlanEventId || !approvalId) {
+      log("Swarm start requires a recorded plan event and an approved lifecycle approval id.");
+      return;
+    }
+    request("swarm.start", privilegedParams({
+      session_id: currentSessionId(),
+      plan_event_id: lastSwarmPlanEventId,
+      approval_id: approvalId,
+      source_client: "hud",
+      actor_id: "user"
+    }));
+    swarmPlanStatus.textContent = "Approved swarm start record requested. This records lifecycle state only.";
+    log("Approved swarm start record requested. No agents, PTYs, Worktrunk, shell, or workflows launched.");
+  });
+
+  requestSwarmStopApproval.addEventListener("click", () => {
+    if (!lastSwarmLifecycleEventId) {
+      log("Record a swarm lifecycle event before requesting stop approval.");
+      swarmPlanStatus.textContent = "Stop approval requires a recorded swarm lifecycle event id.";
+      return;
+    }
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: "Record approved swarm lifecycle stop",
+      operation: "swarm.stop",
+      risk: "medium",
+      scope: {
+        source: "swarm.stop",
+        session_id: currentSessionId(),
+        swarm_event_id: lastSwarmLifecycleEventId
+      },
+      source_client: "hud",
+      actor_id: "user"
+    });
+    swarmPlanStatus.textContent = "Swarm stop approval requested. Approval does not stop running processes.";
+    log("Swarm stop approval requested for lifecycle record. No runtime process was stopped.");
+  });
+
+  recordSwarmStop.addEventListener("click", () => {
+    const approvalId = swarmLifecycleApprovalId.value.trim();
+    if (!lastSwarmLifecycleEventId || !approvalId) {
+      log("Swarm stop requires a recorded lifecycle event and an approved lifecycle approval id.");
+      return;
+    }
+    request("swarm.stop", privilegedParams({
+      session_id: currentSessionId(),
+      swarm_event_id: lastSwarmLifecycleEventId,
+      approval_id: approvalId,
+      source_client: "hud",
+      actor_id: "user"
+    }));
+    swarmPlanStatus.textContent = "Approved swarm stop record requested. This records lifecycle state only.";
+    log("Approved swarm stop record requested. No agents, PTYs, Worktrunk, shell, or workflows stopped.");
   });
 
   recordCommandProposal.addEventListener("click", () => {

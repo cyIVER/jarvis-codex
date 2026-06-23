@@ -28,6 +28,11 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert "This does not execute Codex" in response.text
     assert 'id="swarm-objective"' in response.text
     assert 'id="record-swarm-plan"' in response.text
+    assert 'id="request-swarm-start-approval"' in response.text
+    assert 'id="swarm-lifecycle-approval-id"' in response.text
+    assert 'id="record-swarm-start"' in response.text
+    assert 'id="request-swarm-stop-approval"' in response.text
+    assert 'id="record-swarm-stop"' in response.text
     assert 'id="swarm-plan-status"' in response.text
     assert "This does not launch agents" in response.text
     assert "Swarm planning is semantic state only" in response.text
@@ -93,10 +98,21 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No execution authority granted" in response.text
     assert "This does not execute a command or agent" in response.text
     assert 'request("swarm.plan"' in response.text
+    assert 'request("swarm.start"' in response.text
+    assert 'request("swarm.stop"' in response.text
     assert "Swarm plan record requested" in response.text
     assert "Swarm plan recorded" in response.text
+    assert "Swarm start approval requested" in response.text
+    assert "Approved swarm start record requested" in response.text
+    assert "Swarm stop approval requested" in response.text
+    assert "Approved swarm stop record requested" in response.text
+    assert "lastSwarmPlanEventId" in response.text
+    assert "lastSwarmLifecycleEventId" in response.text
     assert "No agents launched" in response.text
     assert "no Worktrunk mutation occurred" in response.text
+    assert "No agents, PTYs, Worktrunk, commands, or workflows executed" in response.text
+    assert "Approval does not launch agents or commands" in response.text
+    assert "No agents, PTYs, Worktrunk, shell, or workflows launched" in response.text
     assert 'request("command.propose"' in response.text
     assert "Command proposal record requested" in response.text
     assert "No approval was created and nothing executed" in response.text
