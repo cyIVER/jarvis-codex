@@ -14,6 +14,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only session context rehydration through `session.resume`.
 - Non-writing policy profile catalog through `profile.list`.
 - State-only session profile metadata updates through `profile.set`.
+- State-only command proposal records through `command.propose` with policy classification but no approval creation or execution.
 - Semantic prompt history writes through `prompt.send` without agent or command execution.
 - Session-scoped semantic history through `message.list`.
 - Read-only semantic history search through `message.search`.
@@ -52,6 +53,7 @@ The following remain future or incomplete production gates:
 
 - The browser HUD must not execute shell commands directly.
 - Voice transcripts and voice intent proposals must not execute commands.
+- Command proposals must not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Browser-managed speech output must not run local TTS commands or grant approval authority.
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
 - Swarm plans are planning records only; they must not be treated as permission to launch agents, mutate Worktrunk, start PTYs, or run commands.

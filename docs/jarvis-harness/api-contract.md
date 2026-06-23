@@ -90,8 +90,11 @@ Policy:
 - `profile.list`
 - `profile.set`
 - `command.classify`
+- `command.propose`
 
 `profile.list` is implemented as a non-writing profile catalog. `profile.set` is implemented as a state-only session metadata update that appends `session.profile_set` and updates the session projection. Setting a profile does not by itself execute commands or grant approval authority.
+
+`command.propose` is implemented as a semantic proposal record. It classifies a proposed command, appends `command.proposed`, and explicitly does not create approval, launch PTYs, run shell commands, mutate Worktrunk, or grant execution authority.
 
 Voice:
 

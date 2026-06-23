@@ -31,6 +31,10 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="swarm-plan-status"' in response.text
     assert "This does not launch agents" in response.text
     assert "Swarm planning is semantic state only" in response.text
+    assert 'id="command-proposal"' in response.text
+    assert 'id="record-command-proposal"' in response.text
+    assert 'id="command-proposal-status"' in response.text
+    assert "it does not request approval or execute" in response.text
     assert 'id="history-search"' in response.text
     assert 'id="search-history"' in response.text
     assert 'id="history-search-results"' in response.text
@@ -93,6 +97,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Swarm plan recorded" in response.text
     assert "No agents launched" in response.text
     assert "no Worktrunk mutation occurred" in response.text
+    assert 'request("command.propose"' in response.text
+    assert "Command proposal record requested" in response.text
+    assert "No approval was created and nothing executed" in response.text
+    assert "does not request approval, launch a PTY, or execute" in response.text
     assert 'request("message.search"' in response.text
     assert "renderSearchResults(frame.result.results" in response.text
     assert "History search requested" in response.text

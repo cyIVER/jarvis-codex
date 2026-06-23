@@ -70,6 +70,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
     assert "swarm.plan" in data["result"]["capabilities"]
+    assert "command.propose" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -796,6 +797,82 @@ def test_runtime_command_classify_uses_policy(tmp_path):
 
     assert response.status_code == 200
     assert response.json()["result"]["status"] == "block"
+
+
+def test_runtime_command_propose_records_policy_review_without_execution_or_approval(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-command"}, request_id="req_1"))
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "command.propose",
+            {"session_id": "session-command", "command": "git status --short", "profile": "observe"},
+            request_id="req_2",
+        ),
+    )
+    history_response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-command"}, request_id="req_3"),
+    )
+    approvals_response = client.post(
+        "/rpc",
+        json=make_request("approval.list", {"status": "pending"}, request_id="req_4"),
+    )
+
+    result = response.json()["result"]
+    event = history_response.json()["result"]["messages"][-1]
+    assert result["writes_state"] is True
+    assert result["policy"]["status"] == "allow"
+    assert result["policy"]["execution_authority"] is True
+    assert result["approval_required"] is True
+    assert result["approval_created"] is False
+    assert result["execution_authority"] is False
+    assert result["routed_as_command"] is False
+    assert result["pty_launch"] is False
+    assert result["worktrunk_mutation"] is False
+    assert approvals_response.json()["result"]["approvals"] == []
+    assert event["event_type"] == "command.proposed"
+    assert event["payload"]["command"] == "git status --short"
+    assert event["payload"]["approval_created"] is False
+    assert event["payload"]["execution_authority"] is False
+
+
+def test_runtime_command_propose_validates_inputs(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-command"}, request_id="req_1"))
+
+    missing_session = client.post(
+        "/rpc",
+        json=make_request("command.propose", {"command": "git status"}, request_id="req_2"),
+    )
+    missing_command = client.post(
+        "/rpc",
+        json=make_request("command.propose", {"session_id": "session-command", "command": "  "}, request_id="req_3"),
+    )
+    invalid_profile = client.post(
+        "/rpc",
+        json=make_request(
+            "command.propose",
+            {"session_id": "session-command", "command": "git status", "profile": "invalid"},
+            request_id="req_4",
+        ),
+    )
+    unknown_session = client.post(
+        "/rpc",
+        json=make_request(
+            "command.propose",
+            {"session_id": "missing", "command": "git status"},
+            request_id="req_5",
+        ),
+    )
+
+    assert missing_session.json()["error"]["code"] == "missing_session_id"
+    assert missing_command.json()["error"]["code"] == "missing_command"
+    assert invalid_profile.json()["error"]["code"] == "invalid_profile"
+    assert unknown_session.json()["error"]["code"] == "unknown_session"
 
 
 def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):

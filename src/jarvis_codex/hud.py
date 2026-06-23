@@ -415,6 +415,9 @@ HUD_HTML = """<!doctype html>
         <textarea id="swarm-objective" class="log" rows="4" placeholder="Record a planning-only swarm objective. This does not launch agents, Worktrunk, PTYs, or commands."></textarea>
         <button id="record-swarm-plan" type="button">Record Swarm Plan</button>
         <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
+        <textarea id="command-proposal" class="log" rows="3" placeholder="Propose a command for policy review. This records a proposal only; it does not request approval or execute."></textarea>
+        <button id="record-command-proposal" type="button">Record Command Proposal</button>
+        <div id="command-proposal-status" class="log">Command proposals are classified and stored as planning state only.</div>
         <input id="history-search" type="search" placeholder="Search semantic history">
         <button id="search-history" type="button">Search History</button>
         <div id="history-search-results" class="log">Search results will appear here. Search is read-only.</div>
@@ -453,6 +456,9 @@ HUD_JS = r"""(() => {
   const swarmObjective = document.getElementById("swarm-objective");
   const recordSwarmPlan = document.getElementById("record-swarm-plan");
   const swarmPlanStatus = document.getElementById("swarm-plan-status");
+  const commandProposal = document.getElementById("command-proposal");
+  const recordCommandProposal = document.getElementById("record-command-proposal");
+  const commandProposalStatus = document.getElementById("command-proposal-status");
   const historySearch = document.getElementById("history-search");
   const searchHistory = document.getElementById("search-history");
   const historySearchResults = document.getElementById("history-search-results");
@@ -613,6 +619,15 @@ HUD_JS = r"""(() => {
         log(`Swarm plan recorded for ${frame.result.session_id}. No agents launched; no Worktrunk mutation occurred.`);
         swarmPlanStatus.textContent = `Swarm plan recorded at sequence ${frame.result.sequence}. This is planning state only.`;
         swarmObjective.value = "";
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.command_proposal_event_id) {
+        const policy = frame.result.policy || {};
+        log(`Command proposal recorded for ${frame.result.session_id}. Policy: ${policy.status || "unknown"}. No approval was created and nothing executed.`);
+        commandProposalStatus.textContent = `Proposal ${frame.result.proposal_id} recorded. Policy: ${policy.status || "unknown"} (${policy.reason || "no reason"}). No approval created.`;
+        commandProposal.value = "";
         refreshSessionHistory();
         requestIndex.delete(frame.id);
         return;
@@ -787,6 +802,24 @@ HUD_JS = r"""(() => {
     });
     swarmPlanStatus.textContent = "Swarm plan record requested. This does not start agents, Worktrunk, PTYs, or commands.";
     log("Swarm plan record requested. Planning state only; no agents launched.");
+  });
+
+  recordCommandProposal.addEventListener("click", () => {
+    const command = commandProposal.value.trim();
+    if (!command) {
+      log("Command proposal is empty; nothing recorded.");
+      return;
+    }
+    request("command.propose", {
+      session_id: currentSessionId(),
+      command,
+      profile: selectedProfileId(),
+      summary: `HUD command proposal: ${command}`,
+      source_client: "hud",
+      actor_id: "user"
+    });
+    commandProposalStatus.textContent = "Command proposal record requested. This does not request approval, launch a PTY, or execute.";
+    log("Command proposal record requested. Classification and semantic state only.");
   });
 
   searchHistory.addEventListener("click", () => {

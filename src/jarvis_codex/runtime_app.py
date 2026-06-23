@@ -345,6 +345,7 @@ def _dispatch_request(
                     "prompt.send",
                     "swarm.plan",
                     "command.classify",
+                    "command.propose",
                     "pty.create",
                     "pty.input",
                     "pty.resize",
@@ -755,6 +756,59 @@ def _dispatch_request(
             return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
         decision = classify_command(command, profile)  # type: ignore[arg-type]
         return make_response(request_id, decision.to_dict())
+
+    if method == "command.propose":
+        session_id = str(params.get("session_id") or "")
+        command = str(params.get("command") or "").strip()
+        profile = str(params.get("profile") or "observe")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if not command:
+            return make_error_response(request_id, code="missing_command", message="command is required")
+        if profile not in POLICY_PROFILES:
+            return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
+        if store.session(session_id) is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        decision = classify_command(command, profile)  # type: ignore[arg-type]
+        proposal_id = f"proposal_{uuid.uuid4().hex[:12]}"
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="command.proposed",
+            payload={
+                "proposal_id": proposal_id,
+                "summary": str(params.get("summary") or f"Review proposed command: {decision.command}"),
+                "command": decision.command,
+                "profile": profile,
+                "policy": decision.to_dict(),
+                "approval_required": True,
+                "execution_authority": False,
+                "routed_as_command": False,
+                "approval_created": False,
+                "pty_launch": False,
+                "worktrunk_mutation": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "proposal_id": proposal_id,
+                "command_proposal_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "policy": decision.to_dict(),
+                "writes_state": True,
+                "approval_required": True,
+                "approval_created": False,
+                "execution_authority": False,
+                "routed_as_command": False,
+                "pty_launch": False,
+                "worktrunk_mutation": False,
+            },
+        )
 
     if method == "pty.create":
         command = str(params.get("command") or "")
