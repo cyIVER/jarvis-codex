@@ -488,6 +488,7 @@ def _dispatch_request(
                     "runtime.health",
                     "runtime.readiness",
                     "release.evidence_add",
+                    "release.gate_accept",
                     "release.gate_status",
                     "release.readiness_checklist",
                     "profile.list",
@@ -527,13 +528,17 @@ def _dispatch_request(
         return make_response(request_id, build_runtime_readiness())
 
     if method == "release.gate_status":
-        evidence = JarvisState(state_dir).release_evidence() if state_dir is not None else []
-        return make_response(request_id, build_release_gate_status(evidence))
+        release_state = JarvisState(state_dir) if state_dir is not None else None
+        evidence = release_state.release_evidence() if release_state is not None else []
+        acceptances = release_state.release_gate_acceptances() if release_state is not None else []
+        return make_response(request_id, build_release_gate_status(evidence, acceptances))
 
     if method == "release.readiness_checklist":
-        evidence = JarvisState(state_dir).release_evidence() if state_dir is not None else []
+        release_state = JarvisState(state_dir) if state_dir is not None else None
+        evidence = release_state.release_evidence() if release_state is not None else []
+        acceptances = release_state.release_gate_acceptances() if release_state is not None else []
         root = Path(__file__).resolve().parents[2]
-        return make_response(request_id, build_release_readiness_checklist(root, evidence))
+        return make_response(request_id, build_release_readiness_checklist(root, evidence, acceptances))
 
     if method == "release.evidence_add":
         if state_dir is None:
@@ -559,6 +564,35 @@ def _dispatch_request(
                 "evidence": evidence.__dict__,
                 "execution_authority": False,
                 "release_gate_closed": False,
+            },
+        )
+
+    if method == "release.gate_accept":
+        if state_dir is None:
+            return make_error_response(request_id, code="state_unavailable", message="state directory is unavailable")
+        if not _valid_runtime_token(params, runtime_token):
+            return make_error_response(
+                request_id,
+                code="unauthorized",
+                message="accepting release gates requires the HUD runtime token",
+                retryable=False,
+            )
+        gate = str(params.get("gate") or "").strip()
+        evidence_id = str(params.get("evidence_id") or "").strip()
+        summary = str(params.get("summary") or "").strip()
+        reviewer = str(params.get("reviewer") or "operator").strip() or "operator"
+        try:
+            acceptance = JarvisState(state_dir).accept_release_gate(gate, evidence_id, summary, reviewer)
+        except ValueError as exc:
+            return make_error_response(request_id, code="invalid_release_gate_acceptance", message=str(exc), retryable=False)
+        return make_response(
+            request_id,
+            {
+                "state_write_performed": True,
+                "acceptance": acceptance.__dict__,
+                "execution_authority": False,
+                "evidence_closes_gates": False,
+                "release_gate_closed": True,
             },
         )
 

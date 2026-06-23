@@ -753,6 +753,19 @@ HUD_HTML = """<!doctype html>
                 <textarea id="release-evidence-summary" rows="2" placeholder="Evidence summary. This does not close the gate."></textarea>
                 <button id="record-release-evidence" type="button">Record Evidence Metadata</button>
                 <div id="release-evidence-status" class="log">Evidence metadata is state-only and does not authorize release.</div>
+                <select id="release-accept-gate" aria-label="Release gate acceptance gate">
+                  <option value="actual_mobile_device_validation">actual_mobile_device_validation</option>
+                  <option value="networked_gemini_live_validation">networked_gemini_live_validation</option>
+                  <option value="electron_packaging_and_signing">electron_packaging_and_signing</option>
+                  <option value="release_packaging_and_signing">release_packaging_and_signing</option>
+                  <option value="external_security_review">external_security_review</option>
+                  <option value="unattended_loop_scheduling">unattended_loop_scheduling</option>
+                </select>
+                <input id="release-accept-evidence-id" placeholder="Evidence id to accept">
+                <input id="release-accept-reviewer" placeholder="Acceptance reviewer/operator" value="operator">
+                <textarea id="release-accept-summary" rows="2" placeholder="Acceptance summary. This closes only the selected local gate and grants no execution authority."></textarea>
+                <button id="accept-release-gate" type="button">Accept Gate Evidence</button>
+                <div id="release-accept-status" class="log">Gate acceptance requires an existing evidence id for the same gate.</div>
               </div>
             </div>
           </div>
@@ -845,6 +858,12 @@ HUD_JS = r"""(() => {
   const releaseEvidenceSummary = document.getElementById("release-evidence-summary");
   const recordReleaseEvidence = document.getElementById("record-release-evidence");
   const releaseEvidenceStatus = document.getElementById("release-evidence-status");
+  const releaseAcceptGate = document.getElementById("release-accept-gate");
+  const releaseAcceptEvidenceId = document.getElementById("release-accept-evidence-id");
+  const releaseAcceptReviewer = document.getElementById("release-accept-reviewer");
+  const releaseAcceptSummary = document.getElementById("release-accept-summary");
+  const acceptReleaseGate = document.getElementById("accept-release-gate");
+  const releaseAcceptStatus = document.getElementById("release-accept-status");
   const refreshReadiness = document.getElementById("refresh-readiness");
   const shellCommandInput = document.getElementById("shell-command-input");
   const shellCommandRecord = document.getElementById("shell-command-record");
@@ -1184,6 +1203,13 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.evidence && frame.result.state_write_performed) {
         releaseEvidenceStatus.textContent = `Evidence metadata recorded for ${frame.result.evidence.gate}. Gate closed: ${frame.result.release_gate_closed ? "yes" : "no"}.`;
+        request("release.gate_status");
+        request("release.readiness_checklist");
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.acceptance && frame.result.state_write_performed) {
+        releaseAcceptStatus.textContent = `Gate accepted for ${frame.result.acceptance.gate} using ${frame.result.acceptance.evidence_id}. This grants no execution authority.`;
         request("release.gate_status");
         request("release.readiness_checklist");
         requestIndex.delete(frame.id);
@@ -1622,6 +1648,26 @@ HUD_JS = r"""(() => {
     log(`Release evidence metadata requested for ${gate}. No gate closure authority granted.`);
   });
 
+  acceptReleaseGate.addEventListener("click", () => {
+    const gate = releaseAcceptGate.value;
+    const evidenceId = releaseAcceptEvidenceId.value.trim();
+    const summary = releaseAcceptSummary.value.trim();
+    const reviewer = releaseAcceptReviewer.value.trim() || "operator";
+    if (!evidenceId || !summary) {
+      releaseAcceptStatus.textContent = "Evidence id and acceptance summary are required. No gate was accepted.";
+      return;
+    }
+    request("release.gate_accept", {
+      gate,
+      evidence_id: evidenceId,
+      summary,
+      reviewer,
+      runtime_token: runtimeToken
+    });
+    releaseAcceptStatus.textContent = "Release gate acceptance requested. This writes state only and grants no execution authority.";
+    log(`Release gate acceptance requested for ${gate} using evidence ${evidenceId}. No commands, signing, publication, or validation launched.`);
+  });
+
   refreshSessionHistoryButton.addEventListener("click", () => {
     refreshSessionHistory();
     log("Session history refresh requested.");
@@ -2054,8 +2100,9 @@ HUD_JS = r"""(() => {
     releaseGatePanel.innerHTML = gates.map((gate) => `
       <section class="approval-item">
         <strong>${escapeHtml(gate.gate || "release_gate")}</strong>
-        <div>Status: ${escapeHtml(gate.status || "open")} | Evidence records: ${Number(gate.evidence_count || 0)}</div>
+        <div>Status: ${escapeHtml(gate.status || "open")} | Evidence records: ${Number(gate.evidence_count || 0)} | Acceptances: ${Number(gate.acceptance_count || 0)}</div>
         <div>Latest reviewer: ${escapeHtml(gate.latest_reviewer || "none")} | Latest evidence: ${escapeHtml(gate.latest_evidence_id || "none")}</div>
+        <div>Latest acceptance: ${escapeHtml(gate.latest_acceptance_id || "none")} | Accepted evidence: ${escapeHtml(gate.accepted_evidence_id || "none")}</div>
         <div>Human acceptance required: ${gate.requires_human_acceptance ? "yes" : "no"} | Gate closed: ${gate.release_gate_closed ? "yes" : "no"}</div>
       </section>
     `).join("");

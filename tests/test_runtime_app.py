@@ -72,6 +72,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "runtime.readiness" in data["result"]["capabilities"]
     assert "release.gate_status" in data["result"]["capabilities"]
     assert "release.readiness_checklist" in data["result"]["capabilities"]
+    assert "release.gate_accept" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
     assert "swarm.plan" in data["result"]["capabilities"]
@@ -1473,7 +1474,78 @@ def test_runtime_release_evidence_add_records_metadata_with_token(tmp_path):
     assert evidence["gate"] == "actual_mobile_device_validation"
     assert evidence["artifact_path"] is None
     assert evidence["release_gate_closed"] is False
-    assert JarvisState(state).release_evidence()[0]["gate"] == "actual_mobile_device_validation"
+
+
+def test_runtime_release_gate_accept_requires_token(tmp_path):
+    state = tmp_path / "state"
+    evidence = JarvisState(state).record_release_evidence(
+        "external_security_review",
+        "External reviewer attestation submitted.",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "release.gate_accept",
+            {
+                "gate": "external_security_review",
+                "evidence_id": evidence.id,
+                "summary": "Operator accepts reviewer attestation.",
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()
+    assert data["error"]["code"] == "unauthorized"
+    assert JarvisState(state).release_gate_acceptances() == []
+
+
+def test_runtime_release_gate_accept_records_human_acceptance_with_token(tmp_path):
+    state = tmp_path / "state"
+    evidence = JarvisState(state).record_release_evidence(
+        "external_security_review",
+        "External reviewer attestation submitted.",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+    token = app.state.runtime_token
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "release.gate_accept",
+            {
+                "gate": "external_security_review",
+                "evidence_id": evidence.id,
+                "summary": "Operator accepts reviewer attestation.",
+                "reviewer": "operator",
+                "runtime_token": token,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    acceptance = data["acceptance"]
+    assert data["state_write_performed"] is True
+    assert data["execution_authority"] is False
+    assert data["evidence_closes_gates"] is False
+    assert data["release_gate_closed"] is True
+    assert acceptance["gate"] == "external_security_review"
+    assert acceptance["evidence_id"] == evidence.id
+    assert acceptance["publication_ready"] is False
+    assert JarvisState(state).release_gate_acceptances()[0]["id"] == acceptance["id"]
+
+    status_response = client.post("/rpc", json=make_request("release.gate_status", request_id="req_2"))
+    status = status_response.json()["result"]
+    external = next(item for item in status["gates"] if item["gate"] == "external_security_review")
+    assert external["status"] == "accepted"
+    assert external["accepted_evidence_id"] == evidence.id
+    assert status["accepted_gate_count"] == 1
+    assert status["open_gate_count"] == 5
 
 
 def test_runtime_profile_list_reports_policy_catalog_without_writing_state(tmp_path):

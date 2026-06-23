@@ -26,7 +26,7 @@ The current release is a governed local operating substrate:
 - read-only lane scoring, JSON lane CLI review, and WorkerContract planning records
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
 - read-only release readiness checklist that aggregates open release gates and next actions without running them
-- screen-sized multi-page HUD navigation, shell-style state-only operator intent bar, release gate status, release evidence metadata recording, and release readiness checklist panels
+- screen-sized multi-page HUD navigation, shell-style state-only operator intent bar, release gate status, release evidence metadata recording, explicit gate acceptance recording, and release readiness checklist panels
 - approval-only Antigravity challenge requests surfaced in the HUD without launching AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows
 - approval-gated backend swarm role launch and HUD swarm launch controls
 - persistent PTY output projection into searchable runtime events for session replay and transcript evidence
