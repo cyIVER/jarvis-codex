@@ -77,9 +77,11 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="readiness-status"' in response.text
     assert 'id="mobile-access-status"' in response.text
     assert 'id="release-gate-status"' in response.text
+    assert 'id="release-checklist-status"' in response.text
     assert 'id="readiness-gaps"' in response.text
     assert 'id="mobile-access-panel"' in response.text
     assert 'id="release-gate-panel"' in response.text
+    assert 'id="release-checklist-panel"' in response.text
     assert 'id="release-evidence-gate"' in response.text
     assert 'id="release-evidence-reviewer"' in response.text
     assert 'id="release-evidence-summary"' in response.text
@@ -203,6 +205,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("agent.provider_status")' in response.text
     assert 'request("runtime.readiness")' in response.text
     assert 'request("release.gate_status")' in response.text
+    assert 'request("release.readiness_checklist")' in response.text
     assert 'request("release.evidence_add"' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
@@ -241,6 +244,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
     assert "renderReleaseGateStatus(frame.result)" in response.text
+    assert "renderReleaseChecklist(frame.result)" in response.text
     assert "renderMobileAccess(readiness.mobile_access || {})" in response.text
     assert "mobileAccessStatus.textContent" in response.text
     assert "Runtime command proposal" in response.text
@@ -249,6 +253,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "Runtime readiness refresh requested" in response.text
     assert "Release gate status loaded" in response.text
     assert "Evidence records do not close gates" in response.text
+    assert "Release readiness checklist loaded" in response.text
+    assert "Displayed commands are not execution authority" in response.text
     assert "Release evidence metadata recording requested" in response.text
     assert "Gate closed:" in response.text
     assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text

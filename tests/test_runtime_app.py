@@ -71,6 +71,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
     assert "release.gate_status" in data["result"]["capabilities"]
+    assert "release.readiness_checklist" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
     assert "swarm.plan" in data["result"]["capabilities"]
@@ -1383,6 +1384,30 @@ def test_runtime_release_gate_status_reads_state_without_writing(tmp_path):
     assert data["writes_state"] is False
     assert data["execution_authority"] is False
     assert data["evidence_closes_gates"] is False
+    assert external["evidence_count"] == 1
+    assert external["release_gate_closed"] is False
+
+
+def test_runtime_release_readiness_checklist_reads_state_without_writing(tmp_path):
+    state = tmp_path / "state"
+    JarvisState(state).record_release_evidence(
+        "external_security_review",
+        "External reviewer artifact submitted, not accepted yet.",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("release.readiness_checklist", request_id="req_1"))
+
+    data = response.json()["result"]
+    external = next(item for item in data["checklist"] if item["gate"] == "external_security_review")
+    assert data["status"] == "blocked"
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["publication_ready"] is False
+    assert data["release_gate_closed"] is False
+    assert "external_security_review" in data["blocked_by"]
     assert external["evidence_count"] == 1
     assert external["release_gate_closed"] is False
 

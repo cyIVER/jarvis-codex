@@ -67,6 +67,7 @@ Implemented and validated in the local FastAPI runtime:
 - State-only release evidence ledger through `jarvis-codex --state <state-dir> release evidence add/list --json` plus `release gate-status --json`; it records operator or reviewer evidence metadata, optional state-local artifact hashes, and open-gate evidence counts without copying artifacts, launching validations, or closing gates.
 - Read-only release readiness checklist through `jarvis-codex --state <state-dir> release readiness-checklist --json`; it aggregates release manifest, artifact evidence, packaging preflight, mobile/Gemini validation plans, external security review, and evidence counts into blocked-gate next actions without running them.
 - HUD release-gate status panel backed by the same read-only runtime RPC; it displays open gates and evidence counts without writing state, accepting evidence, or approving release.
+- HUD release-readiness checklist panel backed by the same read-only runtime RPC; it displays blocked gates and next-action commands without running validations, launching services, signing artifacts, publishing releases, or closing gates.
 - HUD release-evidence metadata form backed by a runtime-token-gated RPC; it records gate, summary, and reviewer metadata only, with no browser artifact path input and no gate closure.
 
 ## Not Yet Production-Complete
@@ -128,6 +129,7 @@ The following remain future or incomplete production gates:
 - Release evidence records must not be treated as execution authority, proof of test execution, publication approval, or automatic gate closure. Human acceptance remains required for external/device/signing gates.
 - Release readiness checklist output must not be treated as permission to run the displayed commands, validate devices, open Gemini network connections, build packages, sign artifacts, copy artifacts, publish releases, or close gates.
 - HUD release-gate status is display-only. Seeing evidence counts in the UI must not be treated as permission to close gates, publish artifacts, launch validators, or run release commands.
+- HUD release-readiness checklist is display-only. Seeing a next action in the UI must not be treated as approval to run the listed command.
 - HUD release-evidence recording must not be treated as artifact acceptance, test execution, publication approval, external reviewer sign-off, or gate closure. Browser clients cannot provide artifact paths for hashing.
 - Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 

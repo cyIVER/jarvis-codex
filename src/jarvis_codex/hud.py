@@ -371,10 +371,12 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
           <div class="metric"><small>Mobile</small><strong id="mobile-access-status">unknown</strong></div>
           <div class="metric"><small>Release Gates</small><strong id="release-gate-status">unknown</strong></div>
+          <div class="metric"><small>Release Plan</small><strong id="release-checklist-status">unknown</strong></div>
         </div>
         <div id="readiness-gaps" class="log">Readiness summary pending.</div>
         <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
         <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
+        <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
         <select id="release-evidence-gate" aria-label="Release evidence gate">
           <option value="actual_mobile_device_validation">actual_mobile_device_validation</option>
           <option value="networked_gemini_live_validation">networked_gemini_live_validation</option>
@@ -552,6 +554,8 @@ HUD_JS = r"""(() => {
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
+  const releaseChecklistStatus = document.getElementById("release-checklist-status");
+  const releaseChecklistPanel = document.getElementById("release-checklist-panel");
   const releaseEvidenceGate = document.getElementById("release-evidence-gate");
   const releaseEvidenceReviewer = document.getElementById("release-evidence-reviewer");
   const releaseEvidenceSummary = document.getElementById("release-evidence-summary");
@@ -663,6 +667,7 @@ HUD_JS = r"""(() => {
       request("telemetry.codeburn_status");
       request("runtime.readiness");
       request("release.gate_status");
+      request("release.readiness_checklist");
     });
     socket.addEventListener("close", () => {
       socketStatus.textContent = "offline";
@@ -822,9 +827,15 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.checklist)) {
+        renderReleaseChecklist(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.evidence && frame.result.state_write_performed) {
         releaseEvidenceStatus.textContent = `Evidence metadata recorded for ${frame.result.evidence.gate}. Gate closed: ${frame.result.release_gate_closed ? "yes" : "no"}.`;
         request("release.gate_status");
+        request("release.readiness_checklist");
         requestIndex.delete(frame.id);
         return;
       }
@@ -1213,6 +1224,7 @@ HUD_JS = r"""(() => {
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
     request("release.gate_status");
+    request("release.readiness_checklist");
     log("Runtime readiness refresh requested.");
   });
 
@@ -1671,6 +1683,30 @@ HUD_JS = r"""(() => {
       </section>
     `).join("");
     log(`Release gate status loaded: ${status.open_gate_count ?? gates.length} open gate(s). Evidence records do not close gates.`);
+  }
+
+  function renderReleaseChecklist(checklist) {
+    const items = Array.isArray(checklist.checklist) ? checklist.checklist : [];
+    const blocked = Array.isArray(checklist.blocked_by) ? checklist.blocked_by : [];
+    releaseChecklistStatus.textContent = `${blocked.length || items.length} blocked`;
+    if (!items.length) {
+      releaseChecklistPanel.textContent = "No release checklist items reported. No state was written and no approval was granted.";
+      return;
+    }
+    releaseChecklistPanel.innerHTML = items.slice(0, 6).map((item) => {
+      const command = item.read_only_command || "";
+      const evidenceCount = Number(item.evidence_count || 0);
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(item.gate || "release_gate")}</strong>
+          <div>Status: ${escapeHtml(item.status || "open")} | Evidence records: ${evidenceCount}</div>
+          <div>Next action: ${escapeHtml(item.next_action || "")}</div>
+          <div>Display-only command: <code>${escapeHtml(command)}</code></div>
+          <div>Gate closed: ${item.release_gate_closed ? "yes" : "no"} | Human acceptance required: ${item.requires_human_acceptance ? "yes" : "no"}</div>
+        </section>
+      `;
+    }).join("");
+    log(`Release readiness checklist loaded: ${blocked.length || items.length} blocked item(s). Displayed commands are not execution authority.`);
   }
 
   function speakRuntimeStatus() {

@@ -147,6 +147,18 @@ Telemetry:
 - `runtime.health`
 - `runtime.readiness`
 
+Release:
+
+- `release.gate_status`
+- `release.readiness_checklist`
+- `release.evidence_add`
+
+`release.gate_status` is implemented as a read-only gate/evidence summary. It reads local state evidence if available and does not write state, close gates, publish artifacts, launch validators, or grant execution authority.
+
+`release.readiness_checklist` is implemented as a read-only aggregate of release manifest, artifact evidence, packaging preflight, mobile/Gemini validation plans, external security review, and evidence counts. Displayed commands are proposals only; the method must not run mobile validation, open Gemini network connections, install dependencies, build packages, sign artifacts, copy artifacts, publish releases, close gates, or write state.
+
+`release.evidence_add` records metadata under the selected state directory. It requires the per-runtime HUD token and must not accept browser-supplied artifact paths, close release gates, approve publication, launch tests, run validators, or grant execution authority.
+
 ## Error Model
 
 Every error response must include:
