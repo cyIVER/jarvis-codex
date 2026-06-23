@@ -309,7 +309,21 @@ class JarvisEventStore:
         self.initialize()
         with self._connection() as connection:
             row = connection.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
-        return dict(row) if row is not None else None
+        return _session_from_row(row) if row is not None else None
+
+    def sessions(self, status: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        self.initialize()
+        bounded_limit = max(1, min(limit, 200))
+        query = "SELECT * FROM sessions"
+        args: tuple[Any, ...] = ()
+        if status is not None:
+            query += " WHERE status = ?"
+            args = (status,)
+        query += " ORDER BY updated_at DESC, created_at DESC, id ASC LIMIT ?"
+        args = (*args, bounded_limit)
+        with self._connection() as connection:
+            rows = connection.execute(query, args).fetchall()
+        return [_session_from_row(row) for row in rows]
 
     def approval(self, approval_id: str) -> dict[str, Any] | None:
         self.initialize()
@@ -520,6 +534,21 @@ def _event_to_json(event: StoredEvent) -> dict[str, Any]:
         "correlation_id": event.correlation_id,
         "parent_event_id": event.parent_event_id,
         "created_at": event.created_at,
+    }
+
+
+def _session_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "title": str(row["title"]),
+        "profile_id": str(row["profile_id"]),
+        "source_client": str(row["source_client"]),
+        "parent_session_id": row["parent_session_id"],
+        "model_route": json.loads(str(row["model_route"])),
+        "status": str(row["status"]),
+        "created_at": int(row["created_at"]),
+        "updated_at": int(row["updated_at"]),
+        "archived_at": int(row["archived_at"]) if row["archived_at"] is not None else None,
     }
 
 

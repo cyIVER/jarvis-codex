@@ -53,6 +53,44 @@ def test_event_store_updates_session_projection(tmp_path):
     assert session["profile_id"] == "dev-loop"
     assert session["status"] == "archived"
     assert session["archived_at"] == 20
+    assert session["model_route"] == {"agent": "codex"}
+
+
+def test_event_store_lists_sessions_by_updated_time_and_status(tmp_path):
+    store = JarvisEventStore(tmp_path / "jarvis.db")
+    store.append_event(
+        session_id="session-old",
+        actor_id="user",
+        source_client="pytest",
+        event_type="session.created",
+        payload={"title": "Old", "profile_id": "observe", "model_route": {"agent": "codex"}},
+        created_at=10,
+    )
+    store.append_event(
+        session_id="session-new",
+        actor_id="user",
+        source_client="pytest",
+        event_type="session.created",
+        payload={"title": "New", "profile_id": "dev-loop", "model_route": {"agent": "ag"}},
+        created_at=20,
+    )
+    store.append_event(
+        session_id="session-old",
+        actor_id="user",
+        source_client="pytest",
+        event_type="session.archived",
+        payload={},
+        created_at=30,
+    )
+
+    active = store.sessions(status="active")
+    archived = store.sessions(status="archived")
+    all_sessions = store.sessions(limit=10)
+
+    assert [session["id"] for session in active] == ["session-new"]
+    assert [session["id"] for session in archived] == ["session-old"]
+    assert [session["id"] for session in all_sessions] == ["session-old", "session-new"]
+    assert active[0]["model_route"] == {"agent": "ag"}
 
 
 def test_event_store_replays_events_in_order(tmp_path):

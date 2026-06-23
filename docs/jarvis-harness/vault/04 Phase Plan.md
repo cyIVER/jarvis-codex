@@ -83,6 +83,7 @@ Completed:
 - Live WebSocket semantic event frames for approvals, sessions, voice transcripts, audio receipts, and voice intent classifications.
 - HUD approval list with approve/reject controls wired to `approval.respond`.
 - HUD approved-launch list that calls `pty.create` only with an already approved, command-matched approval id.
+- Runtime `session.list` and `session.get`, plus HUD session selection and explicit HUD session creation controls.
 
 ## Phase 4 Voice
 

@@ -32,6 +32,8 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert data["type"] == "response"
     assert data["result"]["runtime"] == "jarvis"
     assert "session.create" in data["result"]["capabilities"]
+    assert "session.get" in data["result"]["capabilities"]
+    assert "session.list" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -61,6 +63,55 @@ def test_runtime_session_create_writes_event_store(tmp_path):
     assert (state / "runtime" / "jarvis.db").exists()
     session = app.state.event_store.session("session-1")
     assert session["title"] == "Jarvis memory"
+
+
+def test_runtime_session_list_and_get_return_session_projection(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request(
+            "session.create",
+            {
+                "session_id": "session-1",
+                "title": "Jarvis memory",
+                "profile_id": "dev-loop",
+                "model_route": {"agent": "codex"},
+                "source_client": "pytest",
+            },
+            request_id="req_1",
+        ),
+    )
+
+    list_response = client.post(
+        "/rpc",
+        json=make_request("session.list", {"status": "active", "limit": 10}, request_id="req_2"),
+    )
+    get_response = client.post(
+        "/rpc",
+        json=make_request("session.get", {"session_id": "session-1"}, request_id="req_3"),
+    )
+
+    listed = list_response.json()["result"]["sessions"][0]
+    fetched = get_response.json()["result"]["session"]
+    assert listed["id"] == "session-1"
+    assert listed["model_route"] == {"agent": "codex"}
+    assert fetched["title"] == "Jarvis memory"
+    assert fetched["profile_id"] == "dev-loop"
+
+
+def test_runtime_session_get_reports_unknown_session(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("session.get", {"session_id": "missing"}, request_id="req_1"),
+    )
+
+    assert response.json()["error"]["code"] == "unknown_session"
+    assert (state / "runtime" / "jarvis.db").exists()
 
 
 def test_runtime_session_create_rejects_unknown_profile(tmp_path):

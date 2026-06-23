@@ -53,10 +53,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed HUD approval response controls in `4ce3839`.
 - Implemented approved PTY launch controls that keep launch separate from approval and call the runtime approval-matched `pty.create` path.
 - Committed and pushed approved PTY launch controls in `b6f5fbf`.
+- Implemented session continuity controls: runtime session list/get, HUD session selection, and explicit HUD session creation.
 
 ## Pending
 
-- Continue session resume controls.
+- Validate and commit session continuity controls.
 - Add mobile/PWA shell affordances.
 - Keep dashboard current as phases progress.
 

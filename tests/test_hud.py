@@ -17,6 +17,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="request-proposal-approval"' in response.text
     assert 'id="approvals-list"' in response.text
     assert 'id="approved-launches"' in response.text
+    assert 'id="active-session"' in response.text
+    assert 'id="create-session"' in response.text
+    assert 'id="sessions-list"' in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -39,6 +42,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("voice.intent_propose"' in response.text
     assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text
+    assert 'request("session.list", { status: "active", limit: 25 })' in response.text
+    assert 'request("session.create"' in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert 'request("approval.list", { status: "approved" })' in response.text
     assert "Voice intent proposal" in response.text
@@ -60,6 +65,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "approvedLaunchCommand" in response.text
     assert "Launch Approved PTY" in response.text
     assert "Runtime policy gate still applies" in response.text
+    assert "renderSessions(frame.result.sessions)" in response.text
+    assert "currentSessionId()" in response.text
+    assert "Use Session" in response.text
     assert "escapeHtml" in response.text
     assert "Event: ${frame.event_type}" in response.text
     assert 'frame.event_type.startsWith("approval.")' in response.text
+    assert 'frame.event_type.startsWith("session.")' in response.text

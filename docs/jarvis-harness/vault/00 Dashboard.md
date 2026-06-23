@@ -34,6 +34,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Approval-matched PTY launch boundary committed and pushed as `6923200`.
 - HUD approval response controls committed and pushed as `4ce3839`.
 - Approved PTY launch controls committed and pushed as `b6f5fbf`.
+- Session continuity controls are in progress: `session.list`, `session.get`, HUD session selection, and explicit HUD session creation.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -55,6 +56,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue into session resume controls.
+1. Validate and commit session continuity controls.
 2. Add mobile/PWA shell affordances.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

@@ -325,6 +325,17 @@ HUD_HTML = """<!doctype html>
         </div>
       </div>
     </section>
+
+    <section class="panel">
+      <h2>Session Continuity</h2>
+      <div class="panel-body">
+        <div class="agent-pane">
+          <div><strong id="active-session">No active session selected</strong><span>Session context is local to this HUD until selected or created.</span></div>
+          <button id="create-session" type="button">Create HUD Session</button>
+        </div>
+        <div id="sessions-list" class="log">Active sessions will appear here.</div>
+      </div>
+    </section>
   </main>
   <script src="/assets/hud.js"></script>
 </body>
@@ -343,9 +354,13 @@ HUD_JS = r"""(() => {
   const approvalCount = document.getElementById("approval-count");
   const approvalsList = document.getElementById("approvals-list");
   const approvedLaunches = document.getElementById("approved-launches");
+  const activeSession = document.getElementById("active-session");
+  const sessionsList = document.getElementById("sessions-list");
+  const createSession = document.getElementById("create-session");
   let socket;
   let requestSeq = 0;
   const requestIndex = new Map();
+  let activeSessionId = "hud";
   let micStream = null;
   let recognition = null;
   let mediaRecorder = null;
@@ -401,6 +416,10 @@ HUD_JS = r"""(() => {
     socket.send(JSON.stringify({ type: "request", id: requestId, method, params }));
   }
 
+  function currentSessionId() {
+    return activeSessionId || "hud";
+  }
+
   function connect() {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(`${protocol}//${location.host}/ws`);
@@ -408,6 +427,7 @@ HUD_JS = r"""(() => {
       socketStatus.textContent = "online";
       log("Connected to Jarvis runtime.");
       request("initialize");
+      request("session.list", { status: "active", limit: 25 });
       request("approval.list", { status: "pending" });
       request("approval.list", { status: "approved" });
       request("voice.provider_status");
@@ -429,6 +449,22 @@ HUD_JS = r"""(() => {
           request("approval.list", { status: "pending" });
           request("approval.list", { status: "approved" });
         }
+        if (frame.event_type && frame.event_type.startsWith("session.")) {
+          request("session.list", { status: "active", limit: 25 });
+        }
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.sessions) {
+        renderSessions(frame.result.sessions);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.session_id) {
+        activeSessionId = frame.result.session_id;
+        activeSession.textContent = `Active session: ${activeSessionId}`;
+        log(`HUD session active: ${activeSessionId}.`);
+        request("session.list", { status: "active", limit: 25 });
+        requestIndex.delete(frame.id);
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.approvals) {
@@ -472,7 +508,7 @@ HUD_JS = r"""(() => {
         return;
       }
       request("approval.request", {
-        session_id: "hud",
+        session_id: currentSessionId(),
         summary: launch.summary,
         operation: launch.command,
         risk: launch.risk,
@@ -486,6 +522,26 @@ HUD_JS = r"""(() => {
       });
       log(`${launch.label} pane launch approval requested. No PTY was started.`);
     });
+  });
+
+  createSession.addEventListener("click", () => {
+    request("session.create", {
+      title: `HUD session ${new Date().toLocaleString()}`,
+      profile_id: "observe",
+      source_client: "hud",
+      actor_id: "user"
+    });
+    log("HUD session creation requested.");
+  });
+
+  sessionsList.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const sessionId = target.dataset.sessionId;
+    if (!sessionId) return;
+    activeSessionId = sessionId;
+    activeSession.textContent = `Active session: ${sessionId}`;
+    log(`Selected session ${sessionId}.`);
   });
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {
@@ -534,7 +590,7 @@ HUD_JS = r"""(() => {
       ? lastVoiceProposal.policy.risk
       : (lastVoiceProposal.intent_type === "command_proposal" ? "high" : "medium");
     request("approval.request", {
-      session_id: "hud",
+      session_id: currentSessionId(),
       summary: `Review voice proposal: ${lastVoiceProposal.summary}`,
       operation,
       risk,
@@ -566,7 +622,7 @@ HUD_JS = r"""(() => {
       micToggle.classList.remove("active");
       voiceStatus.textContent = "idle";
       voiceLog.textContent = "Microphone stopped. No further audio is sent to the Jarvis runtime.";
-      request("voice.stop", { session_id: "hud", provider: "browser-web-speech" });
+      request("voice.stop", { session_id: currentSessionId(), provider: "browser-web-speech" });
       return;
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -580,7 +636,7 @@ HUD_JS = r"""(() => {
       voiceStatus.textContent = "permission granted";
       voiceLog.textContent = "Microphone permission granted. Browser speech recognition will be used when available.";
       log("Microphone permission granted by browser.");
-      request("voice.start", { session_id: "hud", provider: "browser-web-speech" });
+      request("voice.start", { session_id: currentSessionId(), provider: "browser-web-speech" });
       startSpeechRecognition();
     } catch (error) {
       voiceStatus.textContent = "blocked";
@@ -623,12 +679,12 @@ HUD_JS = r"""(() => {
         if (event.results[i].isFinal && text) {
           voiceLog.textContent = `Final transcript: ${text}`;
           request("voice.submit", {
-            session_id: "hud",
+            session_id: currentSessionId(),
             provider: "browser-web-speech",
             transcript: text
           });
           request("voice.intent_propose", {
-            session_id: "hud",
+            session_id: currentSessionId(),
             profile: "observe",
             transcript: text
           });
@@ -670,6 +726,21 @@ HUD_JS = r"""(() => {
         <div>Operation: ${escapeHtml(approval.operation || "")}</div>
         <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="approved">Approve</button>
         <button type="button" class="danger" data-approval-id="${escapeHtml(approval.id)}" data-approval-action="rejected">Reject</button>
+      </section>
+    `).join("");
+  }
+
+  function renderSessions(sessions) {
+    if (!sessions.length) {
+      sessionsList.textContent = "No active sessions yet. Create one to bind approvals and voice events to a durable session.";
+      return;
+    }
+    sessionsList.innerHTML = sessions.map((session) => `
+      <section class="approval-item">
+        <strong>${escapeHtml(session.title || session.id)}</strong>
+        <div>ID: ${escapeHtml(session.id)}</div>
+        <div>Profile: ${escapeHtml(session.profile_id || "observe")} | Updated: ${escapeHtml(session.updated_at || "")}</div>
+        <button type="button" data-session-id="${escapeHtml(session.id)}">Use Session</button>
       </section>
     `).join("");
   }
@@ -727,7 +798,7 @@ HUD_JS = r"""(() => {
       }
       const chunkB64 = await blobToBase64(event.data);
       request("voice.audio_chunk", {
-        session_id: "hud",
+        session_id: currentSessionId(),
         utterance_id: utteranceId,
         sequence: audioSequence,
         mime_type: mimeType,

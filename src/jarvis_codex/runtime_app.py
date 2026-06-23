@@ -256,6 +256,8 @@ def _dispatch_request(
                     "approval.respond",
                     "event.subscribe",
                     "session.create",
+                    "session.get",
+                    "session.list",
                     "runtime.health",
                     "command.classify",
                     "pty.create",
@@ -311,6 +313,25 @@ def _dispatch_request(
                 "sequence": event.sequence,
             },
         )
+
+    if method == "session.list":
+        status = params.get("status")
+        if status is not None and status not in {"active", "archived"}:
+            return make_error_response(request_id, code="invalid_status", message="unknown session status")
+        limit = int(params.get("limit") or 50)
+        return make_response(
+            request_id,
+            {"sessions": store.sessions(status=status if isinstance(status, str) else None, limit=limit)},
+        )
+
+    if method == "session.get":
+        session_id = str(params.get("session_id") or "")
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        session = store.session(session_id)
+        if session is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        return make_response(request_id, {"session": session})
 
     if method == "command.classify":
         command = str(params.get("command") or "")
