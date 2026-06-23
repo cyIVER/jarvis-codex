@@ -55,6 +55,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only Gemini Live feasibility check through `jarvis-codex gemini feasibility --json`; it reports credential signals without exposing secrets, starting OAuth, connecting to Gemini, probing the network, launching services, or writing state.
 - Read-only Gemini Live validation planning through `jarvis-codex gemini validation-plan --json`; it prepares cloud voice evidence steps without starting OAuth, opening WebSockets, launching adapters, probing the network, writing state, exposing secrets, or granting execution authority.
 - Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
+- Read-only release artifact evidence through `jarvis-codex release artifact-evidence --json`; it reports size/SHA-256 for the committed Electron icon and ignored local Electron artifacts without building, signing, copying, publishing, launching services, or writing files.
 
 ## Not Yet Production-Complete
 
@@ -105,6 +106,7 @@ The following remain future or incomplete production gates:
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
+- Release artifact evidence must not build, sign, copy, publish, launch services, mutate Git, or write files. Hash evidence is not publication approval.
 - Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 
 ## Required Local Validation

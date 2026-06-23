@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,20 @@ class ReleaseArtifact:
     note: str
 
 
+@dataclass(frozen=True)
+class ReleaseArtifactEvidence:
+    path: str
+    kind: str
+    status: str
+    size_bytes: int | None
+    sha256: str | None
+    release_candidate: bool
+    ignored_local_artifact: bool
+    requires_approval: bool
+    signing_required: bool
+    note: str
+
+
 def _artifact(root: Path, relative_path: str, kind: str, release_candidate: bool, requires_approval: bool, note: str) -> ReleaseArtifact:
     path = root / relative_path
     return ReleaseArtifact(
@@ -25,6 +40,109 @@ def _artifact(root: Path, relative_path: str, kind: str, release_candidate: bool
         requires_approval=requires_approval,
         note=note,
     )
+
+
+def _artifact_evidence(
+    root: Path,
+    relative_path: str,
+    kind: str,
+    release_candidate: bool,
+    ignored_local_artifact: bool,
+    requires_approval: bool,
+    signing_required: bool,
+    note: str,
+) -> ReleaseArtifactEvidence:
+    path = root / relative_path
+    if not path.is_file():
+        return ReleaseArtifactEvidence(
+            path=relative_path,
+            kind=kind,
+            status="missing",
+            size_bytes=None,
+            sha256=None,
+            release_candidate=release_candidate,
+            ignored_local_artifact=ignored_local_artifact,
+            requires_approval=requires_approval,
+            signing_required=signing_required,
+            note=note,
+        )
+    return ReleaseArtifactEvidence(
+        path=relative_path,
+        kind=kind,
+        status="present",
+        size_bytes=path.stat().st_size,
+        sha256=_sha256(path),
+        release_candidate=release_candidate,
+        ignored_local_artifact=ignored_local_artifact,
+        requires_approval=requires_approval,
+        signing_required=signing_required,
+        note=note,
+    )
+
+
+def build_release_artifact_evidence(root: Path) -> dict[str, Any]:
+    """Build a read-only hash/size evidence manifest for local release artifacts."""
+    root = root.resolve()
+    artifacts = [
+        _artifact_evidence(
+            root,
+            "tools/electron-hud/assets/icon.png",
+            "electron-icon-source-asset",
+            True,
+            False,
+            False,
+            False,
+            "Committed Electron package icon source asset.",
+        ),
+        _artifact_evidence(
+            root,
+            "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud",
+            "electron-unpacked-linux-executable",
+            False,
+            True,
+            True,
+            True,
+            "Ignored local package-build evidence only; not signed, copied, reviewed, or publication-ready.",
+        ),
+        _artifact_evidence(
+            root,
+            "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage",
+            "electron-linux-appimage",
+            False,
+            True,
+            True,
+            True,
+            "Ignored unsigned local installer evidence only; not signed, copied, reviewed, or publication-ready.",
+        ),
+    ]
+    missing_required_source = [
+        artifact.path for artifact in artifacts if artifact.release_candidate and artifact.status == "missing"
+    ]
+    present_local_artifacts = [
+        artifact.path for artifact in artifacts if artifact.ignored_local_artifact and artifact.status == "present"
+    ]
+    status = "ready-for-review" if not missing_required_source else "needs-review"
+    return {
+        "label": "Jarvis Codex release artifact evidence",
+        "status": status,
+        "root": str(root),
+        "writes_files": False,
+        "package_build_performed": False,
+        "signing_performed": False,
+        "artifact_copy_performed": False,
+        "publication_ready": False,
+        "publication_requires_approval": True,
+        "local_artifacts_are_release_candidates": False,
+        "present_local_artifacts": present_local_artifacts,
+        "missing_required_source_artifacts": missing_required_source,
+        "remaining_release_gates": [
+            "sign Electron artifacts before distribution",
+            "perform artifact security and malware review",
+            "copy artifacts only through an approved release plan",
+            "publish artifacts only after explicit operator approval",
+        ],
+        "artifacts": [asdict(artifact) for artifact in artifacts],
+    }
 
 
 def build_release_manifest(root: Path) -> dict[str, Any]:
@@ -404,3 +522,11 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ],
         "artifacts": [asdict(artifact) for artifact in artifacts],
     }
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

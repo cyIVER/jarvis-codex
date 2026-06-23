@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jarvis_codex.release import build_release_manifest
+from jarvis_codex.release import build_release_artifact_evidence, build_release_manifest
 
 
 def write(path: Path, text: str = "ok") -> None:
@@ -151,3 +151,39 @@ def test_release_manifest_warns_when_remotion_outputs_are_not_ignored(tmp_path):
 
     assert manifest["status"] == "needs-review"
     assert manifest["warnings"] == ["Remotion output ignore policy is missing expected out/* and !out/.gitkeep rules."]
+
+
+def test_release_artifact_evidence_hashes_local_artifacts_without_writing(tmp_path):
+    write(tmp_path / "tools/electron-hud/assets/icon.png", "icon-source")
+    write(tmp_path / "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud", "binary")
+    write(tmp_path / "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage", "appimage")
+    before = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+
+    evidence = build_release_artifact_evidence(tmp_path)
+
+    after = sorted(path.relative_to(tmp_path) for path in tmp_path.rglob("*"))
+    artifacts = {item["path"]: item for item in evidence["artifacts"]}
+    assert evidence["status"] == "ready-for-review"
+    assert evidence["writes_files"] is False
+    assert evidence["package_build_performed"] is False
+    assert evidence["signing_performed"] is False
+    assert evidence["artifact_copy_performed"] is False
+    assert evidence["publication_ready"] is False
+    assert evidence["local_artifacts_are_release_candidates"] is False
+    assert "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage" in evidence["present_local_artifacts"]
+    assert artifacts["tools/electron-hud/assets/icon.png"]["release_candidate"] is True
+    assert artifacts["tools/electron-hud/assets/icon.png"]["ignored_local_artifact"] is False
+    assert artifacts["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]["release_candidate"] is False
+    assert artifacts["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]["ignored_local_artifact"] is True
+    assert artifacts["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]["requires_approval"] is True
+    assert artifacts["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]["size_bytes"] == len("appimage")
+    assert len(artifacts["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]["sha256"]) == 64
+    assert before == after
+
+
+def test_release_artifact_evidence_reports_missing_icon_source(tmp_path):
+    evidence = build_release_artifact_evidence(tmp_path)
+
+    assert evidence["status"] == "needs-review"
+    assert evidence["missing_required_source_artifacts"] == ["tools/electron-hud/assets/icon.png"]
+    assert evidence["present_local_artifacts"] == []

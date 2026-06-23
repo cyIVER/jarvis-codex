@@ -218,6 +218,35 @@ def test_release_packaging_preflight_json_is_read_only_summary(monkeypatch, caps
     assert data["approval_required"] is True
 
 
+def test_release_artifact_evidence_json_is_read_only_summary(monkeypatch, capsys):
+    seen = {}
+
+    def fake_evidence(root):
+        seen["root"] = root
+        return {
+            "label": "Jarvis Codex release artifact evidence",
+            "status": "ready-for-review",
+            "writes_files": False,
+            "package_build_performed": False,
+            "signing_performed": False,
+            "artifact_copy_performed": False,
+            "publication_ready": False,
+            "artifacts": [],
+        }
+
+    monkeypatch.setattr(cli, "build_release_artifact_evidence", fake_evidence)
+
+    code = run_cli(monkeypatch, ["release", "artifact-evidence", "--root", "/repo", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert str(seen["root"]) == "/repo"
+    assert data["writes_files"] is False
+    assert data["signing_performed"] is False
+    assert data["artifact_copy_performed"] is False
+    assert data["publication_ready"] is False
+
+
 def test_release_commands_require_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "release", "manifest"])
 

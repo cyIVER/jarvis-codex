@@ -80,7 +80,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Local dependency audits for `tools/electron-hud` and `video/remotion` report zero high-or-worse npm vulnerabilities.
 - Unsigned Electron AppImage generation produced a local ignored `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage` artifact.
 - Electron Builder uses committed `tools/electron-hud/assets/icon.png`; local make validation no longer reports the default Electron icon warning.
-- Current Codeburn snapshot: month `$639.89`, 6786 calls.
+- Read-only release artifact evidence reports size/SHA-256 for the committed icon and ignored Electron artifacts.
+- Current Codeburn snapshot: month `$641.80`, 6804 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -119,12 +120,14 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Local dependency audits are not a replacement for external security review, signing review, or runtime threat modeling.
 - Local unsigned AppImage artifacts are not signed, reviewed, copied, or distribution-ready release artifacts.
 - The committed Electron icon is package metadata only; it does not approve signing, artifact copy, publication, or distribution.
+- Release artifact hash evidence is review data only; it does not approve signing, artifact copy, publication, or distribution.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
 - Runtime serve binds to loopback by default; non-loopback binding requires the explicit `--allow-non-loopback` operator decision.
 - Release manifest review is read-only; it does not package, copy artifacts, launch runtime, or approve generated assets.
 - Packaging preflight is read-only; it does not install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
+- Release artifact evidence is read-only; it does not build, sign, copy, publish, launch services, mutate Git, or write files.
 - Runtime readiness CLI is non-writing and does not start the server.
 - Networked Gemini Live validation is unproven and remains approval-gated; the local feasibility check is read-only credential-signal inspection only.
 - Gemini validation planner is evidence planning only; it does not start OAuth, open WebSockets, probe the network, launch adapters, write state, expose secrets, approve cloud spend, or grant execution authority.

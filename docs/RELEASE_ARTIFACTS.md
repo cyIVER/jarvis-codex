@@ -33,6 +33,18 @@ These files are release candidates for documenting and reviewing the local gover
 
 The manifest reports `publication_ready: false` until an operator approves a specific packaging or publication action. A ready-for-review manifest is review evidence, not release authority.
 
+## Local Artifact Evidence
+
+After an approved local package or make validation has created ignored Electron artifacts, inspect hashes and sizes with:
+
+```bash
+jarvis-codex release artifact-evidence --json
+```
+
+This command reads the committed Electron icon source asset and ignored local Electron `dist/` artifacts, then reports size and SHA-256 evidence. It does not build packages, sign artifacts, copy artifacts, write reports, publish files, launch services, mutate Git, or approve release publication.
+
+Ignored local Electron artifacts remain non-release candidates until a separate signing, security review, artifact-copy, and distribution plan is approved.
+
 ## Generated Assets
 
 Generated Remotion outputs under `video/remotion/out/` are local review assets only.
@@ -57,4 +69,4 @@ If Remotion assets are being considered for release packaging, separately run th
 
 ## Non-authority
 
-The manifest is not execution authority. It does not approve installs, Docker, GPU workloads, Remotion rendering, browser launch, service launch, Worktrunk mutation, Git mutation, packaging, publication, or release upload.
+The manifest and artifact evidence commands are not execution authority. They do not approve installs, Docker, GPU workloads, Remotion rendering, browser launch, service launch, Worktrunk mutation, Git mutation, packaging, signing, artifact copying, publication, or release upload.
