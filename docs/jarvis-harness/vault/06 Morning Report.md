@@ -34,11 +34,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated runtime-served HUD shell with Codex, Antigravity, Codeburn panes, approval refresh, WebSocket connection, and microphone permission button.
 - Committed and pushed runtime HUD shell in `7cbc5c5`.
 - Implemented and validated browser STT final transcript submission through `voice.submit`.
+- Committed and pushed browser STT transcript submission in `11aa08b`.
+- Implemented and validated MediaRecorder audio chunk ingestion into runtime state without automatic transcription execution.
 
 ## Pending
 
-- Commit and push browser STT transcript submission.
-- Continue server-side audio streaming and local STT adapter wiring.
+- Commit and push MediaRecorder audio chunk ingestion.
+- Continue local STT transcription job wiring.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

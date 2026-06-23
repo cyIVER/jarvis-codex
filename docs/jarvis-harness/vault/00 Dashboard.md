@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 02:18 EDT
+updated: 2026-06-23 02:38 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -24,7 +24,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Approval lifecycle committed and pushed as `1332552`.
 - Live WebSocket PTY stream multiplexing committed and pushed as `276b5ab`.
 - Runtime-served HUD shell committed and pushed as `7cbc5c5`.
-- Browser STT transcript submission is validated and awaiting commit.
+- Browser STT transcript submission committed and pushed as `11aa08b`.
+- Server-side MediaRecorder audio chunk ingestion is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -45,6 +46,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Commit and push browser STT transcript submission.
-2. Continue into server-side `MediaRecorder` audio streaming and local STT adapter.
+1. Commit and push MediaRecorder audio chunk ingestion.
+2. Continue into local STT transcription job wiring.
 3. Keep voice/STT feasibility and HUD design tied to the runtime API contract.

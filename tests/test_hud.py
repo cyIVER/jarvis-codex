@@ -29,6 +29,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "new WebSocket" in response.text
     assert "getUserMedia({ audio: true })" in response.text
     assert "SpeechRecognition" in response.text
+    assert "MediaRecorder" in response.text
+    assert 'request("voice.audio_chunk"' in response.text
     assert 'request("voice.submit"' in response.text
     assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text

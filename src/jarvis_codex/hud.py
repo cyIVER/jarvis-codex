@@ -339,6 +339,10 @@ HUD_JS = r"""(() => {
   let requestSeq = 0;
   let micStream = null;
   let recognition = null;
+  let mediaRecorder = null;
+  let audioSequence = 0;
+  let utteranceId = null;
+  let stoppingRecorder = false;
 
   function log(line) {
     const stamp = new Date().toLocaleTimeString();
@@ -404,11 +408,16 @@ HUD_JS = r"""(() => {
         recognition.stop();
         recognition = null;
       }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        stoppingRecorder = true;
+        mediaRecorder.stop();
+      }
       micStream.getTracks().forEach((track) => track.stop());
       micStream = null;
+      mediaRecorder = null;
       micToggle.classList.remove("active");
       voiceStatus.textContent = "idle";
-      voiceLog.textContent = "Microphone stopped. No audio is sent to the Jarvis runtime.";
+      voiceLog.textContent = "Microphone stopped. No further audio is sent to the Jarvis runtime.";
       request("voice.stop", { session_id: "hud", provider: "browser-web-speech" });
       return;
     }
@@ -436,8 +445,9 @@ HUD_JS = r"""(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       voiceStatus.textContent = "mic only";
-      voiceLog.textContent = "Microphone is active, but browser SpeechRecognition is unavailable. Server audio streaming is planned next.";
-      log("Browser SpeechRecognition unavailable. No transcript sent.");
+      voiceLog.textContent = "Microphone is active. Browser SpeechRecognition is unavailable, so audio chunks will be stored locally for later STT.";
+      log("Browser SpeechRecognition unavailable. Starting local audio chunk capture.");
+      startMediaRecorderFallback();
       return;
     }
     recognition = new SpeechRecognition();
@@ -479,6 +489,58 @@ HUD_JS = r"""(() => {
       }
     };
     recognition.start();
+  }
+
+  function startMediaRecorderFallback() {
+    if (!window.MediaRecorder || !micStream) {
+      voiceStatus.textContent = "mic only";
+      voiceLog.textContent = "MediaRecorder is unavailable. No audio chunks are sent.";
+      return;
+    }
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : "audio/webm";
+    audioSequence = 0;
+    utteranceId = `utt_${Date.now().toString(36)}`;
+    stoppingRecorder = false;
+    mediaRecorder = new MediaRecorder(micStream, { mimeType });
+    mediaRecorder.onstart = () => {
+      voiceStatus.textContent = "recording";
+      voiceLog.textContent = "Recording local audio chunks. Transcription remains approval-gated.";
+    };
+    mediaRecorder.ondataavailable = async (event) => {
+      if (!event.data || event.data.size === 0) {
+        return;
+      }
+      const chunkB64 = await blobToBase64(event.data);
+      request("voice.audio_chunk", {
+        session_id: "hud",
+        utterance_id: utteranceId,
+        sequence: audioSequence,
+        mime_type: mimeType,
+        chunk_b64: chunkB64,
+        final: stoppingRecorder
+      });
+      audioSequence += 1;
+    };
+    mediaRecorder.onerror = (event) => {
+      voiceStatus.textContent = "recording error";
+      voiceLog.textContent = `MediaRecorder error: ${event.error.name}`;
+      log(`MediaRecorder error: ${event.error.name}`);
+    };
+    mediaRecorder.start(1000);
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const value = String(reader.result || "");
+        resolve(value.includes(",") ? value.split(",")[1] : value);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   connect();

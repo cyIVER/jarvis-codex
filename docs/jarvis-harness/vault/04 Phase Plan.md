@@ -41,10 +41,11 @@ Completed:
 - Live WebSocket PTY stream frames multiplexed with request/response traffic.
 - Runtime-served Jarvis HUD shell with Codex, Antigravity, Codeburn panes, WebSocket client, approval refresh, and microphone permission button.
 - Browser `SpeechRecognition` STT integration when available, with final transcripts submitted through runtime `voice.submit`.
+- Server-side `MediaRecorder` audio chunk ingestion with local state storage and no automatic transcription execution.
 
 In progress:
 
-- Server-side `MediaRecorder` audio streaming and local STT adapter.
+- Local STT transcription job wiring.
 
 ## Phase 2 Managed PTYs
 
@@ -93,6 +94,7 @@ Completed:
 - Browser microphone permission button in HUD.
 - Local-only capture framing until STT streaming is connected.
 - Browser-managed STT final transcript submission through runtime events.
+- MediaRecorder fallback audio chunks stored under runtime state for later local STT.
 
 ## Phase 5 Swarm And Loops
 

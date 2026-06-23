@@ -1,4 +1,6 @@
 import time
+import base64
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -334,6 +336,53 @@ def test_runtime_voice_submit_rejects_empty_transcript(tmp_path):
 
     assert response.status_code == 200
     assert response.json()["error"]["code"] == "invalid_transcript"
+
+
+def test_runtime_voice_audio_chunk_writes_local_audio_and_event(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+    chunk = base64.b64encode(b"webm-bytes").decode("ascii")
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.audio_chunk",
+            {
+                "session_id": "session-voice",
+                "utterance_id": "utt-1",
+                "sequence": 0,
+                "mime_type": "audio/webm",
+                "chunk_b64": chunk,
+                "final": True,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    audio_path = Path(data["audio"]["path"])
+    assert response.status_code == 200
+    assert data["audio"]["audio_processed"] is False
+    assert data["event"]["event_type"] == "voice.audio_utterance_received"
+    assert data["event"]["payload"]["execution_authority"] is False
+    assert data["event"]["payload"]["audio_processed"] is False
+    assert str(audio_path).startswith(str(state))
+    assert audio_path.read_bytes() == b"webm-bytes"
+    assert data["audio"]["bytes_written"] == len(b"webm-bytes")
+
+
+def test_runtime_voice_audio_chunk_rejects_bad_base64(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("voice.audio_chunk", {"session_id": "session-voice", "chunk_b64": "bad!"}, request_id="req_1"),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["error"]["code"] == "invalid_audio_chunk"
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):

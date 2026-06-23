@@ -20,6 +20,7 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
+from .voice_audio import VoiceAudioBuffer, VoiceAudioError
 
 POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
 PLANNED_METHODS = {
@@ -32,9 +33,11 @@ def create_app(state_dir: Path) -> FastAPI:
     store = JarvisEventStore(state_dir / "runtime" / "jarvis.db")
     pty_supervisor = PtySupervisor()
     approval_service = ApprovalService(store)
+    voice_audio = VoiceAudioBuffer(state_dir)
     app.state.event_store = store
     app.state.pty_supervisor = pty_supervisor
     app.state.approval_service = approval_service
+    app.state.voice_audio = voice_audio
     app.router.add_event_handler("shutdown", pty_supervisor.close_all)
 
     @app.get("/", response_class=HTMLResponse)
@@ -55,7 +58,7 @@ def create_app(state_dir: Path) -> FastAPI:
 
     @app.post("/rpc")
     def rpc(frame: dict[str, Any]) -> dict[str, Any]:
-        return _handle_frame(store, pty_supervisor, approval_service, frame)
+        return _handle_frame(store, pty_supervisor, approval_service, voice_audio, frame)
 
     @app.websocket("/ws")
     async def websocket_rpc(websocket: WebSocket) -> None:
@@ -66,7 +69,7 @@ def create_app(state_dir: Path) -> FastAPI:
         try:
             while True:
                 raw = await websocket.receive_text()
-                response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, approval_service, raw)
+                response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, approval_service, voice_audio, raw)
                 async with send_lock:
                     await websocket.send_json(response)
         except WebSocketDisconnect:
@@ -102,6 +105,7 @@ def _handle_frame(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
     approval_service: ApprovalService,
+    voice_audio: VoiceAudioBuffer,
     raw: str | bytes | dict[str, Any],
 ) -> dict[str, Any]:
     try:
@@ -130,7 +134,7 @@ def _handle_frame(
         return make_error_response(request_id, code="invalid_params", message="params must be an object")
 
     try:
-        return _dispatch_request(store, pty_supervisor, approval_service, request_id, method, params)
+        return _dispatch_request(store, pty_supervisor, approval_service, voice_audio, request_id, method, params)
     except PtyPolicyError as exc:
         decision = exc.decision
         return make_error_response(
@@ -156,6 +160,13 @@ def _handle_frame(
             message=str(exc),
             retryable=False,
         )
+    except VoiceAudioError as exc:
+        return make_error_response(
+            request_id,
+            code="invalid_audio_chunk",
+            message=str(exc),
+            retryable=False,
+        )
     except Exception as exc:
         return make_error_response(
             request_id,
@@ -170,6 +181,7 @@ def _dispatch_request(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
     approval_service: ApprovalService,
+    voice_audio: VoiceAudioBuffer,
     request_id: str,
     method: str,
     params: dict[str, Any],
@@ -194,6 +206,7 @@ def _dispatch_request(
                     "pty.resize",
                     "pty.kill",
                     "voice.provider_status",
+                    "voice.audio_chunk",
                     "voice.start",
                     "voice.stop",
                     "voice.submit",
@@ -349,9 +362,9 @@ def _dispatch_request(
                         "note": "CLI/local adapter path remains approval-gated for audio processing.",
                     },
                     "server_audio_stream": {
-                        "status": "planned",
+                        "status": "available",
                         "privacy": "local",
-                        "note": "MediaRecorder/WebSocket audio chunks are not enabled yet.",
+                        "note": "MediaRecorder chunks can be stored locally; transcription remains separate and approval-gated.",
                     },
                     "gemini_realtime": {
                         "status": "not_configured",
@@ -412,6 +425,40 @@ def _dispatch_request(
                 "characters": len(transcript),
                 "execution_authority": False,
                 "routed_as_command": False,
+            },
+        )
+
+    if method == "voice.audio_chunk":
+        session_id = str(params.get("session_id") or "hud")
+        result = voice_audio.append_chunk(
+            session_id=session_id,
+            utterance_id=str(params.get("utterance_id")) if params.get("utterance_id") else None,
+            sequence=int(params.get("sequence") or 0),
+            mime_type=str(params.get("mime_type") or "audio/webm"),
+            chunk_b64=str(params.get("chunk_b64") or ""),
+            final=bool(params.get("final") or False),
+        )
+        event = store.append_event(
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "hud"),
+            event_type="voice.audio_chunk" if not result.final else "voice.audio_utterance_received",
+            payload={
+                "utterance_id": result.utterance_id,
+                "sequence": result.sequence,
+                "mime_type": result.mime_type,
+                "path": str(result.path),
+                "bytes_written": result.bytes_written,
+                "final": result.final,
+                "execution_authority": False,
+                "audio_processed": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "audio": result.to_dict(),
+                "event": _stored_event_to_dict(event),
             },
         )
 
