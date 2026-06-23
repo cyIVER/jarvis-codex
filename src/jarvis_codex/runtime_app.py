@@ -31,7 +31,7 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
-from .release import build_release_gate_status, build_release_readiness_checklist
+from .release import build_release_gate_acceptance_brief, build_release_gate_status, build_release_readiness_checklist
 from .state import JarvisState
 from .voice_audio import (
     VoiceAudioBuffer,
@@ -489,6 +489,7 @@ def _dispatch_request(
                     "runtime.readiness",
                     "release.evidence_add",
                     "release.gate_accept",
+                    "release.gate_acceptance_brief",
                     "release.gate_status",
                     "release.readiness_checklist",
                     "profile.list",
@@ -532,6 +533,12 @@ def _dispatch_request(
         evidence = release_state.release_evidence() if release_state is not None else []
         acceptances = release_state.release_gate_acceptances() if release_state is not None else []
         return make_response(request_id, build_release_gate_status(evidence, acceptances))
+
+    if method == "release.gate_acceptance_brief":
+        release_state = JarvisState(state_dir) if state_dir is not None else None
+        evidence = release_state.release_evidence() if release_state is not None else []
+        acceptances = release_state.release_gate_acceptances() if release_state is not None else []
+        return make_response(request_id, build_release_gate_acceptance_brief(evidence, acceptances))
 
     if method == "release.readiness_checklist":
         release_state = JarvisState(state_dir) if state_dir is not None else None

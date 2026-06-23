@@ -734,6 +734,7 @@ HUD_HTML = """<!doctype html>
                 <div id="readiness-gaps" class="log">Readiness summary pending.</div>
                 <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
                 <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
+                <div id="release-acceptance-brief-panel" class="log">Release acceptance brief pending. Proposed commands are display-only.</div>
                 <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
                 <button id="refresh-readiness" type="button">Refresh Readiness</button>
               </div>
@@ -851,6 +852,7 @@ HUD_JS = r"""(() => {
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
   const releaseGateStatus = document.getElementById("release-gate-status");
   const releaseGatePanel = document.getElementById("release-gate-panel");
+  const releaseAcceptanceBriefPanel = document.getElementById("release-acceptance-brief-panel");
   const releaseChecklistStatus = document.getElementById("release-checklist-status");
   const releaseChecklistPanel = document.getElementById("release-checklist-panel");
   const releaseEvidenceGate = document.getElementById("release-evidence-gate");
@@ -1033,6 +1035,7 @@ HUD_JS = r"""(() => {
       request("telemetry.codeburn_status");
       request("runtime.readiness");
       request("release.gate_status");
+      request("release.gate_acceptance_brief");
       request("release.readiness_checklist");
     });
     socket.addEventListener("close", () => {
@@ -1191,6 +1194,11 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.acceptance_items)) {
+        renderReleaseAcceptanceBrief(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "open_gate_count")) {
         renderReleaseGateStatus(frame.result);
         requestIndex.delete(frame.id);
@@ -1204,6 +1212,7 @@ HUD_JS = r"""(() => {
       if (frame.type === "response" && frame.result && frame.result.evidence && frame.result.state_write_performed) {
         releaseEvidenceStatus.textContent = `Evidence metadata recorded for ${frame.result.evidence.gate}. Gate closed: ${frame.result.release_gate_closed ? "yes" : "no"}.`;
         request("release.gate_status");
+        request("release.gate_acceptance_brief");
         request("release.readiness_checklist");
         requestIndex.delete(frame.id);
         return;
@@ -1211,6 +1220,7 @@ HUD_JS = r"""(() => {
       if (frame.type === "response" && frame.result && frame.result.acceptance && frame.result.state_write_performed) {
         releaseAcceptStatus.textContent = `Gate accepted for ${frame.result.acceptance.gate} using ${frame.result.acceptance.evidence_id}. This grants no execution authority.`;
         request("release.gate_status");
+        request("release.gate_acceptance_brief");
         request("release.readiness_checklist");
         requestIndex.delete(frame.id);
         return;
@@ -1626,6 +1636,7 @@ HUD_JS = r"""(() => {
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
     request("release.gate_status");
+    request("release.gate_acceptance_brief");
     request("release.readiness_checklist");
     log("Runtime readiness refresh requested.");
   });
@@ -2107,6 +2118,28 @@ HUD_JS = r"""(() => {
       </section>
     `).join("");
     log(`Release gate status loaded: ${status.open_gate_count ?? gates.length} open gate(s). Evidence records do not close gates.`);
+  }
+
+  function renderReleaseAcceptanceBrief(brief) {
+    const items = Array.isArray(brief.acceptance_items) ? brief.acceptance_items : [];
+    const ready = Array.isArray(brief.ready_for_acceptance) ? brief.ready_for_acceptance : [];
+    if (!items.length) {
+      releaseAcceptanceBriefPanel.textContent = "No acceptance brief items reported. No state was written and no approval was granted.";
+      return;
+    }
+    releaseAcceptanceBriefPanel.innerHTML = items.slice(0, 6).map((item) => {
+      const command = item.acceptance_command || "Record matching evidence before acceptance.";
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(item.gate || "release_gate")}</strong>
+          <div>Status: ${escapeHtml(item.status || "needs-evidence")} | Evidence records: ${Number(item.evidence_count || 0)} | Acceptances: ${Number(item.acceptance_count || 0)}</div>
+          <div>Latest evidence: ${escapeHtml(item.latest_evidence_id || "none")} | Accepted evidence: ${escapeHtml(item.accepted_evidence_id || "none")}</div>
+          <div>Display-only acceptance command: <code>${escapeHtml(command)}</code></div>
+          <div>Gate closed: ${item.release_gate_closed ? "yes" : "no"} | Human acceptance required: ${item.requires_human_acceptance ? "yes" : "no"}</div>
+        </section>
+      `;
+    }).join("");
+    log(`Release acceptance brief loaded: ${ready.length} gate(s) ready for human acceptance. Displayed commands are not execution authority.`);
   }
 
   function renderReleaseChecklist(checklist) {

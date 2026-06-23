@@ -71,6 +71,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
     assert "release.gate_status" in data["result"]["capabilities"]
+    assert "release.gate_acceptance_brief" in data["result"]["capabilities"]
     assert "release.readiness_checklist" in data["result"]["capabilities"]
     assert "release.gate_accept" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
@@ -1401,6 +1402,32 @@ def test_runtime_release_gate_status_reads_state_without_writing(tmp_path):
     assert data["evidence_closes_gates"] is False
     assert external["evidence_count"] == 1
     assert external["release_gate_closed"] is False
+
+
+def test_runtime_release_gate_acceptance_brief_reads_state_without_writing(tmp_path):
+    state = tmp_path / "state"
+    evidence = JarvisState(state).record_release_evidence(
+        "networked_gemini_live_validation",
+        "Approved Gemini Live validation notes are ready for review.",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("release.gate_acceptance_brief", request_id="req_1"))
+
+    data = response.json()["result"]
+    gemini = next(item for item in data["acceptance_items"] if item["gate"] == "networked_gemini_live_validation")
+    assert data["status"] == "needs-human-review"
+    assert data["writes_files"] is False
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["evidence_closes_gates"] is False
+    assert data["acceptance_command_writes_state"] is True
+    assert data["acceptance_command_grants_execution_authority"] is False
+    assert "networked_gemini_live_validation" in data["ready_for_acceptance"]
+    assert gemini["status"] == "ready-for-human-acceptance"
+    assert f"--evidence-id {evidence.id}" in gemini["acceptance_command"]
+    assert (state / "release" / "gate-acceptance.jsonl").exists() is False
 
 
 def test_runtime_release_readiness_checklist_reads_state_without_writing(tmp_path):
