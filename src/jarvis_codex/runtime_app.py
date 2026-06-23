@@ -62,7 +62,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "pty.restart",
     "session.cancel",
-    "swarm.plan",
     "swarm.start",
     "swarm.stop",
 }
@@ -344,6 +343,7 @@ def _dispatch_request(
                     "profile.list",
                     "profile.set",
                     "prompt.send",
+                    "swarm.plan",
                     "command.classify",
                     "pty.create",
                     "pty.input",
@@ -700,6 +700,51 @@ def _dispatch_request(
                 "results": results[:limit],
                 "query": query,
                 "writes_state": False,
+            },
+        )
+
+    if method == "swarm.plan":
+        session_id = str(params.get("session_id") or "")
+        objective = str(params.get("objective") or "").strip()
+        if not session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        if not objective:
+            return make_error_response(request_id, code="missing_objective", message="objective is required")
+        session = store.session(session_id)
+        if session is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        lanes = _normalize_swarm_lanes(params.get("lanes") or params.get("assignments") or [])
+        if lanes is None:
+            return make_error_response(request_id, code="invalid_lanes", message="lanes must be a list")
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="swarm.planned",
+            payload={
+                "objective": objective,
+                "lanes": lanes,
+                "profile_id": str(params.get("profile_id") or session.get("profile_id") or "observe"),
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
+                "pty_launch": False,
+                "command_execution": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "swarm_plan_event_id": event.id,
+                "session_id": session_id,
+                "sequence": event.sequence,
+                "lane_count": len(lanes),
+                "writes_state": True,
+                "execution_authority": False,
+                "agent_launch": False,
+                "worktrunk_mutation": False,
             },
         )
 
@@ -1105,6 +1150,42 @@ def _append_and_publish(
     event = store.append_event(**kwargs)
     event_broadcaster.publish(event)
     return event
+
+
+def _normalize_swarm_lanes(value: Any) -> list[dict[str, str]] | None:
+    if not isinstance(value, list):
+        return None
+    normalized: list[dict[str, str]] = []
+    for index, item in enumerate(value[:12], start=1):
+        if isinstance(item, str):
+            text = item.strip()
+            if not text:
+                continue
+            normalized.append(
+                {
+                    "lane_id": f"lane-{index}",
+                    "title": text[:80],
+                    "task": text,
+                    "agent": "unassigned",
+                    "status": "planned",
+                }
+            )
+            continue
+        if not isinstance(item, dict):
+            return None
+        task = str(item.get("task") or item.get("summary") or item.get("title") or "").strip()
+        if not task:
+            continue
+        normalized.append(
+            {
+                "lane_id": str(item.get("lane_id") or item.get("id") or f"lane-{index}")[:80],
+                "title": str(item.get("title") or task[:80])[:120],
+                "task": task[:2000],
+                "agent": str(item.get("agent") or item.get("owner") or "unassigned")[:120],
+                "status": "planned",
+            }
+        )
+    return normalized
 
 
 def _approval_allows_command(store: JarvisEventStore, approval_id: str, command: str) -> bool:

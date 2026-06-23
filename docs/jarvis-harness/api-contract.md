@@ -115,6 +115,8 @@ Loop and swarm:
 - `swarm.start`
 - `swarm.stop`
 
+`swarm.plan` is implemented as a planning-only semantic event. It appends `swarm.planned` for an existing session and records proposed lane assignments without launching agents, starting PTYs, mutating Worktrunk, running shell commands, or granting execution authority.
+
 Telemetry:
 
 - `telemetry.codeburn_status`

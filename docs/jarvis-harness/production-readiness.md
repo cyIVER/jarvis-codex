@@ -17,6 +17,7 @@ Implemented and validated in the local FastAPI runtime:
 - Semantic prompt history writes through `prompt.send` without agent or command execution.
 - Session-scoped semantic history through `message.list`.
 - Read-only semantic history search through `message.search`.
+- Planning-only swarm lane proposal records through `swarm.plan` without agent launch, PTY launch, Worktrunk mutation, or command execution.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
@@ -53,6 +54,7 @@ The following remain future or incomplete production gates:
 - Voice transcripts and voice intent proposals must not execute commands.
 - Browser-managed speech output must not run local TTS commands or grant approval authority.
 - Displayed commands, queue entries, and plan-viewer routes are not execution authority.
+- Swarm plans are planning records only; they must not be treated as permission to launch agents, mutate Worktrunk, start PTYs, or run commands.
 - PTY launches that require approval must include an approved, command-matched approval id, and that approval is consumed on use.
 - Approval responses and approved PTY launches require the per-runtime HUD token served from the same-origin HUD.
 - Approval consumption must be atomic; concurrent consumers must not reuse the same approval.

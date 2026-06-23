@@ -69,6 +69,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "runtime.readiness" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
+    assert "swarm.plan" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -533,6 +534,78 @@ def test_runtime_message_search_validates_session_filter_type(tmp_path):
     )
 
     assert response.json()["error"]["code"] == "invalid_session_id"
+
+
+def test_runtime_swarm_plan_records_planning_event_without_execution_authority(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.plan",
+            {
+                "session_id": "session-swarm",
+                "objective": "Plan UI and runtime lanes",
+                "lanes": [
+                    {"lane_id": "docs", "task": "Review docs", "agent": "jarvis_docs_researcher"},
+                    "Review runtime tests",
+                ],
+            },
+            request_id="req_2",
+        ),
+    )
+    history_response = client.post(
+        "/rpc",
+        json=make_request("message.list", {"session_id": "session-swarm"}, request_id="req_3"),
+    )
+
+    result = response.json()["result"]
+    messages = history_response.json()["result"]["messages"]
+    swarm_event = messages[-1]
+    assert result["writes_state"] is True
+    assert result["execution_authority"] is False
+    assert result["agent_launch"] is False
+    assert result["worktrunk_mutation"] is False
+    assert result["lane_count"] == 2
+    assert swarm_event["event_type"] == "swarm.planned"
+    assert swarm_event["payload"]["objective"] == "Plan UI and runtime lanes"
+    assert swarm_event["payload"]["lanes"][0]["status"] == "planned"
+    assert swarm_event["payload"]["lanes"][1]["agent"] == "unassigned"
+    assert swarm_event["payload"]["command_execution"] is False
+
+
+def test_runtime_swarm_plan_validates_session_objective_and_lanes(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-swarm"}, request_id="req_1"))
+
+    missing_session = client.post(
+        "/rpc",
+        json=make_request("swarm.plan", {"objective": "Plan lanes"}, request_id="req_2"),
+    )
+    missing_objective = client.post(
+        "/rpc",
+        json=make_request("swarm.plan", {"session_id": "session-swarm", "objective": "   "}, request_id="req_3"),
+    )
+    unknown_session = client.post(
+        "/rpc",
+        json=make_request("swarm.plan", {"session_id": "missing", "objective": "Plan lanes"}, request_id="req_4"),
+    )
+    invalid_lanes = client.post(
+        "/rpc",
+        json=make_request(
+            "swarm.plan",
+            {"session_id": "session-swarm", "objective": "Plan lanes", "lanes": "not-a-list"},
+            request_id="req_5",
+        ),
+    )
+
+    assert missing_session.json()["error"]["code"] == "missing_session_id"
+    assert missing_objective.json()["error"]["code"] == "missing_objective"
+    assert unknown_session.json()["error"]["code"] == "unknown_session"
+    assert invalid_lanes.json()["error"]["code"] == "invalid_lanes"
 
 
 def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):

@@ -412,6 +412,9 @@ HUD_HTML = """<!doctype html>
         <div id="sessions-list" class="log">Active sessions will appear here.</div>
         <textarea id="prompt-text" class="log" rows="4" placeholder="Record a prompt in session history. This does not execute Codex, Antigravity, PTY, or Worktrunk."></textarea>
         <button id="send-prompt" type="button">Record Prompt</button>
+        <textarea id="swarm-objective" class="log" rows="4" placeholder="Record a planning-only swarm objective. This does not launch agents, Worktrunk, PTYs, or commands."></textarea>
+        <button id="record-swarm-plan" type="button">Record Swarm Plan</button>
+        <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
         <input id="history-search" type="search" placeholder="Search semantic history">
         <button id="search-history" type="button">Search History</button>
         <div id="history-search-results" class="log">Search results will appear here. Search is read-only.</div>
@@ -447,6 +450,9 @@ HUD_JS = r"""(() => {
   const setSessionProfile = document.getElementById("set-session-profile");
   const promptText = document.getElementById("prompt-text");
   const sendPrompt = document.getElementById("send-prompt");
+  const swarmObjective = document.getElementById("swarm-objective");
+  const recordSwarmPlan = document.getElementById("record-swarm-plan");
+  const swarmPlanStatus = document.getElementById("swarm-plan-status");
   const historySearch = document.getElementById("history-search");
   const searchHistory = document.getElementById("search-history");
   const historySearchResults = document.getElementById("history-search-results");
@@ -603,6 +609,14 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && frame.result.swarm_plan_event_id) {
+        log(`Swarm plan recorded for ${frame.result.session_id}. No agents launched; no Worktrunk mutation occurred.`);
+        swarmPlanStatus.textContent = `Swarm plan recorded at sequence ${frame.result.sequence}. This is planning state only.`;
+        swarmObjective.value = "";
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && Array.isArray(frame.result.results)) {
         renderSearchResults(frame.result.results, frame.result.query || "");
         requestIndex.delete(frame.id);
@@ -748,6 +762,31 @@ HUD_JS = r"""(() => {
       actor_id: "user"
     });
     log("Prompt record requested. This does not execute a command or agent.");
+  });
+
+  recordSwarmPlan.addEventListener("click", () => {
+    const objective = swarmObjective.value.trim();
+    if (!objective) {
+      log("Swarm objective is empty; nothing recorded.");
+      return;
+    }
+    request("swarm.plan", {
+      session_id: currentSessionId(),
+      objective,
+      profile_id: selectedProfileId(),
+      lanes: [
+        {
+          lane_id: "planning",
+          title: "Planning lane",
+          task: objective,
+          agent: "unassigned"
+        }
+      ],
+      source_client: "hud",
+      actor_id: "user"
+    });
+    swarmPlanStatus.textContent = "Swarm plan record requested. This does not start agents, Worktrunk, PTYs, or commands.";
+    log("Swarm plan record requested. Planning state only; no agents launched.");
   });
 
   searchHistory.addEventListener("click", () => {
