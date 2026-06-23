@@ -255,6 +255,10 @@ def validate_loop_readiness(root: Path) -> dict[str, Any]:
         [
             _check_text_contains(root, "loop status active", "STATE.md", "loop_status: active"),
             _check_text_contains(root, "loop level recorded", "STATE.md", "level: L1"),
+            _check_text_contains(root, "loop budget records manual cadence", "loop-budget.md", "manual/operator-requested"),
+            _check_text_contains(root, "loop budget records token cap", "loop-budget.md", "Suggested token cap per loop cycle"),
+            _check_text_contains(root, "loop budget records kill switches", "loop-budget.md", "## Kill Switches"),
+            _check_text_contains(root, "loop budget records escalation rules", "loop-budget.md", "## Escalation Rules"),
             _check_text_contains(root, "ci runs pytest", ".github/workflows/ci.yml", "uv run pytest"),
             _check_text_contains(
                 root,

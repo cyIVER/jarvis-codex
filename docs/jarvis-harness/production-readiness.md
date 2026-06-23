@@ -23,6 +23,7 @@ Implemented and validated in the local FastAPI runtime:
 - Approval-gated role-labeled swarm launch through `swarm.launch`; it requires exact scoped approval for role command/profile/cwd plus the HUD runtime token, starts PTY panes through runtime policy, preserves hardline blocks, and does not mutate Worktrunk or Git.
 - Approval-gated loop lifecycle records through `loop.start`, `loop.pause`, `loop.resume`, and `loop.stop` without agent launch, PTY launch, Worktrunk mutation, runtime workflow execution, or command execution.
 - Bounded loop execution through `jarvis-codex loop run-once --allow-validation --json`; it runs fixed validators/readiness collectors plus fixed no-shell Codeburn telemetry and records a loop-run event under the selected `--state` directory.
+- Read-only loop readiness verification through `jarvis-codex loop verify --json`; it checks loop state, CI wiring, budget policy markers, safety surfaces, and forbidden runtime-authority markers without writing files.
 - Foreground bounded loop scheduling through `jarvis-codex loop schedule --allow-validation --json`; it runs only fixed `run-once` iterations, caps iterations and interval length, writes schedule evidence under the selected `--state`, and starts no daemon.
 - HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through the runtime policy gate.
 - HUD loop lifecycle controls for requesting approval and recording approved start, pause, resume, and stop state without launching execution.

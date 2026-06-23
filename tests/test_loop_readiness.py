@@ -13,7 +13,13 @@ def write(path: Path, text: str = "ok") -> None:
 def write_minimal_loop_repo(root: Path) -> None:
     write(root / "STATE.md", "loop_status: active\nlevel: L1\n")
     write(root / "LOOP.md")
-    write(root / "loop-budget.md")
+    write(
+        root / "loop-budget.md",
+        "Default cadence: manual/operator-requested\n"
+        "Suggested token cap per loop cycle: 120k\n"
+        "## Kill Switches\n"
+        "## Escalation Rules\n",
+    )
     write(root / "loop-run-log.md")
     write(root / "docs/safety.md")
     write(root / "docs/PRODUCT_READINESS.md")
@@ -41,6 +47,17 @@ def test_loop_readiness_fails_when_required_surfaces_are_missing(tmp_path):
     assert result["status"] == "FAIL"
     assert result["failures"] > 0
     assert any(item["path"] == "STATE.md" for item in result["failure_details"])
+
+
+def test_loop_readiness_fails_when_budget_policy_is_incomplete(tmp_path):
+    write_minimal_loop_repo(tmp_path)
+    write(tmp_path / "loop-budget.md", "Default cadence: manual/operator-requested\n")
+
+    result = validate_loop_readiness(tmp_path)
+
+    assert result["status"] == "FAIL"
+    assert any(item["name"] == "loop budget records token cap" for item in result["failure_details"])
+    assert any(item["name"] == "loop budget records kill switches" for item in result["failure_details"])
 
 
 def test_loop_readiness_flags_runtime_authority_markers(tmp_path):
