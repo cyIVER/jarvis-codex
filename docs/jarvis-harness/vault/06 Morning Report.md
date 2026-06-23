@@ -218,6 +218,9 @@ This note backs the morning HTML dashboard.
 - Implemented and validated read-only `jarvis-codex release gate-status --json` to summarize open release gates and evidence counts without closing gates.
 - Ran final targeted validation: governance PASS, loop readiness PASS, and 302 tests passed.
 - Committed release gate status summary in `c41eb57`.
+- Implemented and validated a HUD Release Gates panel backed by read-only `release.gate_status` runtime RPC.
+- Ran final targeted validation: governance PASS, loop readiness PASS, and 303 tests passed.
+- Committed HUD release gate status in `6556e91`.
 
 ## Pending
 
