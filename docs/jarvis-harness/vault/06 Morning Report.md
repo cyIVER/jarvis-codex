@@ -239,10 +239,14 @@ This note backs the morning HTML dashboard.
 - Implemented and validated read-only `jarvis-codex loop unattended-policy --json`; it reports bounded foreground schedule limits, stop controls, escalation requirements, and approval gates without writing state, launching loops, or closing the unattended release gate.
 - Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, unattended policy PASS, release checklist linkage PASS, and 312 tests passed.
 - Committed unattended loop policy report in `3892d1f`.
+- Implemented and validated read-only `jarvis-codex mobile evidence-brief --json`; it packages the target URL, approval-gated serve command, operator screenshot/note checklist, and release evidence recording command without launching the runtime, probing the network, opening browsers, writing state, or closing `actual_mobile_device_validation`.
+- Ran final targeted validation: governance PASS, loop readiness PASS with 25 checks, mobile evidence-brief proof, release checklist linkage PASS, and 315 tests passed.
+- Committed and pushed mobile validation evidence brief in `467c4c6`.
+- Refreshed Codeburn snapshot: today `$13.24` across 114 calls; month `$723.81`, 7507 calls.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, accepted unattended/background scheduling evidence, signed release packaging, and external security reviewer attestation.
+- Remaining production gaps: real iPhone private-network validation with the operator evidence brief, approved Gemini Live network test, Electron signing/distribution flow, accepted unattended/background scheduling evidence, signed release packaging, and external security reviewer attestation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
