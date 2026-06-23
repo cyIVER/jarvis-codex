@@ -64,8 +64,9 @@ def test_packaging_preflight_reports_missing_lock_and_install(tmp_path: Path) ->
 
 def test_packaging_preflight_detects_lock_install_and_signing_signal(tmp_path: Path) -> None:
     write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
-    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
+    write(tmp_path / "tools/electron-hud/electron-builder.json", json.dumps({"directories": {"buildResources": "assets"}, "icon": "icon.png"}))
     write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+    write(tmp_path / "tools/electron-hud/assets/icon.png", "png")
     (tmp_path / "tools/electron-hud/node_modules").mkdir(parents=True)
 
     preflight = build_packaging_preflight(tmp_path, {"CSC_LINK": "secret-signing-material"})
@@ -74,6 +75,8 @@ def test_packaging_preflight_detects_lock_install_and_signing_signal(tmp_path: P
     assert preflight.node_modules_present is True
     assert preflight.electron_builder_version == "26.15.3"
     assert preflight.electron_builder_config_present is True
+    assert preflight.electron_icon_present is True
+    assert preflight.electron_icon_path == "tools/electron-hud/assets/icon.png"
     assert preflight.packaging_scripts_present is True
     assert preflight.signing_signal_present is True
     assert "secret-signing-material" not in str(preflight.to_dict())
@@ -170,3 +173,16 @@ def test_packaging_preflight_detects_unsigned_appimage_artifact(tmp_path: Path) 
     assert preflight.installer_artifact_paths == ["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]
     assert "npm run make" not in preflight.recommended_commands
     assert "review unsigned local installer artifact before signing/distribution" in preflight.remaining_gates
+
+
+def test_packaging_preflight_reports_missing_electron_icon(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", json.dumps({"directories": {"buildResources": "assets"}, "icon": "icon.png"}))
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert preflight.electron_icon_present is False
+    assert preflight.electron_icon_path is None
+    assert "Electron HUD package icon is missing; default Electron icon warning remains." in preflight.warnings
+    assert "add reviewed Electron icon before installer generation" in preflight.remaining_gates

@@ -48,6 +48,7 @@ Implemented and validated in the local FastAPI runtime:
 - Electron Builder dependency, `electron-builder.json`, and reviewed `npm run package` / `npm run make` scripts are present for an approval-gated packaging phase.
 - Non-signing Electron package execution was locally validated with `npm run package`; generated artifacts live under ignored `tools/electron-hud/dist/` and are not release artifacts.
 - Unsigned Electron AppImage generation was locally validated with `npm run make`; the generated AppImage is ignored local evidence only and is not signed, copied, reviewed, or publication-ready.
+- A committed Electron HUD icon asset is configured for Electron Builder; local `npm run make` no longer emits the default Electron icon warning.
 - Local dependency audit evidence is clean for the current JavaScript package surfaces: `tools/electron-hud` and `video/remotion` both report zero high-or-worse npm vulnerabilities.
 - Read-only mobile private-network preflight through `jarvis-codex mobile preflight --json`; it classifies the intended runtime host without probing, serving, or writing state.
 - Read-only mobile validation planning through `jarvis-codex mobile validation-plan --json`; it prepares iPhone/PWA evidence steps without probing, serving, opening browsers, or writing state.
@@ -100,6 +101,7 @@ The following remain future or incomplete production gates:
 - Electron Builder configuration and scripts are reviewed package definitions only; they do not prove a package build ran or approve artifact distribution.
 - Local Electron `dist/` artifacts prove only a non-signing package build ran on this machine; they do not approve installer generation, signing, malware review, artifact copy, or distribution.
 - Local unsigned AppImage artifacts prove only local installer generation ran on this machine; they do not approve signing, malware review, artifact copy, or distribution.
+- The committed Electron icon is package metadata only; it does not approve signing, artifact copy, publication, or distribution.
 - Gemini feasibility checks must not expose secret values, start OAuth, open WebSockets, call Gemini, launch services, write state, or bypass the local STT/TTS fallback.
 - Gemini validation plans must not expose secret values, start OAuth, open WebSockets, launch adapters, probe the network, write state, approve cloud spend, or bypass local approval boundaries.
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.

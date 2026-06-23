@@ -79,7 +79,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only mobile host discovery recommends `172.28.39.152` as the current WSL private-interface candidate.
 - Local dependency audits for `tools/electron-hud` and `video/remotion` report zero high-or-worse npm vulnerabilities.
 - Unsigned Electron AppImage generation produced a local ignored `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage` artifact.
-- Current Codeburn snapshot: month `$638.21`, 6767 calls.
+- Electron Builder uses committed `tools/electron-hud/assets/icon.png`; local make validation no longer reports the default Electron icon warning.
+- Current Codeburn snapshot: month `$639.89`, 6786 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -117,6 +118,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Mobile host discovery is candidate selection only; it does not start the runtime, probe the iPhone, open a browser, approve non-loopback serving, or prove reachability.
 - Local dependency audits are not a replacement for external security review, signing review, or runtime threat modeling.
 - Local unsigned AppImage artifacts are not signed, reviewed, copied, or distribution-ready release artifacts.
+- The committed Electron icon is package metadata only; it does not approve signing, artifact copy, publication, or distribution.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.

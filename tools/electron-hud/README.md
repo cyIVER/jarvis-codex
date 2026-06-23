@@ -31,12 +31,15 @@ The non-signing unpacked Linux package path has been locally validated with `npm
 
 The unsigned Linux AppImage path has also been locally validated with `npm run make`. The generated AppImage is local evidence only. It is not signed, reviewed for distribution, copied to a release location, or publication-ready.
 
+The Electron Builder config uses the committed `assets/icon.png` package icon. Local `npm run make` validation no longer emits the default Electron icon warning.
+
 Safety boundaries:
 
 - Loads `http://127.0.0.1:8765` by default.
 - `package-lock.json` pins Electron dependency resolution; it does not mean dependencies are installed.
 - `node_modules` is a local setup artifact only and is ignored by git.
 - `electron-builder.json` and the `package`/`make` scripts define a reviewed local packaging path; package execution, signing, and artifact copy remain separate approval-gated actions.
+- `assets/icon.png` is package metadata only; it does not approve signing, artifact copy, publication, or distribution.
 - Local `dist/` artifacts are validation evidence only; they are not signed release artifacts and are not publication-ready.
 - Non-loopback runtime URLs require `JARVIS_ELECTRON_ALLOW_NON_LOOPBACK=1` and should be treated as an explicit private-network operator decision.
 - Renderer Node integration is disabled.

@@ -20,6 +20,8 @@ class PackagingPreflight:
     package_lock_present: bool
     electron_builder_version: str | None
     electron_builder_config_present: bool
+    electron_icon_present: bool
+    electron_icon_path: str | None
     packaging_scripts_present: bool
     package_artifact_present: bool
     package_artifact_paths: list[str]
@@ -50,6 +52,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     package_lock = electron_dir / "package-lock.json"
     node_modules = electron_dir / "node_modules"
     builder_config = electron_dir / "electron-builder.json"
+    builder_data = _package_data(builder_config)
+    electron_icon_path = _electron_icon_path(electron_dir, builder_data)
     package_artifact_paths = _package_artifacts(electron_dir)
     installer_artifact_paths = _installer_artifacts(electron_dir)
 
@@ -82,6 +86,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         warnings.append("Electron Builder is not declared; packaging scripts cannot build local artifacts yet.")
     if not builder_config.exists():
         warnings.append("Electron Builder config is missing; package and make commands are not reviewed yet.")
+    if not electron_icon_path:
+        warnings.append("Electron HUD package icon is missing; default Electron icon warning remains.")
     if not packaging_scripts_present:
         warnings.append("Electron HUD package/make scripts are missing or unreviewed.")
     if not signing_signal_present:
@@ -109,6 +115,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         remaining_gates.append("review local package artifact before make/sign/distribution")
     if installer_artifact_paths:
         remaining_gates.append("review unsigned local installer artifact before signing/distribution")
+    if not electron_icon_path:
+        remaining_gates.append("add reviewed Electron icon before installer generation")
     remaining_gates.extend(
         [
             "choose Windows/macOS/Linux artifact targets",
@@ -129,6 +137,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         package_lock_present=package_lock.exists(),
         electron_builder_version=electron_builder_version,
         electron_builder_config_present=builder_config.exists(),
+        electron_icon_present=electron_icon_path is not None,
+        electron_icon_path=electron_icon_path,
         packaging_scripts_present=packaging_scripts_present,
         package_artifact_present=bool(package_artifact_paths),
         package_artifact_paths=package_artifact_paths,
@@ -183,6 +193,20 @@ def _package_artifacts(electron_dir: Path) -> list[str]:
     if executable.is_file():
         paths.append("tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud")
     return paths
+
+
+def _electron_icon_path(electron_dir: Path, builder_data: Mapping[str, Any]) -> str | None:
+    icon = builder_data.get("icon")
+    if not isinstance(icon, str) or not icon:
+        return None
+    directories = builder_data.get("directories")
+    build_resources = "build"
+    if isinstance(directories, dict) and isinstance(directories.get("buildResources"), str):
+        build_resources = directories["buildResources"]
+    icon_path = electron_dir / build_resources / icon
+    if not icon_path.is_file():
+        return None
+    return str(icon_path.relative_to(electron_dir.parent.parent))
 
 
 def _installer_artifacts(electron_dir: Path) -> list[str]:

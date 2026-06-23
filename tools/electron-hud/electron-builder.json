@@ -4,8 +4,10 @@
   "asar": true,
   "npmRebuild": false,
   "directories": {
+    "buildResources": "assets",
     "output": "dist"
   },
+  "icon": "icon.png",
   "files": [
     "main.js",
     "preload.js",

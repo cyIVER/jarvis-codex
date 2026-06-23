@@ -17,6 +17,16 @@ def test_electron_hud_package_is_private_and_pinned() -> None:
     assert package["devDependencies"]["electron"] == "42.4.1"
 
 
+def test_electron_hud_builder_uses_committed_icon_asset() -> None:
+    config = json.loads((ELECTRON_HUD / "electron-builder.json").read_text(encoding="utf-8"))
+    icon = ELECTRON_HUD / "assets" / "icon.png"
+
+    assert config["directories"]["buildResources"] == "assets"
+    assert config["icon"] == "icon.png"
+    assert icon.is_file()
+    assert icon.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
 def test_electron_main_uses_loopback_default_and_private_network_gate() -> None:
     main = (ELECTRON_HUD / "main.js").read_text(encoding="utf-8")
 
