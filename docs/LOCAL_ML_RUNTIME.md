@@ -23,13 +23,15 @@ Every adapter takes local input paths and local model paths. Adapters may read a
 
 | Workload | First local backend | Accelerated backend | Output state | Approval required |
 | --- | --- | --- | --- | --- |
-| Voice capture | CPU speech-to-text or typed text | CUDA transcription or Windows NPU ONNX/OpenVINO adapter | `state/inbox/*.json` episode | Microphone access, model path, long-running listener |
+| Voice capture | Transcript text or explicit local STT adapter | CUDA transcription or Windows NPU ONNX/OpenVINO adapter | `state/inbox/*.json` episode | Microphone access, model path, long-running listener |
 | Summarization | CPU local LLM | CUDA local LLM, preferably containerized when reproducibility matters | handoff or episode summary file | Model path, source files to summarize |
 | Memory extraction | CPU local LLM or deterministic rules | CUDA local LLM for batch extraction | `state/memory/memory.jsonl` append | Any automatic memory write |
 | Embeddings | CPU embedding model | CUDA embedding model; Windows NPU only after adapter proof | future local vector files under `state/memory/` | New index creation, re-embedding existing memory |
 | Video | CPU render | CUDA renderer in Docker when available | local render artifact outside append-only logs | Rendering job, input media paths, container execution |
 
 Use CPU as the deterministic fallback for tests and dry runs. Prefer CUDA for heavy throughput workloads: local LLMs, vision, embeddings, transcription, and video. Prefer the Windows NPU only for narrow, low-power inference after a DirectML, OpenVINO, or ONNX Runtime adapter proves it can run a pinned local model.
+
+The current STT path is file-based: `jarvis-codex voice ingest --audio-file ... --model ... --stt-command ... --allow-audio-processing --json`. The adapter is a local executable that receives `--audio-file` and `--model`, writes the transcript to stdout, and exits. Jarvis does not download models, start listeners, access microphones, or choose a hidden cloud fallback.
 
 ## Adapter Contracts
 

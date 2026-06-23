@@ -250,3 +250,110 @@ def test_loop_commands_require_json(monkeypatch):
         cli.main()
 
     assert exc_info.value.code == 2
+
+
+def test_voice_ingest_transcript_file_json(tmp_path, monkeypatch, capsys):
+    transcript = tmp_path / "transcript.txt"
+    transcript.write_text("Voice idea for Jarvis.\n", encoding="utf-8")
+    state = tmp_path / "state"
+
+    code = run_cli(
+        monkeypatch,
+        ["--state", str(state), "voice", "ingest", "--transcript-file", str(transcript), "--json"],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["captured"].startswith("ep_")
+    assert data["source"] == "voice-transcript-file"
+    assert data["execution_authority"] is False
+    assert data["runtime_started"] is False
+    assert data["audio_processed"] is False
+    assert data["external_services"] is False
+
+
+def test_voice_commands_require_json(tmp_path, monkeypatch):
+    transcript = tmp_path / "transcript.txt"
+    transcript.write_text("Voice idea for Jarvis.\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "voice", "ingest", "--transcript-file", str(transcript)])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
+def test_voice_ingest_audio_requires_approval_without_runtime(tmp_path, monkeypatch, capsys):
+    audio = tmp_path / "sample.wav"
+    model = tmp_path / "model.bin"
+    audio.write_bytes(b"fake audio")
+    model.write_bytes(b"fake model")
+    state = tmp_path / "state"
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "voice",
+            "ingest",
+            "--audio-file",
+            str(audio),
+            "--model",
+            str(model),
+            "--stt-command",
+            "fake-stt",
+            "--json",
+        ],
+    )
+
+    assert code == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "approval-required"
+    assert data["runtime_started"] is False
+    assert data["audio_processed"] is False
+    assert not state.exists()
+
+
+def test_voice_ingest_audio_runs_explicit_adapter_when_approved(tmp_path, monkeypatch, capsys):
+    audio = tmp_path / "sample.wav"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "fake_stt.py"
+    audio.write_bytes(b"fake audio")
+    model.write_bytes(b"fake model")
+    adapter.write_text(
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--audio-file', required=True)\n"
+        "parser.add_argument('--model', required=True)\n"
+        "parser.parse_args()\n"
+        "print('Captured approved audio transcript.')\n",
+        encoding="utf-8",
+    )
+    state = tmp_path / "state"
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "voice",
+            "ingest",
+            "--audio-file",
+            str(audio),
+            "--model",
+            str(model),
+            "--stt-command",
+            f"{sys.executable} {adapter}",
+            "--allow-audio-processing",
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "captured"
+    assert data["source"] == "voice-audio-file"
+    assert data["runtime_started"] is True
+    assert data["audio_processed"] is True
+    assert data["external_services"] is False

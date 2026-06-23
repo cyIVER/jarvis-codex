@@ -19,6 +19,7 @@ uv run jarvis-codex hardware --workload voice
 - CUDA is preferred for `llm`, `vision`, and `video` only when an available CUDA accelerator is detected.
 - Docker GPU containers are recommended only when Docker is reachable and CUDA is available.
 - Runtime probes should not write generated state into Git-tracked files.
+- File-based STT requires explicit `--allow-audio-processing`, an explicit `--audio-file`, an explicit `--model`, and an explicit `--stt-command`; this does not approve microphone listeners, model downloads, cloud STT, Dockerized STT, or GPU/NPU STT adapters.
 
 ## Codex Governance Gate
 

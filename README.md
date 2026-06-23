@@ -24,6 +24,8 @@ By default, state is stored in `./state`.
 
 ```bash
 jarvis-codex capture "task text"          # create an inbox episode
+jarvis-codex voice ingest --transcript-file transcript.txt --json
+jarvis-codex voice ingest --audio-file recording.wav --model models/stt.bin --stt-command "python3 scripts/local-stt-adapter.py" --allow-audio-processing --json
 jarvis-codex memory add KEY VALUE         # add durable memory
 jarvis-codex memory list                  # print memory records
 jarvis-codex approve request "summary"    # create an approval request
@@ -102,6 +104,7 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 - `loop-run-log.md`
 - `docs/safety.md`
 - `docs/VOICE_NOTIFICATIONS.md`
+- `docs/VOICE_INGRESS.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/REMOTION_REVIEW.md`
 - `docs/RELEASE_ARTIFACTS.md`
@@ -121,7 +124,7 @@ GitHub CI runs Python tests, project-local Codex governance validation, and Remo
 2. Project-local Codex governance and validator integration.
 3. Local browser UI and Remotion video review surface.
 4. Hardware-aware GPU/NPU inspection and approval gates.
-5. Speech-to-text adapter.
+5. Transcript and approved local-file STT voice ingress.
 6. Codex App Server bridge.
 7. Approval-aware tool execution.
 8. Worktrunk-powered parallel coding sessions.

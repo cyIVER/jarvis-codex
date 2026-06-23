@@ -11,6 +11,7 @@ from .loop_readiness import validate_loop_readiness
 from .release import build_release_manifest
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
+from .voice import ingest_audio_file, ingest_transcript_file
 
 
 def main() -> int:
@@ -46,6 +47,17 @@ def main() -> int:
         default="general",
         help="Workload to recommend a backend for",
     )
+    voice = sub.add_parser("voice", help="Capture voice-origin input through transcript or approved local STT")
+    voice_sub = voice.add_subparsers(dest="voice_command", required=True)
+    voice_ingest = voice_sub.add_parser("ingest", help="Capture a transcript file or approved local STT audio file")
+    voice_source = voice_ingest.add_mutually_exclusive_group(required=True)
+    voice_source.add_argument("--transcript-file", help="Path to a UTF-8 text transcript")
+    voice_source.add_argument("--audio-file", help="Path to a local audio file for STT")
+    voice_ingest.add_argument("--model", help="Path to an explicit local STT model file; required with --audio-file")
+    voice_ingest.add_argument("--stt-command", help="Local STT adapter command; receives --audio-file and --model")
+    voice_ingest.add_argument("--allow-audio-processing", action="store_true", help="Approve local audio processing for this command")
+    voice_ingest.add_argument("--timeout-seconds", type=int, default=120, help="STT adapter timeout")
+    voice_ingest.add_argument("--json", action="store_true", help="Print voice ingest result as JSON")
     lane = sub.add_parser("lane", help="Review Worktrunk lane state without mutation")
     lane_sub = lane.add_subparsers(dest="lane_command", required=True)
     lane_list = lane_sub.add_parser("list", help="List lane readiness from git worktree metadata")
@@ -106,6 +118,27 @@ def main() -> int:
         data["selected_backend"] = recommend_backend(profile, args.workload)
         print(json.dumps(data, indent=2, sort_keys=True))
         return 0
+    if args.command == "voice":
+        if not args.json:
+            parser.error("voice commands are JSON-only; pass --json")
+        if args.voice_command == "ingest":
+            if args.transcript_file:
+                print(json.dumps(ingest_transcript_file(state, Path(args.transcript_file)), indent=2, sort_keys=True))
+                return 0
+            if not args.model:
+                parser.error("voice ingest --audio-file requires --model")
+            if not args.stt_command:
+                parser.error("voice ingest --audio-file requires --stt-command")
+            result = ingest_audio_file(
+                state,
+                Path(args.audio_file),
+                Path(args.model),
+                args.stt_command,
+                args.allow_audio_processing,
+                args.timeout_seconds,
+            )
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["status"] == "captured" else 1
     if args.command == "lane":
         if not args.json:
             parser.error("lane commands are JSON-only in this read-only first implementation; pass --json")

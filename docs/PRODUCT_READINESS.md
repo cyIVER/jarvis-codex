@@ -26,6 +26,7 @@ The current release is a governed local operating substrate:
 - read-only release artifact manifest for local review surfaces and generated Remotion asset decisions
 - GitHub CI for Python tests, Codex governance validation, and Remotion static validation
 - read-only loop readiness verifier for state, CI, budget, safety, and runtime-boundary drift
+- voice ingress through transcript files and approved local executable STT adapters
 - approval-gated autonomous loop planning artifacts
 - local-only Remotion review asset scaffold
 
@@ -38,6 +39,7 @@ The current release is a governed local operating substrate:
 | Governance validator plus doctor summary will catch project-local agent/skill drift. | Low | Validator passes with 156 checks; doctor is opt-in and read-only. | Add checks only when trial runs reveal routing noise. |
 | GitHub-side validation catches drift outside the local shell. | Low | CI workflow runs Python tests, project-local governance validation, and Remotion typecheck/audit without rendering or publishing artifacts. | Observe the first remote run after push and tighten only if it finds environment drift. |
 | Local loop readiness can be checked without adding new governance skills. | Low | `jarvis-codex loop verify --json` checks loop state, CI, budget, safety, and forbidden runtime markers without writing files. | Keep project-local skill expansion deferred until governance policy explicitly includes it. |
+| Voice ingress can start without always-on listeners. | Medium | Transcript capture exists, and `voice ingest --audio-file ... --model ... --stt-command ... --allow-audio-processing --json` supports explicit local STT adapter execution. | Exercise against an operator-selected local STT adapter and model; keep microphone and Codex App Server bridges separate. |
 | Local Remotion review assets improve review and handoff quality without adding hosted risk. | Low | Typecheck, render, audit, scaffold tests, and the read-only release manifest pass. | Review generated asset with the operator before any copy, publication, or tracked release bundle. |
 | Lane scoring can guide Worktrunk cleanup without implying mutation authority. | Low | Read-only lane tests pass, docs say mutation is approval-gated, `jarvis-codex lane list --json` plus `lane score --json` expose review-only CLI output, and an isolated real-worktree fixture covers multiple worktrees. | Exercise manually on operator-selected real worktrees before any mutation PRD. |
 
@@ -52,7 +54,7 @@ The current release is a governed local operating substrate:
 | 5 | Release artifact packaging | Read-only manifest is implemented; generated assets still require operator approval before packaging. | High | Keep the manifest as review-only until the operator approves a specific artifact copy/publish step. |
 | 6 | GitHub CI and review templates | CI and templates are present and validation-only. | High | Watch the first remote CI result after push; do not add publish/release jobs without approval. |
 | 7 | Loop readiness verifier | Local JSON verifier is implemented without adding new project-local skills or agents. | High | Keep loop-triage and loop-verifier skills deferred until the governance baseline is intentionally expanded. |
-| 8 | Voice ingress and Codex App Server bridge | Important product direction, but higher runtime and approval risk. | Low | Keep as discovery until state, queue, handoff, and lane review loops are proven. |
+| 8 | Voice ingress and Codex App Server bridge | File-based STT is implemented; microphone listeners and Codex App Server bridge remain higher-risk runtime phases. | Medium | Test an operator-selected local STT adapter/model; keep always-on capture and bridge work behind separate approval gates. |
 
 ## Release Acceptance Criteria
 
@@ -70,13 +72,14 @@ The current release is a governed local operating substrate:
 - `tests/test_release.py` covers the read-only release manifest and generated asset approval labels.
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier and runtime-authority marker checks.
+- `tests/test_voice.py` covers transcript capture, approval-gated local STT adapter execution, and adapter failure paths.
 - Global architecture validation has zero errors.
 
 ## Unresolved Product Decisions
 
 - Whether future PM loop commits should be pushed immediately after validation or batched for release review.
 - Whether generated Remotion PNG/MP4 files should be copied to a release artifact location or remain local ignored outputs after operator review.
-- Whether the next package should start voice ingress discovery, release publication planning, or broader release readiness review.
+- Whether the next package should exercise a real local STT adapter/model, start release publication planning, or broaden release readiness review.
 - Whether project-local `skills.config` should remain deferred until more routing evidence appears.
 
 ## Recommendation

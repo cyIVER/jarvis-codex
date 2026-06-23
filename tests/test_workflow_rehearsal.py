@@ -44,6 +44,17 @@ def test_local_workflow_rehearsal_uses_temp_state_only(tmp_path, monkeypatch, ca
     assert code == 0
     assert capture["captured"].startswith("ep_")
 
+    transcript = tmp_path / "voice-transcript.txt"
+    transcript.write_text("Capture voice-origin platform note.\n", encoding="utf-8")
+    code, voice = run_cli(
+        monkeypatch,
+        capsys,
+        ["--state", str(state), "voice", "ingest", "--transcript-file", str(transcript), "--json"],
+    )
+    assert code == 0
+    assert voice["captured"].startswith("ep_")
+    assert voice["runtime_started"] is False
+
     code, memory = run_cli(monkeypatch, capsys, ["--state", str(state), "memory", "add", "platform_status", "ready"])
     assert code == 0
     assert memory["memory"].startswith("mem_")
@@ -59,7 +70,7 @@ def test_local_workflow_rehearsal_uses_temp_state_only(tmp_path, monkeypatch, ca
     monkeypatch.setattr(cli, "validate_phase1_governance", lambda: PassingGovernance())
     code, doctor = run_cli(monkeypatch, capsys, ["--state", str(state), "doctor", "--governance"])
     assert code == 0
-    assert doctor["episodes"] == 1
+    assert doctor["episodes"] == 2
     assert doctor["memories"] == 1
     assert doctor["approvals"] == 1
     assert doctor["handoffs"] == 1
@@ -84,7 +95,10 @@ def test_local_workflow_rehearsal_uses_temp_state_only(tmp_path, monkeypatch, ca
     current = build_current_state(ROOT, state)
 
     assert current["selected_count"] == 2
-    assert current["continuity"]["episodes"][0]["text"] == "Review platform readiness"
+    assert {episode["text"] for episode in current["continuity"]["episodes"]} == {
+        "Review platform readiness",
+        "Capture voice-origin platform note.",
+    }
     assert current["continuity"]["unresolved_approvals"][0]["summary"] == "Review generated Remotion asset"
     assert current["continuity"]["last_handoff"]["text"].startswith("# Codex Handoff")
     assert current["continuity"]["queued_state"]["execution_authority"] is False
