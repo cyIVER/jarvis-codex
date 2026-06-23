@@ -1,4 +1,4 @@
-from jarvis_codex.notifications import classify_completion, classify_prompt
+from jarvis_codex.notifications import classify_completion, classify_prompt, get_pack_hints
 
 
 def test_prompt_classification_phrases():
@@ -25,3 +25,13 @@ def test_completion_classification_speaks_only_for_action_needed_by_default():
         "I'm blocked and need input.",
         True,
     )
+
+
+def test_pack_hints_route_prompt_to_relevant_packs():
+    assert get_pack_hints("coordinate an agent harness eval") == ["agent-engineering"]
+    assert get_pack_hints("review responsive UI in browser with screenshots") == [
+        "design-frontend",
+        "browser-testing",
+    ]
+    assert get_pack_hints("inspect DFIR evidence and write Sentinel KQL") == ["dfir-cyber"]
+    assert get_pack_hints("hello") == []

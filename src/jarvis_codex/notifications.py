@@ -53,3 +53,17 @@ def classify_completion(payload: dict[str, Any]) -> tuple[str, str, bool]:
     if ACTION_NEEDED_PATTERN.search(text):
         return "user-action-needed", "Input is needed.", True
     return "success", "", False
+
+
+PACK_HINTS: dict[str, re.Pattern[str]] = {
+    "agent-engineering": re.compile(r"\b(agent|harness|eval|memory|context|orchestrat|tool design)\b", re.I),
+    "design-frontend": re.compile(r"\b(frontend|ui|ux|design|responsive|landing|screen)\b", re.I),
+    "obsidian-knowledge": re.compile(r"\b(obsidian|vault|wikilink|canvas|base|pkm|note)\b", re.I),
+    "browser-testing": re.compile(r"\b(browser|playwright|screenshot|console|network|scrap|visual qa)\b", re.I),
+    "native-tools": re.compile(r"\b(graphify|native tool|plugin|skill creator|notebooklm)\b", re.I),
+    "dfir-cyber": re.compile(r"\b(dfir|incident|sentinel|kql|volatility|forensic|evidence|ioc|sift)\b", re.I),
+}
+
+
+def get_pack_hints(prompt: str) -> list[str]:
+    return [name for name, pattern in PACK_HINTS.items() if pattern.search(prompt)]
