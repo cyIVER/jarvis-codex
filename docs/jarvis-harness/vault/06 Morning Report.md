@@ -77,8 +77,10 @@ This note backs the morning HTML dashboard.
 - Committed and pushed runtime policy profile catalog in `0b23f80`.
 - Implemented and validated non-writing session-scoped semantic message history through `message.list`.
 - Committed and pushed runtime semantic message history in `efe573e`.
+- Implemented and validated HUD semantic session history rendering backed by `message.list`.
+- Committed and pushed HUD semantic session history in `3e46529`.
 - Ran final integrated validation: governance PASS, 167 tests passed.
-- Refreshed Codeburn snapshot: month `$558.07`, 6061 calls.
+- Refreshed Codeburn snapshot: month `$559.72`, 6085 calls.
 
 ## Pending
 
