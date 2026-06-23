@@ -207,10 +207,14 @@ This note backs the morning HTML dashboard.
 - Ran Antigravity challenge review on the scheduler and kept the broader `unattended_loop_scheduling` release gate open for future background scheduling.
 - Ran scheduler validation: governance PASS, scheduler smoke PASS, and focused scheduler/CLI/release/loop-readiness tests passed.
 - Committed and pushed bounded foreground loop scheduler in `3c14c7b`.
+- Implemented and validated a read-only external security review packet through `jarvis-codex release security-review-plan --json`.
+- Ran Antigravity challenge review on the security packet and hardened it with explicit human external reviewer attestation, OWASP LLM Top 10, MITRE ATLAS, and non-server runtime readiness boundaries.
+- Ran final targeted validation: governance PASS, loop readiness PASS, and 293 tests passed.
+- Committed external security review packet in `336d407`.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, background/unattended loop scheduling, signed release packaging, and external security review.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, background/unattended loop scheduling, signed release packaging, and external security reviewer attestation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

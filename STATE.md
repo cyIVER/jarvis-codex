@@ -76,7 +76,10 @@ pattern: product-readiness-triage
 - [x] PM-023 - Bounded foreground loop scheduler
   Loop action: added `jarvis-codex loop schedule --allow-validation --json` for capped foreground scheduling of fixed `loop run-once` iterations with local schedule evidence.
   Human decision: this is not a daemon or background scheduler; higher-level unattended scheduling remains a separate release gate.
-- [ ] PM-024 - Next product slice
+- [x] PM-024 - External security review packet
+  Loop action: added a read-only `release security-review-plan` command, OWASP ASVS/WSTG/Top 10 plus OWASP LLM Top 10 and MITRE ATLAS review framing, reviewer deliverables, and explicit human-attestation gate language.
+  Human decision: external_security_review remains open until a human external reviewer artifact is accepted; tests and fixes alone do not close the gate.
+- [ ] PM-025 - Next product slice
   Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and background scheduling.
   Human decision: not selected yet.
 
@@ -101,3 +104,4 @@ Run log: 2026-06-23 | findings: HUD lacked a button path from captured audio chu
 Run log: 2026-06-23 | findings: mobile host discovery existed only in CLI/docs and was not visible in the harness | actions: added non-writing mobile access evidence to runtime readiness and HUD display-only command proposals | escalations: 0
 Run log: 2026-06-23 | findings: loop lifecycle records did not perform a bounded iteration | actions: added fixed-check `loop run-once` execution with local JSON evidence and no arbitrary command authority | escalations: 0
 Run log: 2026-06-23 | findings: swarm lifecycle records still did not launch role panes | actions: added approval-gated `swarm.launch` with exact role command/profile/cwd scope and hardline policy preservation | escalations: 0
+Run log: 2026-06-23 | findings: external security review remained an unsurfaced release gate | actions: added read-only external security review packet and JSON summary with human-attestation close condition | escalations: 0
