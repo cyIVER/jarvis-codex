@@ -41,6 +41,22 @@ def test_voice_intent_routes_codex_and_antigravity_handoffs():
     assert ag.execution_authority is False
 
 
+def test_voice_intent_routes_common_codex_work_requests():
+    file_context = propose_voice_intent("grab this file in this location src/jarvis_codex/hud.py")
+    explore = propose_voice_intent("explore this codebase for the voice routing path")
+    plan = propose_voice_intent("plan this feature voice commands for file lookup")
+
+    for proposal in (file_context, explore, plan):
+        assert proposal.intent_type == "agent_handoff"
+        assert proposal.target == "codex"
+        assert proposal.approval_required is True
+        assert proposal.execution_authority is False
+
+    assert "read the requested file or path for context: src/jarvis_codex/hud.py" in file_context.summary
+    assert "explore the codebase for the voice routing path" in explore.summary
+    assert "plan the feature voice commands for file lookup" in plan.summary
+
+
 def test_voice_intent_note_and_unknown_are_planning_context_only():
     note = propose_voice_intent("remember the mobile PWA needs private network mode")
     unknown = propose_voice_intent("what is the current runtime status")

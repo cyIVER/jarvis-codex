@@ -37,6 +37,9 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="request-ag-challenge-approval"' in response.text
     assert 'id="ag-challenge-status"' in response.text
     assert "Antigravity challenge requests are approval-only" in response.text
+    assert "Live Backend Terminal" in response.text
+    assert 'id="terminal-panes"' in response.text
+    assert "Runtime-supervised PTY output will appear here by channel" in response.text
     assert 'id="approvals-list"' in response.text
     assert 'id="approved-launches"' in response.text
     assert 'id="active-session"' in response.text
@@ -290,6 +293,12 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "renderAgentProviders(frame.result)" in response.text
     assert "Agent provider status loaded" in response.text
     assert "No agents launched" in response.text
+    assert "terminalChannels" in response.text
+    assert "handlePtyStream(frame)" in response.text
+    assert "observePtyOutputEvent(frame)" in response.text
+    assert "registerPtyChannel(frame.result, \"pty.create\")" in response.text
+    assert "registerPtyChannel(role, \"swarm.launch\")" in response.text
+    assert "dataset.terminalChannel" in response.text
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
     assert "renderMobileEvidenceBrief(frame.result)" in response.text

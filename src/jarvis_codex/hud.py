@@ -430,6 +430,55 @@ HUD_HTML = """<!doctype html>
       white-space: pre-wrap;
     }
 
+    .terminal-board {
+      display: grid;
+      gap: 10px;
+    }
+
+    .terminal-panel {
+      grid-column: 1 / -1;
+    }
+
+    .terminal-pane {
+      border: 1px solid rgba(100, 242, 175, 0.34);
+      background: #01060a;
+      min-height: 178px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .terminal-pane header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-soft);
+      align-items: center;
+    }
+
+    .terminal-pane strong {
+      color: var(--green);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .terminal-pane small {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .terminal-output {
+      min-height: 140px;
+      max-height: 42vh;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      color: #d9faff;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
     .voice {
       display: grid;
       gap: 12px;
@@ -613,6 +662,13 @@ HUD_HTML = """<!doctype html>
               <textarea id="ag-challenge-brief" rows="3" placeholder="Antigravity challenge brief. Example: Review this plan for hidden release, safety, and architecture risks."></textarea>
               <div id="ag-challenge-status" class="log">Antigravity challenge requests are approval-only. They do not launch AG, Codex, PTYs, Worktrunk, shell commands, services, or workflows.</div>
               <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
+            </div>
+
+            <div class="panel terminal-panel">
+              <h2>Live Backend Terminal</h2>
+              <div id="terminal-panes" class="panel-body terminal-board" aria-live="polite">
+                <div class="log">Runtime-supervised PTY output will appear here by channel after an approved launch.</div>
+              </div>
             </div>
           </div>
         </section>
@@ -800,6 +856,7 @@ HUD_JS = r"""(() => {
   const approvalCount = document.getElementById("approval-count");
   const agentProviderStatus = document.getElementById("agent-provider-status");
   const agentProviderList = document.getElementById("agent-provider-list");
+  const terminalPanes = document.getElementById("terminal-panes");
   const agChallengeBrief = document.getElementById("ag-challenge-brief");
   const requestAgChallengeApproval = document.getElementById("request-ag-challenge-approval");
   const agChallengeStatus = document.getElementById("ag-challenge-status");
@@ -900,6 +957,7 @@ HUD_JS = r"""(() => {
   let lastSwarmLifecycleEventId = "";
   let lastSwarmLaunchRoles = [];
   let lastLoopLifecycleEventId = "";
+  const terminalChannels = new Map();
   const runtimeToken = document.querySelector('meta[name="jarvis-runtime-token"]')?.content || "";
   const PANE_LAUNCHES = {
     codex: {
@@ -920,6 +978,80 @@ HUD_JS = r"""(() => {
     const stamp = new Date().toLocaleTimeString();
     consoleEl.textContent += `\n[${stamp}] ${line}`;
     consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function terminalLabel(metadata) {
+    const command = metadata.command ? `Command: ${metadata.command}` : "Command pending";
+    const profile = metadata.profile ? `Profile: ${metadata.profile}` : "Profile pending";
+    const pid = metadata.pid ? `PID: ${metadata.pid}` : "PID pending";
+    return `${command} | ${profile} | ${pid}`;
+  }
+
+  function ensureTerminalPane(channelId, metadata = {}) {
+    const existing = terminalChannels.get(channelId);
+    if (existing) {
+      Object.assign(existing.metadata, metadata);
+      existing.meta.textContent = terminalLabel(existing.metadata);
+      return existing;
+    }
+    if (terminalPanes.querySelector(".log")) {
+      terminalPanes.textContent = "";
+    }
+    const pane = document.createElement("article");
+    pane.className = "terminal-pane";
+    pane.dataset.terminalChannel = channelId;
+
+    const header = document.createElement("header");
+    const title = document.createElement("strong");
+    title.textContent = `PTY ${channelId}`;
+    const meta = document.createElement("small");
+    meta.textContent = terminalLabel(metadata);
+    header.append(title, meta);
+
+    const output = document.createElement("pre");
+    output.className = "terminal-output";
+    output.textContent = "";
+
+    pane.append(header, output);
+    terminalPanes.appendChild(pane);
+
+    const state = { pane, output, meta, metadata: { ...metadata } };
+    terminalChannels.set(channelId, state);
+    return state;
+  }
+
+  function registerPtyChannel(result, source = "pty.create") {
+    if (!result || !result.channel_id) return;
+    ensureTerminalPane(result.channel_id, {
+      command: result.command || "",
+      profile: result.profile || "",
+      pid: result.pid || "",
+      source
+    });
+  }
+
+  function handlePtyStream(frame) {
+    const state = ensureTerminalPane(frame.channel_id, {
+      stream_type: frame.stream_type || "stdout",
+      sequence: frame.sequence || 0
+    });
+    state.output.textContent += frame.chunk || "";
+    if (state.output.textContent.length > 50000) {
+      state.output.textContent = state.output.textContent.slice(-50000);
+    }
+    state.output.scrollTop = state.output.scrollHeight;
+  }
+
+  function observePtyOutputEvent(frame) {
+    const payload = frame.payload || {};
+    if (!payload.channel_id) return;
+    ensureTerminalPane(payload.channel_id, {
+      command: payload.command || "",
+      profile: payload.profile || "",
+      pid: payload.pid || "",
+      stream_type: payload.stream_type || "",
+      sequence: payload.pty_sequence || ""
+    });
   }
 
   function escapeHtml(value) {
@@ -1058,11 +1190,15 @@ HUD_JS = r"""(() => {
     socket.addEventListener("message", (event) => {
       const frame = JSON.parse(event.data);
       if (frame.type === "stream") {
+        handlePtyStream(frame);
         log(`PTY ${frame.channel_id}: ${frame.chunk.trimEnd()}`);
         return;
       }
       if (frame.type === "event") {
         log(`Event: ${frame.event_type}`);
+        if (frame.event_type === "pty.output") {
+          observePtyOutputEvent(frame);
+        }
         if (frame.event_type && frame.event_type.startsWith("approval.")) {
           request("approval.list", { status: "pending" });
           request("approval.list", { status: "approved" });
@@ -1136,6 +1272,9 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.swarm_launch_event_id) {
         const roles = Array.isArray(frame.result.roles) ? frame.result.roles : [];
+        for (const role of roles) {
+          registerPtyChannel(role, "swarm.launch");
+        }
         const channels = roles.map((role) => role.channel_id).filter(Boolean).join(", ");
         log(`Swarm launched ${frame.result.role_count || roles.length} approved role-labeled PTY pane(s). Channels: ${channels || "none"}.`);
         swarmLaunchStatus.textContent = `Swarm launched ${frame.result.role_count || roles.length} approved role-labeled PTY pane(s). Event: ${frame.result.swarm_launch_event_id}. Runtime policy gate still applies.`;
@@ -1289,7 +1428,9 @@ HUD_JS = r"""(() => {
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.channel_id) {
+        registerPtyChannel(frame.result, "pty.create");
         log(`PTY channel launched: ${frame.result.channel_id}. Approval: ${frame.result.approval_id || "none"}.`);
+        requestIndex.delete(frame.id);
         return;
       }
       if (frame.type === "response" && frame.result && frame.result.proposal) {

@@ -21,6 +21,21 @@ AGENT_PREFIX = re.compile(
     re.IGNORECASE,
 )
 NOTE_PREFIX = re.compile(r"^\s*(?:note|remember|capture)\s+(?P<note>.+?)\s*$", re.IGNORECASE)
+FILE_CONTEXT_PREFIX = re.compile(
+    r"^\s*(?:grab|open|read|load|pull(?:\s+up)?)\s+(?:this\s+|the\s+)?(?:file|path)\s+"
+    r"(?:in|at|from|under|located\s+at)?\s*(?:this\s+)?(?:location\s+)?(?P<path>.+?)\s*$",
+    re.IGNORECASE,
+)
+CODEBASE_EXPLORE_PREFIX = re.compile(
+    r"^\s*(?:explore|inspect|map|review)\s+(?:this\s+|the\s+)?(?:codebase|repo|repository|project)"
+    r"(?:\s+(?P<objective>.+?))?\s*$",
+    re.IGNORECASE,
+)
+FEATURE_PLAN_PREFIX = re.compile(
+    r"^\s*(?:plan|scope|design)\s+(?:this\s+|the\s+)?(?:feature|change|implementation|work)"
+    r"(?:\s+(?P<objective>.+?))?\s*$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -93,6 +108,21 @@ def propose_voice_intent(transcript: str, *, profile: PolicyProfile = "observe")
             policy=None,
         )
 
+    file_context_match = FILE_CONTEXT_PREFIX.match(text)
+    if file_context_match:
+        path = file_context_match.group("path").strip()
+        return _codex_handoff(text, f"read the requested file or path for context: {path}")
+
+    codebase_explore_match = CODEBASE_EXPLORE_PREFIX.match(text)
+    if codebase_explore_match:
+        objective = (codebase_explore_match.group("objective") or "and summarize the relevant structure").strip()
+        return _codex_handoff(text, f"explore the codebase {objective}")
+
+    feature_plan_match = FEATURE_PLAN_PREFIX.match(text)
+    if feature_plan_match:
+        objective = (feature_plan_match.group("objective") or "and produce an implementation plan").strip()
+        return _codex_handoff(text, f"plan the feature {objective}")
+
     note_match = NOTE_PREFIX.match(text)
     if note_match:
         return VoiceIntentProposal(
@@ -109,6 +139,18 @@ def propose_voice_intent(transcript: str, *, profile: PolicyProfile = "observe")
         intent_type="unknown",
         target="none",
         summary="Voice transcript was not routed; operator review is required.",
+    )
+
+
+def _codex_handoff(transcript: str, objective: str) -> VoiceIntentProposal:
+    return VoiceIntentProposal(
+        proposal_id=_new_proposal_id(),
+        transcript=transcript,
+        intent_type="agent_handoff",
+        target="codex",
+        summary=f"Voice-origin codex handoff proposal requires explicit confirmation: {objective}",
+        command=None,
+        policy=None,
     )
 
 
