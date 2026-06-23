@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ipaddress
+import json
+import subprocess
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -46,6 +48,46 @@ class MobileValidationPlan:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class MobileHostCandidate:
+    interface: str
+    host: str
+    host_class: str
+    url: str
+    iphone_reachable_candidate: bool
+    public_exposure_risk: bool
+    requires_allow_non_loopback: bool
+    runtime_command: str
+    preflight_command: str
+    validation_plan_command: str
+    warnings: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MobileHostDiscovery:
+    label: str
+    status: str
+    port: int
+    scheme: str
+    candidates: list[MobileHostCandidate]
+    recommended_candidate: MobileHostCandidate | None
+    writes_state: bool
+    network_probe_performed: bool
+    service_launch_performed: bool
+    browser_opened: bool
+    execution_authority: bool
+    warnings: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["candidates"] = [candidate.to_dict() for candidate in self.candidates]
+        data["recommended_candidate"] = self.recommended_candidate.to_dict() if self.recommended_candidate else None
+        return data
 
 
 def build_mobile_preflight(host: str = "127.0.0.1", port: int = 8765, scheme: str = "http") -> MobilePreflight:
@@ -94,6 +136,39 @@ def build_mobile_preflight(host: str = "127.0.0.1", port: int = 8765, scheme: st
             "Confirm approvals show operation, risk, and scope before approve or reject.",
             "Confirm the service worker does not cache /rpc, /ws, or non-GET requests.",
         ],
+        warnings=warnings,
+    )
+
+
+def discover_mobile_hosts(
+    port: int = 8765,
+    scheme: str = "http",
+    interface_records: list[dict[str, Any]] | None = None,
+) -> MobileHostDiscovery:
+    """Discover local mobile host candidates without serving, probing, opening browsers, or writing state."""
+    if scheme not in {"http", "https"}:
+        raise ValueError("scheme must be http or https")
+    if port < 1 or port > 65535:
+        raise ValueError("port must be between 1 and 65535")
+    records = interface_records if interface_records is not None else _read_ipv4_interfaces()
+    warnings: list[str] = []
+    if not records:
+        warnings.append("No IPv4 interface records were found; choose a private LAN, Tailscale, or WireGuard address manually.")
+    candidates = _mobile_candidates_from_interfaces(records, port=port, scheme=scheme)
+    recommended = next((candidate for candidate in candidates if candidate.iphone_reachable_candidate and not candidate.public_exposure_risk), None)
+    status = "READY_FOR_OPERATOR_TEST" if recommended else "NEEDS_PRIVATE_INTERFACE"
+    return MobileHostDiscovery(
+        label="Jarvis mobile host discovery",
+        status=status,
+        port=port,
+        scheme=scheme,
+        candidates=candidates,
+        recommended_candidate=recommended,
+        writes_state=False,
+        network_probe_performed=False,
+        service_launch_performed=False,
+        browser_opened=False,
+        execution_authority=False,
         warnings=warnings,
     )
 
@@ -179,3 +254,52 @@ def classify_mobile_host(host: str) -> str:
     if address.is_link_local:
         return "vpn-or-link-local"
     return "public"
+
+
+def _read_ipv4_interfaces() -> list[dict[str, Any]]:
+    try:
+        result = subprocess.run(["ip", "-j", "-4", "addr", "show"], capture_output=True, text=True, timeout=5, check=False)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+    try:
+        value = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return []
+    return value if isinstance(value, list) else []
+
+
+def _mobile_candidates_from_interfaces(records: list[dict[str, Any]], port: int, scheme: str) -> list[MobileHostCandidate]:
+    candidates: list[MobileHostCandidate] = []
+    for record in records:
+        interface = str(record.get("ifname") or "unknown")
+        flags = {str(flag) for flag in record.get("flags") or []}
+        is_loopback_interface = "LOOPBACK" in flags
+        for address in record.get("addr_info") or []:
+            if address.get("family") != "inet":
+                continue
+            host = str(address.get("local") or "")
+            if not host:
+                continue
+            preflight = build_mobile_preflight(host, port, scheme)
+            warnings = list(preflight.warnings)
+            iphone_candidate = preflight.iphone_reachable_candidate and not is_loopback_interface
+            if is_loopback_interface:
+                warnings.append("Interface is loopback-scoped; do not treat this address as iPhone-reachable.")
+            candidates.append(
+                MobileHostCandidate(
+                    interface=interface,
+                    host=host,
+                    host_class=preflight.host_class,
+                    url=preflight.url,
+                    iphone_reachable_candidate=iphone_candidate,
+                    public_exposure_risk=preflight.public_exposure_risk,
+                    requires_allow_non_loopback=preflight.requires_allow_non_loopback,
+                    runtime_command=preflight.runtime_command,
+                    preflight_command=f"jarvis-codex mobile preflight --host {host} --port {port} --scheme {scheme} --json",
+                    validation_plan_command=f"jarvis-codex mobile validation-plan --host {host} --port {port} --scheme {scheme} --json",
+                    warnings=warnings,
+                )
+            )
+    return candidates

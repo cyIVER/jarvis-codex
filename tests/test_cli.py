@@ -344,6 +344,49 @@ def test_mobile_preflight_json_is_read_only_summary(monkeypatch, capsys):
     assert data["runtime_command"].endswith("--allow-non-loopback")
 
 
+def test_mobile_discover_json_reports_candidates_without_launching(monkeypatch, capsys):
+    fake_candidate = {
+        "interface": "eth0",
+        "host": "192.168.1.20",
+        "host_class": "private-lan",
+        "url": "http://192.168.1.20:8765",
+        "iphone_reachable_candidate": True,
+        "public_exposure_risk": False,
+        "requires_allow_non_loopback": True,
+        "runtime_command": "jarvis-codex runtime serve --host 192.168.1.20 --port 8765 --allow-non-loopback",
+        "preflight_command": "jarvis-codex mobile preflight --host 192.168.1.20 --port 8765 --scheme http --json",
+        "validation_plan_command": "jarvis-codex mobile validation-plan --host 192.168.1.20 --port 8765 --scheme http --json",
+        "warnings": [],
+    }
+
+    class FakeDiscovery:
+        def to_dict(self):
+            return {
+                "label": "Jarvis mobile host discovery",
+                "status": "READY_FOR_OPERATOR_TEST",
+                "candidates": [fake_candidate],
+                "recommended_candidate": fake_candidate,
+                "writes_state": False,
+                "network_probe_performed": False,
+                "service_launch_performed": False,
+                "browser_opened": False,
+                "execution_authority": False,
+                "warnings": [],
+            }
+
+    monkeypatch.setattr(cli, "discover_mobile_hosts", lambda port, scheme: FakeDiscovery())
+
+    code = run_cli(monkeypatch, ["mobile", "discover", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["status"] == "READY_FOR_OPERATOR_TEST"
+    assert data["recommended_candidate"]["host"] == "192.168.1.20"
+    assert data["network_probe_performed"] is False
+    assert data["service_launch_performed"] is False
+    assert data["browser_opened"] is False
+
+
 def test_mobile_preflight_requires_json(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["jarvis-codex", "mobile", "preflight"])
 

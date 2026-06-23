@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from jarvis_codex.mobile import build_mobile_preflight, build_mobile_validation_plan, classify_mobile_host
+from jarvis_codex.mobile import build_mobile_preflight, build_mobile_validation_plan, classify_mobile_host, discover_mobile_hosts
 
 
 def test_mobile_preflight_keeps_loopback_safe_but_not_iphone_reachable() -> None:
@@ -17,6 +17,46 @@ def test_mobile_preflight_keeps_loopback_safe_but_not_iphone_reachable() -> None
     assert preflight.writes_state is False
     assert preflight.runtime_command == "jarvis-codex runtime serve --host 127.0.0.1 --port 8765"
     assert preflight.warnings == ["Loopback is safe for desktop but is not reachable from an iPhone."]
+
+
+def test_mobile_discovery_recommends_private_interface_without_probe_or_serve() -> None:
+    discovery = discover_mobile_hosts(
+        interface_records=[
+            {
+                "ifname": "eth0",
+                "flags": ["BROADCAST", "UP"],
+                "addr_info": [{"family": "inet", "local": "192.168.1.20"}],
+            }
+        ]
+    )
+
+    assert discovery.status == "READY_FOR_OPERATOR_TEST"
+    assert discovery.network_probe_performed is False
+    assert discovery.service_launch_performed is False
+    assert discovery.browser_opened is False
+    assert discovery.writes_state is False
+    assert discovery.execution_authority is False
+    assert discovery.recommended_candidate is not None
+    assert discovery.recommended_candidate.host == "192.168.1.20"
+    assert discovery.recommended_candidate.iphone_reachable_candidate is True
+    assert "--allow-non-loopback" in discovery.recommended_candidate.runtime_command
+
+
+def test_mobile_discovery_does_not_recommend_loopback_interface_address() -> None:
+    discovery = discover_mobile_hosts(
+        interface_records=[
+            {
+                "ifname": "lo",
+                "flags": ["LOOPBACK", "UP"],
+                "addr_info": [{"family": "inet", "local": "10.255.255.254"}],
+            }
+        ]
+    )
+
+    assert discovery.status == "NEEDS_PRIVATE_INTERFACE"
+    assert discovery.recommended_candidate is None
+    assert discovery.candidates[0].iphone_reachable_candidate is False
+    assert any("loopback-scoped" in warning for warning in discovery.candidates[0].warnings)
 
 
 def test_mobile_preflight_classifies_private_network_runtime_command() -> None:

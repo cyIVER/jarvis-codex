@@ -41,6 +41,7 @@ Implemented and validated in the local FastAPI runtime:
 - Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
 - Non-writing `jarvis-codex runtime readiness --json` CLI summary that exposes the same operator readiness surface without starting the runtime server.
 - Operator CLI entrypoint `jarvis-codex runtime serve`, loopback by default with explicit `--allow-non-loopback` for approved private-network binding.
+- Read-only mobile host discovery through `jarvis-codex mobile discover --json`; it lists local private-interface candidates without probing, serving, opening browsers, or writing state.
 - Local-only Electron HUD scaffold with loopback runtime default, renderer sandboxing, context isolation, disabled Node integration, denied window-open/cross-origin navigation, and no shell authority.
 - Electron HUD dependency lockfile generated separately with lifecycle scripts disabled.
 - Electron HUD local dependencies installed under ignored `tools/electron-hud/node_modules/` for operator validation; `node_modules` is not a release artifact.
@@ -88,6 +89,7 @@ The following remain future or incomplete production gates:
 - The PWA service worker must not cache `/rpc`, `/ws`, or non-GET requests.
 - Public internet exposure is not part of v1.
 - Runtime serving must bind to loopback unless the operator explicitly chooses a private-network host with `--allow-non-loopback`.
+- Mobile host discovery is candidate selection only; it does not prove iPhone reachability or approve runtime serving.
 - Mobile validation plans are evidence checklists only; they must not launch the runtime, probe the network, open browsers, or grant execution authority.
 - The Electron HUD must remain a client of the runtime. The renderer must not gain Node integration, shell authority, direct command execution, Worktrunk mutation, or runtime-policy bypasses.
 - The Electron lockfile is not proof of an installed or packaged app; dependency installation, package builds, signing, and artifact copy remain separate gated actions.
@@ -114,7 +116,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-253 passed
+256 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning and WebSocket deprecation warnings from HUD browser smoke coverage.

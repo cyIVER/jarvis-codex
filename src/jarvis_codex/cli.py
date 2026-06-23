@@ -11,7 +11,7 @@ from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
-from .mobile import build_mobile_preflight, build_mobile_validation_plan
+from .mobile import build_mobile_preflight, build_mobile_validation_plan, discover_mobile_hosts
 from .packaging import build_packaging_preflight
 from .release import build_release_manifest
 from .runtime_app import build_runtime_readiness, create_app
@@ -103,6 +103,10 @@ def main() -> int:
     runtime_readiness.add_argument("--json", action="store_true", help="Print runtime readiness as JSON")
     mobile = sub.add_parser("mobile", help="Review private-network mobile access without probing or serving")
     mobile_sub = mobile.add_subparsers(dest="mobile_command", required=True)
+    mobile_discover = mobile_sub.add_parser("discover", help="Discover local private-network host candidates without probing")
+    mobile_discover.add_argument("--port", type=int, default=8765, help="Runtime port")
+    mobile_discover.add_argument("--scheme", default="http", choices=["http", "https"], help="Runtime URL scheme")
+    mobile_discover.add_argument("--json", action="store_true", help="Print mobile host discovery as JSON")
     mobile_preflight = mobile_sub.add_parser("preflight", help="Print a read-only mobile PWA access preflight")
     mobile_preflight.add_argument("--host", default="127.0.0.1", help="Runtime host or private-network address to classify")
     mobile_preflight.add_argument("--port", type=int, default=8765, help="Runtime port")
@@ -238,6 +242,9 @@ def main() -> int:
     if args.command == "mobile":
         if not args.json:
             parser.error("mobile commands are JSON-only in this read-only first implementation; pass --json")
+        if args.mobile_command == "discover":
+            print(json.dumps(discover_mobile_hosts(args.port, args.scheme).to_dict(), indent=2, sort_keys=True))
+            return 0
         if args.mobile_command == "preflight":
             print(json.dumps(build_mobile_preflight(args.host, args.port, args.scheme).to_dict(), indent=2, sort_keys=True))
             return 0
