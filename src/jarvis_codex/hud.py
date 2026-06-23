@@ -589,6 +589,15 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && frame.result.child_session_id) {
+        activeSessionId = frame.result.child_session_id;
+        activeSession.textContent = `Active session: ${activeSessionId}`;
+        log(`Forked session ${frame.result.parent_session_id} to ${frame.result.child_session_id}. No execution authority granted.`);
+        request("session.list", { status: "active", limit: 25 });
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.sessions) {
         renderSessions(frame.result.sessions);
         requestIndex.delete(frame.id);
@@ -753,6 +762,17 @@ HUD_JS = r"""(() => {
         actor_id: "user"
       });
       log(`Session archive requested for ${archiveSessionId}.`);
+      return;
+    }
+    const forkSessionId = target.dataset.forkSessionId;
+    if (forkSessionId) {
+      request("session.fork", {
+        session_id: forkSessionId,
+        profile_id: selectedProfileId(),
+        source_client: "hud",
+        actor_id: "user"
+      });
+      log(`Session fork requested for ${forkSessionId}. This creates state only.`);
       return;
     }
     const sessionId = target.dataset.sessionId;
@@ -964,6 +984,7 @@ HUD_JS = r"""(() => {
         <div>ID: ${escapeHtml(session.id)}</div>
         <div>Profile: ${escapeHtml(session.profile_id || "observe")} | Updated: ${escapeHtml(session.updated_at || "")}</div>
         <button type="button" data-session-id="${escapeHtml(session.id)}">Use Session</button>
+        <button type="button" data-fork-session-id="${escapeHtml(session.id)}">Fork Session</button>
         <button type="button" class="danger" data-archive-session-id="${escapeHtml(session.id)}">Archive Session</button>
       </section>
     `).join("");

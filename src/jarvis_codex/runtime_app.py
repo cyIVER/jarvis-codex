@@ -62,7 +62,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "pty.restart",
     "session.cancel",
-    "session.fork",
     "session.resume",
     "swarm.plan",
     "swarm.start",
@@ -335,6 +334,7 @@ def _dispatch_request(
                     "message.list",
                     "session.archive",
                     "session.create",
+                    "session.fork",
                     "session.get",
                     "session.list",
                     "telemetry.codeburn_status",
@@ -544,6 +544,44 @@ def _dispatch_request(
                 "sequence": event.sequence,
                 "writes_state": True,
                 "session": archived or session,
+            },
+        )
+
+    if method == "session.fork":
+        parent_session_id = str(params.get("session_id") or "")
+        if not parent_session_id:
+            return make_error_response(request_id, code="missing_session_id", message="session_id is required")
+        parent = store.session(parent_session_id)
+        if parent is None:
+            return make_error_response(request_id, code="unknown_session", message="session does not exist")
+        child_session_id = str(params.get("child_session_id") or f"session_{uuid.uuid4().hex[:12]}")
+        profile_id = str(params.get("profile_id") or parent.get("profile_id") or "observe")
+        if profile_id not in POLICY_PROFILES:
+            return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
+        event = _append_and_publish(
+            store,
+            event_broadcaster,
+            session_id=child_session_id,
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="session.created",
+            payload={
+                "title": str(params.get("title") or f"Fork of {parent.get('title') or parent_session_id}"),
+                "profile_id": profile_id,
+                "model_route": params.get("model_route") or parent.get("model_route") or {},
+                "parent_session_id": parent_session_id,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "child_session_id": child_session_id,
+                "parent_session_id": parent_session_id,
+                "event_id": event.id,
+                "sequence": event.sequence,
+                "writes_state": True,
+                "execution_authority": False,
+                "session": store.session(child_session_id),
             },
         )
 

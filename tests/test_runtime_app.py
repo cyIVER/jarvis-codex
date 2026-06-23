@@ -230,6 +230,74 @@ def test_runtime_session_archive_validates_session_id(tmp_path):
     assert unknown_response.json()["error"]["code"] == "unknown_session"
 
 
+def test_runtime_session_fork_creates_child_session_without_execution_authority(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request(
+            "session.create",
+            {
+                "session_id": "session-parent",
+                "title": "Parent",
+                "profile_id": "dev-loop",
+                "model_route": {"agent": "codex"},
+            },
+            request_id="req_1",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "session.fork",
+            {"session_id": "session-parent", "child_session_id": "session-child"},
+            request_id="req_2",
+        ),
+    )
+    child_response = client.post(
+        "/rpc",
+        json=make_request("session.get", {"session_id": "session-child"}, request_id="req_3"),
+    )
+
+    result = response.json()["result"]
+    child = child_response.json()["result"]["session"]
+    assert result["child_session_id"] == "session-child"
+    assert result["parent_session_id"] == "session-parent"
+    assert result["writes_state"] is True
+    assert result["execution_authority"] is False
+    assert child["parent_session_id"] == "session-parent"
+    assert child["profile_id"] == "dev-loop"
+    assert child["model_route"] == {"agent": "codex"}
+
+
+def test_runtime_session_fork_validates_inputs(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post(
+        "/rpc",
+        json=make_request("session.create", {"session_id": "session-parent"}, request_id="req_1"),
+    )
+
+    missing_response = client.post("/rpc", json=make_request("session.fork", request_id="req_2"))
+    unknown_response = client.post(
+        "/rpc",
+        json=make_request("session.fork", {"session_id": "missing"}, request_id="req_3"),
+    )
+    invalid_profile_response = client.post(
+        "/rpc",
+        json=make_request(
+            "session.fork",
+            {"session_id": "session-parent", "profile_id": "unbounded"},
+            request_id="req_4",
+        ),
+    )
+
+    assert missing_response.json()["error"]["code"] == "missing_session_id"
+    assert unknown_response.json()["error"]["code"] == "unknown_session"
+    assert invalid_profile_response.json()["error"]["code"] == "invalid_profile"
+
+
 def test_runtime_prompt_send_records_semantic_prompt_without_execution_authority(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

@@ -80,6 +80,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "renderSessionHistory(frame.result.messages" in response.text
     assert "Session history refresh requested" in response.text
     assert 'request("session.archive"' in response.text
+    assert 'request("session.fork"' in response.text
+    assert "Fork Session" in response.text
+    assert "Session fork requested" in response.text
+    assert "Forked session" in response.text
     assert "Archive Session" in response.text
     assert "Session archive requested" in response.text
     assert "Archived session" in response.text

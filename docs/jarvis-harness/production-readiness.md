@@ -10,6 +10,7 @@ Implemented and validated in the local FastAPI runtime:
 - SQLite/WAL runtime event store with session and approval projections.
 - Runtime policy classification and hardline command blocking.
 - State-only session archive lifecycle through `session.archive`.
+- State-only session lineage creation through `session.fork`.
 - Non-writing policy profile catalog through `profile.list`.
 - State-only session profile metadata updates through `profile.set`.
 - Semantic prompt history writes through `prompt.send` without agent or command execution.

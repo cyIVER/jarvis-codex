@@ -49,6 +49,8 @@ Session:
 
 `session.archive` is implemented as a state-only lifecycle operation. It appends `session.archived`, updates the session projection, and does not execute shell, PTY, Worktrunk, or runtime workflow commands.
 
+`session.fork` is implemented as a state-only lineage operation. It creates a child session with `parent_session_id`, inherited route/profile defaults, and no execution authority.
+
 Messaging:
 
 - `prompt.send`
