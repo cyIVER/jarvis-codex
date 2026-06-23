@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 07:56 EDT
+updated: 2026-06-23 09:50 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -86,7 +86,9 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only Gemini Live evidence brief committed and pushed as `4f3d540`; it packages credential, billing, redaction, network-test, fallback, and release-ledger requirements without OAuth, WebSockets, network probes, state writes, cloud-spend authority, or gate closure.
 - Read-only packaging/signing evidence brief committed and pushed as `489a5d9`; it packages preflight, artifact, signing, security-review, publication, and release-ledger requirements without npm, build, signing, copy, publish, state writes, or gate closure.
 - Read-only external security evidence brief committed and pushed as `750180f`; it packages reviewer scope, standards, findings/remediation, accepted attestation, and release-ledger requirements without scanners, services, probes, builds, signing, copy/publish actions, state writes, or gate closure.
-- Current Codeburn snapshot: today `$25.35` across 222 calls; month `$735.92`, 7615 calls.
+- HUD mobile, Gemini, packaging/signing, external security, and gate-acceptance evidence surfaces are visible as display-only operator aids.
+- Production readiness validation baseline is current as of `e21832a`: governance PASS, loop readiness PASS, GitHub CI PASS, and `uv run pytest` reports 381 passed.
+- Current Codeburn snapshot: today `$85.48` across 716 calls; month `$796.06`, 8109 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -121,7 +123,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Electron Builder config and package/make scripts define the reviewed local packaging path only; they do not prove package execution, signing, distribution, or artifact security review.
 - Local Electron dist artifacts are validation evidence only; they are not signed, copied, reviewed, or distribution-ready release artifacts.
 - STT discovery is local asset inspection only; it does not access microphones, process audio, download models, call cloud services, start the runtime, or write state.
-- Current local STT discovery result is `NEEDS_SETUP` because no local `whisper-cli` or ggml model candidate was found.
+- Current local STT discovery has been proven on this machine with user-cache `whisper.cpp` and the JFK sample; this proves only approval-gated file-based STT, not always-on microphone execution.
 - Mobile host discovery is candidate selection only; it does not start the runtime, probe the iPhone, open a browser, approve non-loopback serving, or prove reachability.
 - Local dependency audits are not a replacement for external security review, signing review, or runtime threat modeling.
 - Local unsigned AppImage artifacts are not signed, reviewed, copied, or distribution-ready release artifacts.

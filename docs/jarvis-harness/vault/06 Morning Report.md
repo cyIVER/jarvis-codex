@@ -273,3 +273,11 @@ This note backs the morning HTML dashboard.
 ## Morning Dashboard
 
 See `docs/jarvis-harness/morning-dashboard.html`.
+
+## Post-0800 Checkpoint
+
+- Pushed HUD display-only evidence surfaces for mobile, Gemini Live, packaging/signing, external security, release gate status, release readiness checklist, and gate acceptance briefing.
+- Pushed production readiness validation baseline update in `e21832a`; the current local and CI baseline is governance PASS, loop readiness PASS, Remotion static validation PASS, and 381 tests passed.
+- Runtime readiness remains `foundation-ready`, not production-complete.
+- Remaining release gates still require human evidence and acceptance: actual iPhone private-network validation, approved Gemini Live network validation, Electron packaging/signing, release packaging/signing, external security review, and unattended/background scheduling policy.
+- Latest Codeburn checkpoint during the PM readiness pass: today `$85.48` across 716 calls; month `$796.06`, 8109 calls.

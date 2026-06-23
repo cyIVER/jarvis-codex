@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jarvis Harness Overnight Dashboard</title>
+  <title>Jarvis Harness Readiness Dashboard</title>
   <style>
     :root {
       color-scheme: dark;
@@ -244,14 +244,14 @@
   <main>
     <header>
       <div>
-        <h1>Jarvis Harness<br>Overnight Build Plan</h1>
+        <h1>Jarvis Harness<br>Readiness Checkpoint</h1>
         <p class="sub">
-          Morning dashboard prepared for 0800 EST. This page summarizes the production harness plan,
-          research decisions, Obsidian vault, AG challenge review, Codeburn monitoring, and next build phases.
+          Current checkpoint for the local Jarvis Codex platform. This page summarizes the governed
+          runtime foundation, user-test surfaces, remaining release gates, validation baseline, and review artifacts.
         </p>
       </div>
       <div class="status-ring" aria-label="overnight status">
-        <div class="ring-text"><strong>PHASE 64</strong>Video Brief</div>
+        <div class="ring-text"><strong>PHASE 65</strong>Test Ready</div>
       </div>
     </header>
 
@@ -272,32 +272,32 @@
     </section>
 
     <section>
-      <h2>Tonight's Output</h2>
+      <h2>Latest Checkpoint</h2>
       <div class="cards">
         <div class="card">
-          <div class="label">Spec Set</div>
-          <div class="value">14 docs</div>
-          <div class="note">Runtime, ACP, event store, HUD, voice, permissions, swarm, mobile, tests, and runbook.</div>
+          <div class="label">Baseline Commit</div>
+          <div class="value">e21832a</div>
+          <div class="note">Production readiness validation baseline updated and pushed to <code>main</code>.</div>
         </div>
         <div class="card">
-          <div class="label">Vault</div>
-          <div class="value">Obsidian</div>
-          <div class="note">Wikilinked planning memory under <code>docs/jarvis-harness/vault/</code>.</div>
+          <div class="label">Validation</div>
+          <div class="value">381 tests</div>
+          <div class="note">Current baseline: governance PASS, loop readiness PASS, GitHub CI PASS, and <code>uv run pytest</code> reports 381 passed.</div>
         </div>
         <div class="card">
           <div class="label">Telemetry</div>
-          <div class="value">$743.39</div>
-          <div class="note">Latest Codeburn snapshot: today $32.82 across 279 calls; month total 7672 calls.</div>
+          <div class="value">$796.06</div>
+          <div class="note">Latest Codeburn snapshot: today $85.48 across 716 calls; month total 8109 calls.</div>
         </div>
         <div class="card">
-          <div class="label">Reviewer</div>
-          <div class="value">AG</div>
-          <div class="note">Antigravity challenge review used to identify missing planning details.</div>
+          <div class="label">Status</div>
+          <div class="value">Foundation</div>
+          <div class="note">Runtime readiness remains <code>foundation-ready</code>; production release gates still require human evidence.</div>
         </div>
         <div class="card">
-          <div class="label">Rezun Gaps</div>
-          <div class="value">Mapped</div>
-          <div class="note">Voice, memory, tool integration, and mobile continuity are now explicit spec drivers.</div>
+          <div class="label">Test URL</div>
+          <div class="value">127.0.0.1</div>
+          <div class="note">Run <code>uv run jarvis-codex runtime serve --host 127.0.0.1 --port 8765</code>, then open <code>http://127.0.0.1:8765</code>.</div>
         </div>
         <div class="card">
           <div class="label">Runtime Core</div>
@@ -332,7 +332,7 @@
           <li>Voice intent proposals classify transcripts but must not execute commands.</li>
           <li>Loop lifecycle records require scoped approvals and runtime token; they do not launch agents, PTYs, Worktrunk, shell, or runtime workflows.</li>
           <li>AG challenge review found STT, approval replay, command policy, WebSocket origin, token, and API-contract issues; fixes are committed in <code>89b09fc</code>, <code>c176976</code>, and <code>7d3e0b5</code>.</li>
-          <li>Final integrated validation passed: governance PASS, loop readiness PASS with 25 checks, unattended policy PASS, mobile evidence-brief proof, Gemini evidence-brief proof, packaging/signing evidence-brief proof, external security evidence-brief proof, unattended loop evidence-brief proof, bounded loop-run proof, bounded loop-schedule proof, approval-gated swarm launch proof, HUD swarm launch control proof, external security review packet proof, release evidence ledger proof, release gate status proof, release readiness checklist proof, HUD release checklist proof, HUD release gate status proof, HUD release evidence recording proof, product readiness artifact sync, Antigravity Gemini, packaging, and security evidence challenge reviews, scheduler, security-packet, evidence-ledger, and readiness-doc challenge reviews, 325 tests, provider status matrix, mobile HUD readiness, release artifact hash evidence, Electron icon readiness, unsigned Electron installer evidence, mobile host discovery tests, STT discovery tests, AG challenge review, Electron package-build validation, Electron packaging-script review, Electron lock boundary review, Gemini validation-plan review, mobile validation-plan review, packaging preflight review, HUD loop control review, loop lifecycle review, Gemini feasibility review, mobile preflight review, Electron scaffold review, release manifest review, swarm lifecycle review, HUD browser smoke, local TTS adapter tests, runtime readiness/serve CLI tests, swarm-plan smoke, and command-proposal smoke.</li>
+          <li>Final integrated validation passed: governance PASS, loop readiness PASS with 25 checks, GitHub CI PASS, Remotion static validation PASS, and 381 tests passed. Release evidence surfaces remain display-only until a human records and accepts the required evidence.</li>
           <li>Mobile evidence briefs are operator collection aids only; they do not launch the runtime, probe the network, open browsers, write state, or close the actual mobile validation gate.</li>
           <li>Gemini evidence briefs are operator collection aids only; they do not start OAuth, open WebSockets, probe the network, approve cloud spend, write state, or close the networked Gemini validation gate.</li>
           <li>Packaging/signing evidence briefs are operator collection aids only; they do not run npm, build, sign, copy, publish, access signing credentials, write files, or close packaging gates.</li>
@@ -412,6 +412,7 @@
         <div class="step"><strong>Phase 62</strong><span>External security evidence brief packages reviewer scope, standards, findings/remediation requirements, accepted-attestation evidence, and release evidence command without scanners, services, probes, builds, signing, copy/publish actions, state writes, or gate closure.</span></div>
         <div class="step"><strong>Phase 63</strong><span>Unattended loop evidence brief packages policy acceptance, run-log visibility, stop controls, escalation rules, and release-evidence instructions without starting schedulers, writing state, or closing the unattended scheduling gate.</span></div>
         <div class="step"><strong>Phase 64</strong><span>Remotion 08:00 video briefing summarizes what was built, what remains, and which human decisions are still needed, then serves the generated MP4 from this dashboard.</span></div>
+        <div class="step"><strong>Phase 65</strong><span>PM command-library readiness review reconciled the operator dashboard, vault snapshot, and production runbook with the current 381-test baseline and pushed CI-green checkpoint <code>e21832a</code>.</span></div>
       </div>
     </section>
 
