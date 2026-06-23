@@ -202,6 +202,7 @@ This note backs the morning HTML dashboard.
 - Implemented HUD swarm launch controls for requesting exact scoped `swarm.launch` approval and launching approved role-labeled PTY panes through runtime policy.
 - Added browser smoke coverage for the full HUD swarm launch path: plan, lifecycle start approval, launch approval, approved PTY launch, and `swarm.launched` history.
 - Ran Antigravity challenge review on the HUD launch controls and hardened frozen role-scope launch submission, explicit non-execution lifecycle approval scopes, and approval-id clearing.
+- Committed and pushed HUD swarm launch controls in `c390992`.
 
 ## Pending
 
