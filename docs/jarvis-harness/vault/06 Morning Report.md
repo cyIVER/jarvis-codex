@@ -128,11 +128,15 @@ This note backs the morning HTML dashboard.
 - Committed and pushed hardened Electron HUD scaffold in `95b8221`.
 - Ran final integrated validation: governance PASS, 211 tests passed.
 - Ran AG Electron scaffold security review; no renderer authority or packaging gate issue was found.
-- Refreshed Codeburn snapshot: month `$597.36`, 6422 calls.
+- Implemented and validated a read-only mobile private-network preflight. It classifies loopback, private LAN, Tailscale, bind-all, and public hosts; emits safe `runtime serve` command guidance; and performs no network probes, service launches, or state writes.
+- Committed and pushed read-only mobile access preflight in `731340f`.
+- Ran final integrated validation: governance PASS, 218 tests passed.
+- Ran AG mobile preflight safety review; no read-only boundary issue was found.
+- Refreshed Codeburn snapshot: month `$599.81`, 6445 calls.
 
 ## Pending
 
-- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, safe swarm start/stop design, and release packaging.
+- Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, actual swarm agent launch design, loop command surfaces, and release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
