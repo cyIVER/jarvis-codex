@@ -326,6 +326,55 @@ def test_runtime_voice_provider_status_and_transcript_submit(tmp_path):
     assert stop_response.json()["result"]["event"]["event_type"] == "voice.stopped"
 
 
+def test_runtime_voice_intent_propose_classifies_without_execution_authority(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.intent_propose",
+            {"session_id": "session-voice", "transcript": "run git status --short", "profile": "observe"},
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    proposal = data["proposal"]
+    assert response.status_code == 200
+    assert proposal["intent_type"] == "command_proposal"
+    assert proposal["command"] == "git status --short"
+    assert proposal["policy"]["status"] == "allow"
+    assert proposal["policy"]["execution_authority"] is True
+    assert proposal["approval_required"] is True
+    assert proposal["execution_authority"] is False
+    assert proposal["routed_as_command"] is False
+    assert data["execution_authority"] is False
+    assert data["routed_as_command"] is False
+    assert data["event"]["event_type"] == "voice.intent_classified"
+
+
+def test_runtime_voice_intent_propose_surfaces_invalid_inputs(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    empty = client.post(
+        "/rpc",
+        json=make_request("voice.intent_propose", {"session_id": "session-voice", "transcript": " "}, request_id="req_1"),
+    )
+    bad_profile = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.intent_propose",
+            {"session_id": "session-voice", "transcript": "run git status", "profile": "invalid"},
+            request_id="req_2",
+        ),
+    )
+
+    assert empty.json()["error"]["code"] == "invalid_transcript"
+    assert bad_profile.json()["error"]["code"] == "invalid_profile"
+
+
 def test_runtime_voice_submit_rejects_empty_transcript(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

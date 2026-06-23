@@ -21,6 +21,7 @@ from .protocol import (
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
 from .voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
+from .voice_intent import propose_voice_intent
 
 POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
 PLANNED_METHODS = {
@@ -208,6 +209,7 @@ def _dispatch_request(
                     "voice.provider_status",
                     "voice.audio_chunk",
                     "voice.transcribe_audio",
+                    "voice.intent_propose",
                     "voice.start",
                     "voice.stop",
                     "voice.submit",
@@ -429,6 +431,31 @@ def _dispatch_request(
             {
                 "event": _stored_event_to_dict(event),
                 "characters": len(transcript),
+                "execution_authority": False,
+                "routed_as_command": False,
+            },
+        )
+
+    if method == "voice.intent_propose":
+        transcript = str(params.get("transcript") or "").strip()
+        if not transcript:
+            return make_error_response(request_id, code="invalid_transcript", message="voice transcript is required")
+        profile = str(params.get("profile") or "observe")
+        if profile not in POLICY_PROFILES:
+            return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
+        proposal = propose_voice_intent(transcript, profile=profile)  # type: ignore[arg-type]
+        event = store.append_event(
+            session_id=str(params.get("session_id") or "hud"),
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "hud"),
+            event_type="voice.intent_classified",
+            payload=proposal.to_dict(),
+        )
+        return make_response(
+            request_id,
+            {
+                "proposal": proposal.to_dict(),
+                "event": _stored_event_to_dict(event),
                 "execution_authority": False,
                 "routed_as_command": False,
             },

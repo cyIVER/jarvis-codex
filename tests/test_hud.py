@@ -32,7 +32,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "MediaRecorder" in response.text
     assert 'request("voice.audio_chunk"' in response.text
     assert 'request("voice.submit"' in response.text
+    assert 'request("voice.intent_propose"' in response.text
     assert 'request("voice.provider_status")' in response.text
     assert 'request("initialize")' in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
+    assert "Voice intent proposal" in response.text
+    assert "No execution authority" in response.text
     assert "Execution requires an explicit runtime command and policy decision" in response.text

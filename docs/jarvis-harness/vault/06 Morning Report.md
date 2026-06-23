@@ -40,11 +40,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated approval-gated local STT adapter execution for saved audio files.
 - Committed and pushed approval-gated local STT transcription in `b8be669`.
 - Implemented and validated plan-viewer harness routing for Codex/Antigravity planning handoffs with queue safety tests.
+- Committed and pushed plan-viewer harness route package in `13f2b06`.
+- Implemented and validated voice intent proposals with transcript-to-command safety boundaries.
 
 ## Pending
 
-- Commit and push plan-viewer harness route and queue-safety package.
-- Continue voice intent routing and transcript-to-command approval boundaries.
+- Commit and push voice intent proposal layer.
+- Continue transcript proposal approval UI and command preview boundaries.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

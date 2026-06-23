@@ -383,6 +383,12 @@ HUD_JS = r"""(() => {
       if (frame.type === "response" && frame.result && frame.result.approvals) {
         approvalCount.textContent = String(frame.result.approvals.length);
       }
+      if (frame.type === "response" && frame.result && frame.result.proposal) {
+        const proposal = frame.result.proposal;
+        log(`Voice intent proposal: ${proposal.intent_type} -> ${proposal.summary}`);
+        voiceLog.textContent = `Intent proposal: ${proposal.intent_type}. ${proposal.execution_authority ? "Execution authority present" : "No execution authority"}.`;
+        return;
+      }
       if (frame.type === "response" && frame.error) {
         log(`Error: ${frame.error.code} - ${frame.error.message}`);
         return;
@@ -477,6 +483,11 @@ HUD_JS = r"""(() => {
           request("voice.submit", {
             session_id: "hud",
             provider: "browser-web-speech",
+            transcript: text
+          });
+          request("voice.intent_propose", {
+            session_id: "hud",
+            profile: "observe",
             transcript: text
           });
           log(`Voice transcript submitted: ${text}`);
