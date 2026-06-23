@@ -54,6 +54,7 @@ The current release is a governed local operating substrate:
 - `jarvis-codex doctor --governance` returns compact governance status and does not create state directories.
 - Loop planning YAML parses successfully.
 - Remotion `npm run typecheck`, `npm audit --audit-level=high`, `npm run still`, and `npm run render` pass.
+- `tests/test_workflow_rehearsal.py` proves the local loop can capture state, record memory, request approval, write a handoff, report governance through doctor, select plan steps, approve a planning queue, and render continuity from temp state.
 - Global architecture validation has zero errors.
 
 ## Unresolved Product Decisions
