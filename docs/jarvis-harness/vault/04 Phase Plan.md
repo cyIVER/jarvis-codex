@@ -38,10 +38,11 @@ Completed:
 - FastAPI runtime app with `/health`, `/rpc`, WebSocket RPC, session creation, command classification, and planned-method stubs.
 - Policy-gated PTY supervisor with create, input, resize, kill, cleanup, and runtime RPC wiring.
 - Approval lifecycle service with persistent request/respond events, approval projections, runtime RPC methods, and `event.subscribe` replay framing.
+- Live WebSocket PTY stream frames multiplexed with request/response traffic.
 
 In progress:
 
-- Live WebSocket stream multiplexing.
+- HUD shell and client runtime adapter.
 
 ## Phase 2 Managed PTYs
 
@@ -56,6 +57,7 @@ Completed:
 - PTY supervisor module.
 - Runtime RPC wiring for `pty.create`, `pty.input`, `pty.resize`, and `pty.kill`.
 - Policy block and approval-required responses before process spawn.
+- PTY output stream frames over WebSocket.
 
 ## Phase 3 Permissions
 
@@ -72,6 +74,7 @@ Completed:
 - Persistent approval request and response events.
 - One-shot approval response guard.
 - Runtime `approval.request`, `approval.list`, and `approval.respond`.
+- Runtime `event.subscribe` replay framing.
 
 ## Phase 4 Voice
 

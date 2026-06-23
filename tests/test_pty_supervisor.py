@@ -62,6 +62,21 @@ def test_write_input_and_drain_output_from_cat():
     assert "hello from pty" in text
 
 
+def test_next_output_reads_shared_stream_queue():
+    supervisor = PtySupervisor()
+    result = supervisor.spawn("python3 -c \"print('shared stream')\"", profile="dev-loop")
+
+    try:
+        supervisor.get(result.channel_id).wait(timeout=2)
+        chunk = supervisor.next_output(timeout=2)
+    finally:
+        supervisor.close_all()
+
+    assert chunk is not None
+    assert chunk.channel_id == result.channel_id
+    assert "shared stream" in chunk.chunk
+
+
 def test_resize_and_kill_running_process():
     supervisor = PtySupervisor()
     result = supervisor.spawn("cat", profile="observe")

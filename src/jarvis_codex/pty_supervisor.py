@@ -70,6 +70,7 @@ class ManagedPty:
         profile: PolicyProfile,
         process: subprocess.Popen[bytes],
         master_fd: int,
+        output_queue: queue.Queue[PtyOutputChunk],
     ) -> None:
         self.channel_id = channel_id
         self.command = command
@@ -80,6 +81,7 @@ class ManagedPty:
         self._sequence = 0
         self._closed = False
         self._output: queue.Queue[PtyOutputChunk] = queue.Queue()
+        self._shared_output = output_queue
         self._reader = threading.Thread(target=self._read_loop, name=f"pty-reader-{channel_id}", daemon=True)
         self._reader.start()
 
@@ -155,13 +157,14 @@ class ManagedPty:
                     return
                 self._sequence += 1
                 self._output.put(
-                    PtyOutputChunk(
+                    chunk := PtyOutputChunk(
                         channel_id=self.channel_id,
                         stream_type="stdout",
                         chunk=data.decode("utf-8", errors="replace"),
                         sequence=self._sequence,
                     )
                 )
+                self._shared_output.put(chunk)
         finally:
             self.process.poll()
 
@@ -169,6 +172,7 @@ class ManagedPty:
 class PtySupervisor:
     def __init__(self) -> None:
         self._channels: dict[str, ManagedPty] = {}
+        self._output: queue.Queue[PtyOutputChunk] = queue.Queue()
         self._lock = threading.Lock()
 
     def spawn(
@@ -215,6 +219,7 @@ class PtySupervisor:
                 profile=profile,
                 process=process,
                 master_fd=master_fd,
+                output_queue=self._output,
             )
             with self._lock:
                 self._channels[channel_id] = managed
@@ -255,6 +260,12 @@ class PtySupervisor:
 
     def drain_output(self, channel_id: str) -> list[PtyOutputChunk]:
         return self.get(channel_id).drain_output()
+
+    def next_output(self, timeout: float | None = None) -> PtyOutputChunk | None:
+        try:
+            return self._output.get(timeout=timeout)
+        except queue.Empty:
+            return None
 
     def cleanup_finished(self) -> list[str]:
         removed: list[str] = []

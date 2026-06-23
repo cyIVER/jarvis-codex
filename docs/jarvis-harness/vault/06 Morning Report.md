@@ -28,11 +28,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated managed PTY supervision with policy-gated spawn, input, resize, kill, cleanup, and runtime RPC wiring.
 - Committed and pushed managed PTY supervision in `21ef4ab`.
 - Implemented and validated approval lifecycle and `event.subscribe` replay framing.
+- Committed and pushed approval lifecycle in `1332552`.
+- Implemented and validated live WebSocket PTY stream multiplexing.
 
 ## Pending
 
-- Commit and push approval lifecycle and event replay framing.
-- Continue live WebSocket stream multiplexing and approval event push.
+- Commit and push live WebSocket PTY stream multiplexing.
+- Continue HUD shell and client runtime adapter implementation.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

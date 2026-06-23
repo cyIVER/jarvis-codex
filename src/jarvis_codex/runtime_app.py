@@ -14,6 +14,7 @@ from .protocol import (
     ProtocolError,
     make_error_response,
     make_response,
+    make_stream,
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
@@ -49,15 +50,42 @@ def create_app(state_dir: Path) -> FastAPI:
     @app.websocket("/ws")
     async def websocket_rpc(websocket: WebSocket) -> None:
         await websocket.accept()
+        send_lock = asyncio.Lock()
+        stop_streaming = asyncio.Event()
+        stream_task = asyncio.create_task(_send_pty_streams(websocket, pty_supervisor, send_lock, stop_streaming))
         try:
             while True:
                 raw = await websocket.receive_text()
                 response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, approval_service, raw)
-                await websocket.send_json(response)
+                async with send_lock:
+                    await websocket.send_json(response)
         except WebSocketDisconnect:
             return
+        finally:
+            stop_streaming.set()
+            stream_task.cancel()
 
     return app
+
+
+async def _send_pty_streams(
+    websocket: WebSocket,
+    pty_supervisor: PtySupervisor,
+    send_lock: asyncio.Lock,
+    stop_streaming: asyncio.Event,
+) -> None:
+    while not stop_streaming.is_set():
+        chunk = await asyncio.to_thread(pty_supervisor.next_output, 0.1)
+        if chunk is None:
+            continue
+        frame = make_stream(
+            channel_id=chunk.channel_id,
+            stream_type=chunk.stream_type,
+            chunk=chunk.chunk,
+            sequence=chunk.sequence,
+        )
+        async with send_lock:
+            await websocket.send_json(frame)
 
 
 def _handle_frame(

@@ -309,6 +309,29 @@ def test_runtime_websocket_accepts_json_rpc_requests(tmp_path):
     assert response["result"]["status"] == "ok"
 
 
+def test_runtime_websocket_streams_pty_output(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json(
+            make_request(
+                "pty.create",
+                {"command": "python3 -c \"print('streamed pty')\"", "profile": "dev-loop"},
+                request_id="req_1",
+            )
+        )
+        frames = [websocket.receive_json(), websocket.receive_json()]
+
+    app.state.pty_supervisor.close_all()
+    frame_types = {frame["type"] for frame in frames}
+    stream_frames = [frame for frame in frames if frame["type"] == "stream"]
+
+    assert "response" in frame_types
+    assert "stream" in frame_types
+    assert "streamed pty" in "".join(frame["chunk"] for frame in stream_frames)
+
+
 def test_runtime_websocket_returns_structured_errors(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
