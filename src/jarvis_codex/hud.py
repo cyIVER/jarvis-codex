@@ -370,9 +370,11 @@ HUD_HTML = """<!doctype html>
           <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
           <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
           <div class="metric"><small>Mobile</small><strong id="mobile-access-status">unknown</strong></div>
+          <div class="metric"><small>Release Gates</small><strong id="release-gate-status">unknown</strong></div>
         </div>
         <div id="readiness-gaps" class="log">Readiness summary pending.</div>
         <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
+        <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
         <button id="refresh-readiness" type="button">Refresh Readiness</button>
       </div>
 
@@ -536,6 +538,8 @@ HUD_JS = r"""(() => {
   const readinessGaps = document.getElementById("readiness-gaps");
   const mobileAccessStatus = document.getElementById("mobile-access-status");
   const mobileAccessPanel = document.getElementById("mobile-access-panel");
+  const releaseGateStatus = document.getElementById("release-gate-status");
+  const releaseGatePanel = document.getElementById("release-gate-panel");
   const refreshReadiness = document.getElementById("refresh-readiness");
   let socket;
   let requestSeq = 0;
@@ -641,6 +645,7 @@ HUD_JS = r"""(() => {
       request("agent.provider_status");
       request("telemetry.codeburn_status");
       request("runtime.readiness");
+      request("release.gate_status");
     });
     socket.addEventListener("close", () => {
       socketStatus.textContent = "offline";
@@ -792,6 +797,11 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "production_complete")) {
         renderReadiness(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "open_gate_count")) {
+        renderReleaseGateStatus(frame.result);
         requestIndex.delete(frame.id);
         return;
       }
@@ -1179,6 +1189,7 @@ HUD_JS = r"""(() => {
 
   refreshReadiness.addEventListener("click", () => {
     request("runtime.readiness");
+    request("release.gate_status");
     log("Runtime readiness refresh requested.");
   });
 
@@ -1601,6 +1612,24 @@ HUD_JS = r"""(() => {
         <div>No runtime was launched, no browser opened, no network probe ran, and displayed commands are not execution authority.</div>
       </section>
     `;
+  }
+
+  function renderReleaseGateStatus(status) {
+    const gates = Array.isArray(status.gates) ? status.gates : [];
+    releaseGateStatus.textContent = `${status.open_gate_count ?? gates.length} open`;
+    if (!gates.length) {
+      releaseGatePanel.textContent = "No release gates reported. No state was written and no approval was granted.";
+      return;
+    }
+    releaseGatePanel.innerHTML = gates.map((gate) => `
+      <section class="approval-item">
+        <strong>${escapeHtml(gate.gate || "release_gate")}</strong>
+        <div>Status: ${escapeHtml(gate.status || "open")} | Evidence records: ${Number(gate.evidence_count || 0)}</div>
+        <div>Latest reviewer: ${escapeHtml(gate.latest_reviewer || "none")} | Latest evidence: ${escapeHtml(gate.latest_evidence_id || "none")}</div>
+        <div>Human acceptance required: ${gate.requires_human_acceptance ? "yes" : "no"} | Gate closed: ${gate.release_gate_closed ? "yes" : "no"}</div>
+      </section>
+    `).join("");
+    log(`Release gate status loaded: ${status.open_gate_count ?? gates.length} open gate(s). Evidence records do not close gates.`);
   }
 
   function speakRuntimeStatus() {

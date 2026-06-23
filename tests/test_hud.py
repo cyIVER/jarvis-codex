@@ -76,8 +76,11 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert 'id="pwa-status"' in response.text
     assert 'id="readiness-status"' in response.text
     assert 'id="mobile-access-status"' in response.text
+    assert 'id="release-gate-status"' in response.text
     assert 'id="readiness-gaps"' in response.text
     assert 'id="mobile-access-panel"' in response.text
+    assert 'id="release-gate-panel"' in response.text
+    assert "Evidence records do not close gates" in response.text
     assert "Displayed commands are proposals only" in response.text
     assert 'id="refresh-readiness"' in response.text
     assert 'rel="manifest" href="/manifest.webmanifest"' in response.text
@@ -193,6 +196,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("telemetry.codeburn_status")' in response.text
     assert 'request("agent.provider_status")' in response.text
     assert 'request("runtime.readiness")' in response.text
+    assert 'request("release.gate_status")' in response.text
     assert "/native-tools/codeburn/dist/cli.js status" not in response.text
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert 'request("approval.list", { status: "approved" })' in response.text
@@ -229,12 +233,15 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No agents launched" in response.text
     assert "Codeburn month usage" in response.text
     assert "renderReadiness(frame.result)" in response.text
+    assert "renderReleaseGateStatus(frame.result)" in response.text
     assert "renderMobileAccess(readiness.mobile_access || {})" in response.text
     assert "mobileAccessStatus.textContent" in response.text
     assert "Runtime command proposal" in response.text
     assert "displayed commands are not execution authority" in response.text
     assert "Remaining release gaps" in response.text
     assert "Runtime readiness refresh requested" in response.text
+    assert "Release gate status loaded" in response.text
+    assert "Evidence records do not close gates" in response.text
     assert 'navigator.serviceWorker.register("/service-worker.js")' in response.text
     assert "PWA service worker registered" in response.text
     assert "currentSessionId()" in response.text

@@ -31,6 +31,8 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
+from .release import build_release_gate_status
+from .state import JarvisState
 from .voice_audio import (
     VoiceAudioBuffer,
     VoiceAudioError,
@@ -244,6 +246,7 @@ def create_app(state_dir: Path) -> FastAPI:
             voice_audio,
             frame,
             runtime_token=runtime_token,
+            state_dir=state_dir,
         )
 
     @app.websocket("/ws")
@@ -271,6 +274,7 @@ def create_app(state_dir: Path) -> FastAPI:
                     voice_audio,
                     raw,
                     runtime_token=runtime_token,
+                    state_dir=state_dir,
                 )
                 async with send_lock:
                     await websocket.send_json(response)
@@ -342,6 +346,7 @@ def _handle_frame(
     voice_audio: VoiceAudioBuffer,
     raw: str | bytes | dict[str, Any],
     runtime_token: str | None = None,
+    state_dir: Path | None = None,
 ) -> dict[str, Any]:
     try:
         frame = parse_frame(raw)
@@ -379,6 +384,7 @@ def _handle_frame(
             method,
             params,
             runtime_token,
+            state_dir,
         )
     except PtyPolicyError as exc:
         decision = exc.decision
@@ -432,6 +438,7 @@ def _dispatch_request(
     method: str,
     params: dict[str, Any],
     runtime_token: str | None,
+    state_dir: Path | None,
 ) -> dict[str, Any]:
     if method == "initialize":
         return make_response(
@@ -457,6 +464,7 @@ def _dispatch_request(
                     "telemetry.codeburn_status",
                     "runtime.health",
                     "runtime.readiness",
+                    "release.gate_status",
                     "profile.list",
                     "profile.set",
                     "prompt.send",
@@ -492,6 +500,10 @@ def _dispatch_request(
 
     if method == "runtime.readiness":
         return make_response(request_id, build_runtime_readiness())
+
+    if method == "release.gate_status":
+        evidence = JarvisState(state_dir).release_evidence() if state_dir is not None else []
+        return make_response(request_id, build_release_gate_status(evidence))
 
     if method == "agent.provider_status":
         return make_response(request_id, build_agent_provider_status())

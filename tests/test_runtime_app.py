@@ -10,6 +10,7 @@ from starlette.websockets import WebSocketDisconnect
 
 import jarvis_codex.runtime_app as runtime_app
 from jarvis_codex.codeburn import CodeburnStatus
+from jarvis_codex.state import JarvisState
 from jarvis_codex.protocol import make_request
 from jarvis_codex.runtime_app import create_app
 
@@ -69,6 +70,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
+    assert "release.gate_status" in data["result"]["capabilities"]
     assert "profile.list" in data["result"]["capabilities"]
     assert "message.list" in data["result"]["capabilities"]
     assert "swarm.plan" in data["result"]["capabilities"]
@@ -1362,6 +1364,27 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert "approved_gemini_live_network_test" in data["remaining_gaps"]
     assert "actual_loop_execution" not in data["remaining_gaps"]
     assert not state.exists()
+
+
+def test_runtime_release_gate_status_reads_state_without_writing(tmp_path):
+    state = tmp_path / "state"
+    JarvisState(state).record_release_evidence(
+        "external_security_review",
+        "External reviewer artifact submitted, not accepted yet.",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("release.gate_status", request_id="req_1"))
+
+    data = response.json()["result"]
+    external = next(item for item in data["gates"] if item["gate"] == "external_security_review")
+    assert data["status"] == "open-gates"
+    assert data["writes_state"] is False
+    assert data["execution_authority"] is False
+    assert data["evidence_closes_gates"] is False
+    assert external["evidence_count"] == 1
+    assert external["release_gate_closed"] is False
 
 
 def test_runtime_profile_list_reports_policy_catalog_without_writing_state(tmp_path):
