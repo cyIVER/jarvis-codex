@@ -91,8 +91,17 @@ pattern: product-readiness-triage
 - [x] PM-028 - HUD release evidence recording
   Loop action: added runtime-token-gated HUD evidence metadata recording for release gates with no browser artifact path input and no gate closure.
   Human decision: HUD evidence recording is metadata only and does not substitute for external validation or acceptance.
-- [ ] PM-029 - Next product slice
-  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and background scheduling.
+- [x] PM-029 - Release readiness checklist
+  Loop action: added read-only `release readiness-checklist --json` to aggregate manifest, artifact evidence, packaging preflight, mobile/Gemini validation plans, external security review, and evidence counts into blocked-gate next actions.
+  Human decision: checklist output is planning only; it does not run validations, write state, sign artifacts, publish releases, or close gates.
+- [x] PM-030 - HUD release readiness checklist
+  Loop action: surfaced `release.readiness_checklist` in runtime RPC and the HUD Release Plan panel with display-only commands and browser smoke coverage.
+  Human decision: HUD checklist output is display-only and does not approve or execute listed commands.
+- [x] PM-031 - Loop budget-policy verifier
+  Loop action: hardened `loop verify --json` to check loop-budget manual cadence, token cap, kill switches, and escalation rules.
+  Human decision: this improves local loop governance evidence without adding broad loop skills or changing the Phase 1 governance baseline.
+- [ ] PM-032 - Next product slice
+  Loop action: pending prioritization between actual iPhone private-network validation evidence, approved Gemini Live network validation, Electron signing/distribution flow, external security reviewer attestation, and unattended/background scheduling policy.
   Human decision: not selected yet.
 
 ## Watch List
@@ -121,3 +130,6 @@ Run log: 2026-06-23 | findings: remaining external gates needed a safe evidence 
 Run log: 2026-06-23 | findings: release evidence needed a non-authoritative status summary | actions: added read-only gate status command that reports open gates and evidence counts without closure | escalations: 0
 Run log: 2026-06-23 | findings: release gate status was CLI-only | actions: surfaced read-only gate status in runtime RPC and HUD with display-only semantics | escalations: 0
 Run log: 2026-06-23 | findings: operator evidence recording needed a HUD path | actions: added runtime-token-gated HUD metadata recording with no browser artifact hashing or gate closure | escalations: 0
+Run log: 2026-06-23 | findings: release gates were spread across separate commands | actions: added read-only release readiness checklist and HUD Release Plan panel | escalations: 0
+Run log: 2026-06-23 | findings: loop verifier checked budget presence but not budget policy | actions: added loop-budget policy marker checks for cadence, token cap, kill switches, and escalation rules | escalations: 0
+Run log: 2026-06-23 | findings: product readiness artifacts lagged committed platform state | actions: reconciled acceptance matrix and loop state with current validated surfaces | escalations: 0
