@@ -95,6 +95,7 @@ Completed:
 - Local-only capture framing until STT streaming is connected.
 - Browser-managed STT final transcript submission through runtime events.
 - MediaRecorder fallback audio chunks stored under runtime state for later local STT.
+- Approval-gated local STT adapter execution for saved audio chunks, with transcript events marked as non-execution-authority.
 
 ## Phase 5 Swarm And Loops
 

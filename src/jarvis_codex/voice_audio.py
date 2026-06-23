@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+import shlex
+import subprocess
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +39,27 @@ class VoiceAudioChunkResult:
 
 class VoiceAudioError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class LocalSttResult:
+    transcript: str
+    audio_file: Path
+    model_path: Path
+    command: str
+    returncode: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "transcript": self.transcript,
+            "audio_file": str(self.audio_file),
+            "model_path": str(self.model_path),
+            "command": self.command,
+            "returncode": self.returncode,
+            "audio_processed": True,
+            "external_services": False,
+            "execution_authority": False,
+        }
 
 
 class VoiceAudioBuffer:
@@ -95,3 +118,51 @@ def _extension_for_mime(mime_type: str) -> str:
     if "mp4" in lowered:
         return ".mp4"
     return ".webm"
+
+
+def transcribe_with_local_adapter(
+    *,
+    audio_file: Path,
+    model_path: Path,
+    stt_command: str,
+    timeout_seconds: int = 120,
+) -> LocalSttResult:
+    audio = audio_file.resolve()
+    model = model_path.resolve()
+    if not audio.is_file():
+        raise VoiceAudioError(f"audio file not found: {audio}")
+    if not model.is_file():
+        raise VoiceAudioError(f"model file not found: {model}")
+    try:
+        command = shlex.split(stt_command)
+    except ValueError as exc:
+        raise VoiceAudioError(f"invalid stt command: {exc}") from exc
+    if not command:
+        raise VoiceAudioError("stt command is required")
+
+    try:
+        result = subprocess.run(
+            [*command, "--audio-file", str(audio), "--model", str(model)],
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise VoiceAudioError(f"stt adapter not found: {exc.filename}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise VoiceAudioError(f"stt adapter timed out after {timeout_seconds} seconds") from exc
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise VoiceAudioError(f"stt adapter failed with {result.returncode}: {stderr}")
+    transcript = result.stdout.strip()
+    if not transcript:
+        raise VoiceAudioError("stt adapter returned an empty transcript")
+    return LocalSttResult(
+        transcript=transcript,
+        audio_file=audio,
+        model_path=model,
+        command=stt_command,
+        returncode=result.returncode,
+    )

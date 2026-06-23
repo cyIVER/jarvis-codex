@@ -20,7 +20,7 @@ from .protocol import (
     parse_frame,
 )
 from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
-from .voice_audio import VoiceAudioBuffer, VoiceAudioError
+from .voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
 
 POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
 PLANNED_METHODS = {
@@ -207,6 +207,7 @@ def _dispatch_request(
                     "pty.kill",
                     "voice.provider_status",
                     "voice.audio_chunk",
+                    "voice.transcribe_audio",
                     "voice.start",
                     "voice.stop",
                     "voice.submit",
@@ -366,6 +367,11 @@ def _dispatch_request(
                         "privacy": "local",
                         "note": "MediaRecorder chunks can be stored locally; transcription remains separate and approval-gated.",
                     },
+                    "local_stt_adapter": {
+                        "status": "approval-gated",
+                        "privacy": "local",
+                        "note": "Saved audio may be transcribed only when allow_audio_processing is true.",
+                    },
                     "gemini_realtime": {
                         "status": "not_configured",
                         "privacy": "cloud",
@@ -459,6 +465,52 @@ def _dispatch_request(
             {
                 "audio": result.to_dict(),
                 "event": _stored_event_to_dict(event),
+            },
+        )
+
+    if method == "voice.transcribe_audio":
+        if not bool(params.get("allow_audio_processing") or False):
+            return make_error_response(
+                request_id,
+                code="approval_required",
+                message="local audio transcription requires explicit audio processing approval",
+                retryable=False,
+                approval_required=True,
+                details={"required_param": "allow_audio_processing"},
+            )
+        transcript = transcribe_with_local_adapter(
+            audio_file=Path(str(params.get("audio_file") or "")),
+            model_path=Path(str(params.get("model_path") or "")),
+            stt_command=str(params.get("stt_command") or ""),
+            timeout_seconds=int(params.get("timeout_seconds") or 120),
+        )
+        session_id = str(params.get("session_id") or "hud")
+        event = store.append_event(
+            session_id=session_id,
+            actor_id=str(params.get("actor_id") or "user"),
+            source_client=str(params.get("source_client") or "rpc"),
+            event_type="voice.transcript_final",
+            payload={
+                "text": transcript.transcript,
+                "provider": str(params.get("provider") or "local-stt-adapter"),
+                "audio_file": str(transcript.audio_file),
+                "model_path": str(transcript.model_path),
+                "execution_authority": False,
+                "routed_as_command": False,
+                "audio_processed": True,
+                "external_services": False,
+            },
+        )
+        return make_response(
+            request_id,
+            {
+                "event": _stored_event_to_dict(event),
+                "characters": len(transcript.transcript),
+                "transcription": transcript.to_dict(),
+                "execution_authority": False,
+                "routed_as_command": False,
+                "audio_processed": True,
+                "external_services": False,
             },
         )
 

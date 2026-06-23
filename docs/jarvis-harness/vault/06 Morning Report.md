@@ -36,11 +36,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated browser STT final transcript submission through `voice.submit`.
 - Committed and pushed browser STT transcript submission in `11aa08b`.
 - Implemented and validated MediaRecorder audio chunk ingestion into runtime state without automatic transcription execution.
+- Committed and pushed MediaRecorder audio chunk ingestion in `162b9b6`.
+- Implemented and validated approval-gated local STT adapter execution for saved audio files.
 
 ## Pending
 
-- Commit and push MediaRecorder audio chunk ingestion.
-- Continue local STT transcription job wiring.
+- Commit and push approval-gated local STT transcription job wiring.
+- Continue voice intent routing and transcript-to-command approval boundaries.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

@@ -1,8 +1,9 @@
 import base64
+import sys
 
 import pytest
 
-from jarvis_codex.voice_audio import VoiceAudioBuffer, VoiceAudioError
+from jarvis_codex.voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
 
 
 def test_voice_audio_buffer_appends_base64_chunks(tmp_path):
@@ -35,3 +36,72 @@ def test_voice_audio_buffer_rejects_invalid_chunks(tmp_path):
         buffer.append_chunk(session_id="s", chunk_b64="")
     with pytest.raises(VoiceAudioError):
         buffer.append_chunk(session_id="s", chunk_b64="not base64!")
+
+
+def test_transcribe_with_local_adapter_invokes_command_without_shell(tmp_path):
+    audio = tmp_path / "sample.webm"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "fake_stt.py"
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text(
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--audio-file')\n"
+        "parser.add_argument('--model')\n"
+        "args = parser.parse_args()\n"
+        "print('turn on the jarvis microphone')\n",
+        encoding="utf-8",
+    )
+
+    result = transcribe_with_local_adapter(
+        audio_file=audio,
+        model_path=model,
+        stt_command=f"{sys.executable} {adapter}",
+        timeout_seconds=5,
+    )
+
+    assert result.transcript == "turn on the jarvis microphone"
+    assert result.audio_file == audio.resolve()
+    assert result.model_path == model.resolve()
+    assert result.to_dict()["audio_processed"] is True
+    assert result.to_dict()["external_services"] is False
+    assert result.to_dict()["execution_authority"] is False
+
+
+def test_transcribe_with_local_adapter_rejects_missing_inputs(tmp_path):
+    audio = tmp_path / "missing.webm"
+    model = tmp_path / "model.bin"
+    model.write_bytes(b"model")
+
+    with pytest.raises(VoiceAudioError, match="audio file not found"):
+        transcribe_with_local_adapter(
+            audio_file=audio,
+            model_path=model,
+            stt_command=f"{sys.executable} -c 'print(1)'",
+        )
+
+    audio.write_bytes(b"audio")
+    with pytest.raises(VoiceAudioError, match="model file not found"):
+        transcribe_with_local_adapter(
+            audio_file=audio,
+            model_path=tmp_path / "missing-model.bin",
+            stt_command=f"{sys.executable} -c 'print(1)'",
+        )
+
+
+def test_transcribe_with_local_adapter_surfaces_adapter_failures(tmp_path):
+    audio = tmp_path / "sample.webm"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "failing_stt.py"
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text("import sys\nprint('failed', file=sys.stderr)\nsys.exit(17)\n", encoding="utf-8")
+
+    with pytest.raises(VoiceAudioError, match="stt adapter failed with 17"):
+        transcribe_with_local_adapter(
+            audio_file=audio,
+            model_path=model,
+            stt_command=f"{sys.executable} {adapter}",
+            timeout_seconds=5,
+        )

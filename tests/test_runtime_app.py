@@ -1,5 +1,6 @@
 import time
 import base64
+import sys
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -383,6 +384,106 @@ def test_runtime_voice_audio_chunk_rejects_bad_base64(tmp_path):
 
     assert response.status_code == 200
     assert response.json()["error"]["code"] == "invalid_audio_chunk"
+
+
+def test_runtime_voice_transcribe_audio_requires_explicit_approval(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {"session_id": "session-voice", "audio_file": "/tmp/audio.webm"},
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()
+    assert response.status_code == 200
+    assert data["error"]["code"] == "approval_required"
+    assert data["error"]["approval_required"] is True
+
+
+def test_runtime_voice_transcribe_audio_writes_transcript_event(tmp_path):
+    state = tmp_path / "state"
+    audio = tmp_path / "sample.webm"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "fake_stt.py"
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text(
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--audio-file')\n"
+        "parser.add_argument('--model')\n"
+        "args = parser.parse_args()\n"
+        "print('open the diagnostics panel')\n",
+        encoding="utf-8",
+    )
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_path": str(model),
+                "stt_command": f"{sys.executable} {adapter}",
+                "allow_audio_processing": True,
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    data = response.json()["result"]
+    payload = data["event"]["payload"]
+    assert response.status_code == 200
+    assert data["characters"] == len("open the diagnostics panel")
+    assert data["audio_processed"] is True
+    assert data["external_services"] is False
+    assert data["execution_authority"] is False
+    assert data["routed_as_command"] is False
+    assert payload["text"] == "open the diagnostics panel"
+    assert payload["provider"] == "local-stt-adapter"
+    assert payload["audio_processed"] is True
+    assert payload["external_services"] is False
+    assert payload["execution_authority"] is False
+
+
+def test_runtime_voice_transcribe_audio_surfaces_adapter_errors(tmp_path):
+    audio = tmp_path / "sample.webm"
+    model = tmp_path / "model.bin"
+    adapter = tmp_path / "empty_stt.py"
+    audio.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    adapter.write_text("print('')\n", encoding="utf-8")
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "voice.transcribe_audio",
+            {
+                "session_id": "session-voice",
+                "audio_file": str(audio),
+                "model_path": str(model),
+                "stt_command": f"{sys.executable} {adapter}",
+                "allow_audio_processing": True,
+                "timeout_seconds": 5,
+            },
+            request_id="req_1",
+        ),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["error"]["code"] == "invalid_audio_chunk"
+    assert "empty transcript" in response.json()["error"]["message"]
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):
