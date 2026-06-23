@@ -1,26 +1,28 @@
 # Remotion Review Gate
 
-Remotion is a future local-only review asset path. Gate 2 does not add Remotion dependencies or video generation.
+Remotion is a local-only review asset path under `video/remotion`. It is isolated from the Python package and is used to generate local walkthrough assets for review, not hosted publishing or runtime execution.
 
-## Before Implementation
+## Current Scaffold
 
-- Define the review objective and target audience.
-- Keep Remotion dependencies project-local.
-- Store generated videos, frames, and temporary render artifacts outside Git.
-- Verify browser playback and rendered frames locally.
-- Ask for approval before GPU/Docker execution, dependency installation, or long-running renders.
+- Dependencies are pinned and project-local in `video/remotion/package.json` and `video/remotion/package-lock.json`.
+- Generated videos, frames, browser caches, and temporary render artifacts stay outside Git through `video/remotion/.gitignore`.
+- The default composition is `JarvisCodexPlan`.
+- Docker and GPU paths are optional and approval-gated.
+- `npm run studio`, `npm run still`, `npm run render`, `npm run render:gpu`, and Docker Compose commands must be treated as explicit local runtime commands, not ambient agent permissions.
 
 ## Candidate Assets
 
 | Asset | Purpose | Gate |
 | --- | --- | --- |
-| Short plan walkthrough | Show the selected Gate 2 next steps | Requires local-only storyboard approval |
-| Lane reconciliation clip | Explain Worktrunk lane states | Requires lane refresh decision |
-| Hardware boundary clip | Show CUDA/NPU/Docker routing | Requires runtime execution approval |
+| Short plan walkthrough | Show the current Jarvis Codex operating loop | Local-only render approval |
+| Lane reconciliation clip | Explain planning-lane states | Local-only render approval; lane mutation remains separately gated |
+| Hardware boundary clip | Show CUDA/NPU/Docker routing | Runtime execution approval before any GPU or Docker command |
 
 ## Acceptance Checks
 
-- Remotion project scaffold is explicit and reversible.
-- Render output path is ignored by Git.
-- Browser smoke confirms the review asset loads locally.
+- `npm ci` installs from the lockfile.
+- `npm run typecheck` passes.
+- `npm audit --audit-level=high` reports no high or critical vulnerabilities.
+- `npm run still` and `npm run render` write only under ignored `video/remotion/out/`.
+- `tests/test_remotion_scaffold.py` confirms private/local package settings, deterministic Docker install, ignored outputs, approval-gated docs, and current planning-lane copy.
 - No hosted publish path is added without explicit approval.

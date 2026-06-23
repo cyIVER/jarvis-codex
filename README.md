@@ -94,6 +94,7 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 - `docs/VOICE_NOTIFICATIONS.md`
 - `docs/RUNTIME_GATES.md`
 - `docs/REMOTION_REVIEW.md`
+- `docs/PRODUCT_READINESS.md`
 - `docs/WORKTRUNK_LANES.md`
 - `docs/JARVIS_WHITE_PAPER.md`
 
