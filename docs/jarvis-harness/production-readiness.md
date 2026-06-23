@@ -16,6 +16,7 @@ Implemented and validated in the local FastAPI runtime:
 - State-only session profile metadata updates through `profile.set`.
 - Semantic prompt history writes through `prompt.send` without agent or command execution.
 - Session-scoped semantic history through `message.list`.
+- Read-only semantic history search through `message.search`.
 - HUD session history panel backed by `message.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.

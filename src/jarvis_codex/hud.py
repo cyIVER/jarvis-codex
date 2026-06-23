@@ -412,6 +412,9 @@ HUD_HTML = """<!doctype html>
         <div id="sessions-list" class="log">Active sessions will appear here.</div>
         <textarea id="prompt-text" class="log" rows="4" placeholder="Record a prompt in session history. This does not execute Codex, Antigravity, PTY, or Worktrunk."></textarea>
         <button id="send-prompt" type="button">Record Prompt</button>
+        <input id="history-search" type="search" placeholder="Search semantic history">
+        <button id="search-history" type="button">Search History</button>
+        <div id="history-search-results" class="log">Search results will appear here. Search is read-only.</div>
         <button id="refresh-session-history" type="button">Refresh Session History</button>
         <div id="session-history" class="log">Semantic session history will appear here. This is not an execution queue.</div>
       </div>
@@ -444,6 +447,9 @@ HUD_JS = r"""(() => {
   const setSessionProfile = document.getElementById("set-session-profile");
   const promptText = document.getElementById("prompt-text");
   const sendPrompt = document.getElementById("send-prompt");
+  const historySearch = document.getElementById("history-search");
+  const searchHistory = document.getElementById("search-history");
+  const historySearchResults = document.getElementById("history-search-results");
   const codeburnStatus = document.getElementById("codeburn-status");
   const refreshCodeburn = document.getElementById("refresh-codeburn");
   const pwaStatus = document.getElementById("pwa-status");
@@ -597,6 +603,11 @@ HUD_JS = r"""(() => {
         requestIndex.delete(frame.id);
         return;
       }
+      if (frame.type === "response" && frame.result && Array.isArray(frame.result.results)) {
+        renderSearchResults(frame.result.results, frame.result.query || "");
+        requestIndex.delete(frame.id);
+        return;
+      }
       if (frame.type === "response" && frame.result && frame.result.child_session_id) {
         activeSessionId = frame.result.child_session_id;
         activeSession.textContent = `Active session: ${activeSessionId}`;
@@ -737,6 +748,16 @@ HUD_JS = r"""(() => {
       actor_id: "user"
     });
     log("Prompt record requested. This does not execute a command or agent.");
+  });
+
+  searchHistory.addEventListener("click", () => {
+    const query = historySearch.value.trim();
+    request("message.search", {
+      query,
+      session_id: currentSessionId(),
+      limit: 20
+    });
+    log(`History search requested for "${query}". Search is read-only.`);
   });
 
   refreshCodeburn.addEventListener("click", () => {
@@ -1019,6 +1040,27 @@ HUD_JS = r"""(() => {
         <section class="approval-item">
           <strong>${escapeHtml(message.event_type || "event")}</strong>
           <div>Sequence: ${escapeHtml(message.sequence || "")} | Session: ${escapeHtml(message.session_id || "")}</div>
+          <pre>${escapeHtml(payload)}</pre>
+        </section>
+      `;
+    }).join("");
+  }
+
+  function renderSearchResults(results, query) {
+    if (!query) {
+      historySearchResults.textContent = "Enter a search query to search semantic history.";
+      return;
+    }
+    if (!results.length) {
+      historySearchResults.textContent = `No read-only history matches for "${query}".`;
+      return;
+    }
+    historySearchResults.innerHTML = results.map((result) => {
+      const payload = JSON.stringify(result.payload || {}, null, 2);
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(result.event_type || "event")}</strong>
+          <div>Sequence: ${escapeHtml(result.sequence || "")} | Session: ${escapeHtml(result.session_id || "")}</div>
           <pre>${escapeHtml(payload)}</pre>
         </section>
       `;

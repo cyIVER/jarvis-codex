@@ -331,6 +331,7 @@ def _dispatch_request(
                     "approval.respond",
                     "event.subscribe",
                     "message.list",
+                    "message.search",
                     "session.archive",
                     "session.create",
                     "session.fork",
@@ -671,6 +672,33 @@ def _dispatch_request(
             {
                 "messages": events,
                 "current_sequence": store.current_sequence(),
+                "writes_state": False,
+            },
+        )
+
+    if method == "message.search":
+        query = str(params.get("query") or "").strip()
+        session_id = params.get("session_id")
+        if session_id is not None and not isinstance(session_id, str):
+            return make_error_response(request_id, code="invalid_session_id", message="session_id must be a string")
+        limit = max(1, min(int(params.get("limit") or 20), 100))
+        if not query or not store.db_path.exists():
+            return make_response(
+                request_id,
+                {
+                    "results": [],
+                    "query": query,
+                    "writes_state": False,
+                },
+            )
+        results = store.search(query, limit=limit)
+        if isinstance(session_id, str):
+            results = [result for result in results if result["session_id"] == session_id]
+        return make_response(
+            request_id,
+            {
+                "results": results[:limit],
+                "query": query,
                 "writes_state": False,
             },
         )

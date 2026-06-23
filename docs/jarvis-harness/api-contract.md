@@ -58,11 +58,14 @@ Messaging:
 - `prompt.send`
 - `prompt.cancel`
 - `message.list`
+- `message.search`
 - `event.subscribe`
 
 `prompt.send` is implemented as a semantic prompt-history write. It appends `prompt.sent` for an existing session and explicitly does not execute Codex, Antigravity, PTY, Worktrunk, shell, or runtime workflows.
 
 `message.list` is implemented as a semantic event/history view. If runtime state has not been initialized yet, it returns an empty list without creating state.
+
+`message.search` is implemented as read-only semantic history search over the event-store FTS projection. Missing state and blank queries return empty results without writing files.
 
 PTY:
 

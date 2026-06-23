@@ -457,6 +457,84 @@ def test_runtime_message_list_returns_session_events(tmp_path):
     assert data["writes_state"] is False
 
 
+def test_runtime_message_search_returns_matching_events_without_writing(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    client.post("/rpc", json=make_request("session.create", {"session_id": "session-search"}, request_id="req_1"))
+    client.post(
+        "/rpc",
+        json=make_request(
+            "prompt.send",
+            {"session_id": "session-search", "text": "Find the blue reactor plan"},
+            request_id="req_2",
+        ),
+    )
+
+    response = client.post(
+        "/rpc",
+        json=make_request("message.search", {"query": "blue reactor"}, request_id="req_3"),
+    )
+
+    data = response.json()["result"]
+    assert data["writes_state"] is False
+    assert data["query"] == "blue reactor"
+    assert data["results"][0]["event_type"] == "prompt.sent"
+    assert data["results"][0]["payload"]["text"] == "Find the blue reactor plan"
+
+
+def test_runtime_message_search_can_filter_by_session(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    for session_id in ("session-a", "session-b"):
+        client.post("/rpc", json=make_request("session.create", {"session_id": session_id}, request_id=session_id))
+        client.post(
+            "/rpc",
+            json=make_request(
+                "prompt.send",
+                {"session_id": session_id, "text": "shared reactor keyword"},
+                request_id=f"prompt-{session_id}",
+            ),
+        )
+
+    response = client.post(
+        "/rpc",
+        json=make_request(
+            "message.search",
+            {"query": "reactor", "session_id": "session-b"},
+            request_id="req_1",
+        ),
+    )
+
+    assert {result["session_id"] for result in response.json()["result"]["results"]} == {"session-b"}
+
+
+def test_runtime_message_search_absent_store_and_blank_query_do_not_write_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    blank_response = client.post("/rpc", json=make_request("message.search", {"query": "   "}, request_id="req_1"))
+    missing_response = client.post("/rpc", json=make_request("message.search", {"query": "anything"}, request_id="req_2"))
+
+    assert blank_response.json()["result"]["results"] == []
+    assert missing_response.json()["result"]["results"] == []
+    assert blank_response.json()["result"]["writes_state"] is False
+    assert missing_response.json()["result"]["writes_state"] is False
+    assert not state.exists()
+
+
+def test_runtime_message_search_validates_session_filter_type(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("message.search", {"query": "x", "session_id": 42}, request_id="req_1"),
+    )
+
+    assert response.json()["error"]["code"] == "invalid_session_id"
+
+
 def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
