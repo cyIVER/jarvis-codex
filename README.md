@@ -157,13 +157,25 @@ Selected next steps are written to `state/next-steps/selection.json`, which is i
 
 GitHub CI runs Python tests, project-local Codex governance validation, and Remotion typecheck/audit checks. It does not render Remotion assets, publish artifacts, mutate Git/Worktrunk state, launch services, or execute local runtime workflows.
 
-## Roadmap
+## Release Gates
 
-1. Local state, handoff CLI, and read-only doctor.
-2. Project-local Codex governance and validator integration.
-3. Local browser UI and Remotion video review surface.
-4. Hardware-aware GPU/NPU inspection and approval gates.
-5. Transcript and approved local-file STT voice ingress.
-6. Codex App Server bridge.
-7. Approval-aware tool execution.
-8. Worktrunk-powered parallel coding sessions.
+The local governed harness foundation is implemented and validated. Do not treat it as production-complete until these gates have accepted evidence:
+
+1. Actual iPhone or approved mobile-device validation over an approved private-network address.
+2. Approved Gemini Live network validation with credential, billing/quota, redaction, and fallback evidence.
+3. Electron packaging/signing review with signed artifact hashes and security review.
+4. Release packaging/signing review with explicit copy, upload, or publication approval if distribution is requested.
+5. External security reviewer attestation with reviewed scope, findings, remediation status, and sign-off.
+6. Unattended/background scheduling policy acceptance before any daemon, background scheduler, or open-ended loop operation.
+
+Useful read-only review commands:
+
+```bash
+uv run jarvis-codex runtime readiness --json
+uv run jarvis-codex release readiness-checklist --json
+uv run jarvis-codex mobile evidence-brief --json
+uv run jarvis-codex gemini evidence-brief --json
+uv run jarvis-codex release packaging-evidence-brief --json
+uv run jarvis-codex release security-evidence-brief --json
+uv run jarvis-codex loop unattended-evidence-brief --json
+```
