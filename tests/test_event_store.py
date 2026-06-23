@@ -170,3 +170,37 @@ def test_event_store_iterates_events_without_requiring_session_filter(tmp_path):
     )
 
     assert [event.session_id for event in store.iter_events()] == ["session-1", "session-2"]
+
+
+def test_event_store_projects_approval_lifecycle(tmp_path):
+    store = JarvisEventStore(tmp_path / "jarvis.db")
+    store.append_event(
+        session_id="session-1",
+        actor_id="runtime",
+        source_client="pytest",
+        event_type="approval.requested",
+        payload={
+            "approval_id": "appr-1",
+            "summary": "Run tests",
+            "operation": "uv run pytest",
+            "risk": "medium",
+            "scope": {"command": "uv run pytest tests/test_event_store.py"},
+        },
+        created_at=10,
+    )
+    store.append_event(
+        session_id="session-1",
+        actor_id="user",
+        source_client="pytest",
+        event_type="approval.responded",
+        payload={"approval_id": "appr-1", "status": "approved", "reason": "targeted"},
+        created_at=20,
+    )
+
+    approval = store.approval("appr-1")
+
+    assert approval is not None
+    assert approval["status"] == "approved"
+    assert approval["decided_at"] == 20
+    assert approval["scope"]["command"].startswith("uv run pytest")
+    assert store.approvals(status="approved")[0]["id"] == "appr-1"

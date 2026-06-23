@@ -311,6 +311,24 @@ class JarvisEventStore:
             row = connection.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
         return dict(row) if row is not None else None
 
+    def approval(self, approval_id: str) -> dict[str, Any] | None:
+        self.initialize()
+        with self._connection() as connection:
+            row = connection.execute("SELECT * FROM approvals WHERE id = ?", (approval_id,)).fetchone()
+        return _approval_from_row(row) if row is not None else None
+
+    def approvals(self, status: str | None = None) -> list[dict[str, Any]]:
+        self.initialize()
+        query = "SELECT * FROM approvals"
+        args: tuple[str, ...] = ()
+        if status is not None:
+            query += " WHERE status = ?"
+            args = (status,)
+        query += " ORDER BY created_at ASC, id ASC"
+        with self._connection() as connection:
+            rows = connection.execute(query, args).fetchall()
+        return [_approval_from_row(row) for row in rows]
+
     def table_names(self) -> set[str]:
         self.initialize()
         with self._connection() as connection:
@@ -414,6 +432,57 @@ class JarvisEventStore:
             )
             return
 
+        if event_type == "approval.requested":
+            approval_id = str(payload["approval_id"])
+            scope_json = json.dumps(payload.get("scope") or {}, sort_keys=True)
+            connection.execute(
+                """
+                INSERT INTO approvals(
+                    id,
+                    session_id,
+                    summary,
+                    operation,
+                    risk,
+                    status,
+                    scope_json,
+                    created_at,
+                    decided_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, NULL)
+                ON CONFLICT(id) DO UPDATE SET
+                    summary=excluded.summary,
+                    operation=excluded.operation,
+                    risk=excluded.risk,
+                    status='pending',
+                    scope_json=excluded.scope_json,
+                    decided_at=NULL
+                """,
+                (
+                    approval_id,
+                    session_id,
+                    str(payload.get("summary") or ""),
+                    str(payload.get("operation") or ""),
+                    str(payload.get("risk") or "medium"),
+                    scope_json,
+                    created_at,
+                ),
+            )
+            return
+
+        if event_type == "approval.responded":
+            approval_id = str(payload["approval_id"])
+            status = str(payload["status"])
+            connection.execute(
+                """
+                UPDATE approvals
+                SET status = ?,
+                    decided_at = ?
+                WHERE id = ?
+                """,
+                (status, created_at, approval_id),
+            )
+            return
+
         connection.execute(
             """
             UPDATE sessions
@@ -451,6 +520,20 @@ def _event_to_json(event: StoredEvent) -> dict[str, Any]:
         "correlation_id": event.correlation_id,
         "parent_event_id": event.parent_event_id,
         "created_at": event.created_at,
+    }
+
+
+def _approval_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "session_id": str(row["session_id"]),
+        "summary": str(row["summary"]),
+        "operation": str(row["operation"]),
+        "risk": str(row["risk"]),
+        "status": str(row["status"]),
+        "scope": json.loads(str(row["scope_json"])),
+        "created_at": int(row["created_at"]),
+        "decided_at": int(row["decided_at"]) if row["decided_at"] is not None else None,
     }
 
 

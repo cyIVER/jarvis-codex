@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
+from .approval import ApprovalError, ApprovalService
 from .event_store import JarvisEventStore
 from .policy import classify_command
 from .protocol import (
@@ -19,10 +20,6 @@ from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
 
 POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
 PLANNED_METHODS = {
-    "approval.list",
-    "approval.request",
-    "approval.respond",
-    "event.subscribe",
     "pty.restart",
 }
 
@@ -31,8 +28,10 @@ def create_app(state_dir: Path) -> FastAPI:
     app = FastAPI(title="Jarvis Runtime", version="0.1.0")
     store = JarvisEventStore(state_dir / "runtime" / "jarvis.db")
     pty_supervisor = PtySupervisor()
+    approval_service = ApprovalService(store)
     app.state.event_store = store
     app.state.pty_supervisor = pty_supervisor
+    app.state.approval_service = approval_service
     app.router.add_event_handler("shutdown", pty_supervisor.close_all)
 
     @app.get("/health")
@@ -45,7 +44,7 @@ def create_app(state_dir: Path) -> FastAPI:
 
     @app.post("/rpc")
     def rpc(frame: dict[str, Any]) -> dict[str, Any]:
-        return _handle_frame(store, pty_supervisor, frame)
+        return _handle_frame(store, pty_supervisor, approval_service, frame)
 
     @app.websocket("/ws")
     async def websocket_rpc(websocket: WebSocket) -> None:
@@ -53,7 +52,7 @@ def create_app(state_dir: Path) -> FastAPI:
         try:
             while True:
                 raw = await websocket.receive_text()
-                response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, raw)
+                response = await asyncio.to_thread(_handle_frame, store, pty_supervisor, approval_service, raw)
                 await websocket.send_json(response)
         except WebSocketDisconnect:
             return
@@ -64,6 +63,7 @@ def create_app(state_dir: Path) -> FastAPI:
 def _handle_frame(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
+    approval_service: ApprovalService,
     raw: str | bytes | dict[str, Any],
 ) -> dict[str, Any]:
     try:
@@ -92,7 +92,7 @@ def _handle_frame(
         return make_error_response(request_id, code="invalid_params", message="params must be an object")
 
     try:
-        return _dispatch_request(store, pty_supervisor, request_id, method, params)
+        return _dispatch_request(store, pty_supervisor, approval_service, request_id, method, params)
     except PtyPolicyError as exc:
         decision = exc.decision
         return make_error_response(
@@ -111,6 +111,13 @@ def _handle_frame(
             message="PTY channel does not exist",
             retryable=False,
         )
+    except ApprovalError as exc:
+        return make_error_response(
+            request_id,
+            code="invalid_approval",
+            message=str(exc),
+            retryable=False,
+        )
     except Exception as exc:
         return make_error_response(
             request_id,
@@ -124,6 +131,7 @@ def _handle_frame(
 def _dispatch_request(
     store: JarvisEventStore,
     pty_supervisor: PtySupervisor,
+    approval_service: ApprovalService,
     request_id: str,
     method: str,
     params: dict[str, Any],
@@ -136,9 +144,17 @@ def _dispatch_request(
                 "protocol": "acp-style-json-rpc",
                 "capabilities": [
                     "initialize",
+                    "approval.list",
+                    "approval.request",
+                    "approval.respond",
+                    "event.subscribe",
                     "session.create",
                     "runtime.health",
                     "command.classify",
+                    "pty.create",
+                    "pty.input",
+                    "pty.resize",
+                    "pty.kill",
                 ],
                 "writes_reports": False,
             },
@@ -214,6 +230,67 @@ def _dispatch_request(
         returncode = pty_supervisor.kill(channel_id)
         return make_response(request_id, {"channel_id": channel_id, "returncode": returncode})
 
+    if method == "approval.request":
+        result = approval_service.request(
+            session_id=str(params.get("session_id") or "runtime"),
+            summary=str(params.get("summary") or ""),
+            operation=str(params.get("operation") or ""),
+            risk=str(params.get("risk") or "medium"),
+            scope=params.get("scope") if isinstance(params.get("scope"), dict) else {},
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+        )
+        return make_response(
+            request_id,
+            {
+                "approval": result.approval,
+                "event": _stored_event_to_dict(result.event),
+            },
+        )
+
+    if method == "approval.list":
+        status = params.get("status")
+        if status is not None and status not in {"pending", "approved", "rejected"}:
+            return make_error_response(request_id, code="invalid_status", message="unknown approval status")
+        return make_response(request_id, {"approvals": approval_service.list(status=status)})  # type: ignore[arg-type]
+
+    if method == "approval.respond":
+        status = str(params.get("status") or "")
+        if status not in {"approved", "rejected"}:
+            return make_error_response(request_id, code="invalid_status", message="status must be approved or rejected")
+        result = approval_service.respond(
+            approval_id=str(params.get("approval_id") or ""),
+            status=status,  # type: ignore[arg-type]
+            actor_id=str(params.get("actor_id") or "runtime"),
+            source_client=str(params.get("source_client") or "rpc"),
+            reason=str(params.get("reason") or ""),
+        )
+        return make_response(
+            request_id,
+            {
+                "approval": result.approval,
+                "event": _stored_event_to_dict(result.event),
+            },
+        )
+
+    if method == "event.subscribe":
+        session_id = params.get("session_id")
+        since_sequence = int(params.get("since_sequence") or 0)
+        limit = max(0, min(int(params.get("limit") or 100), 500))
+        events = [
+            _stored_event_to_dict(event)
+            for event in store.iter_events(session_id=session_id if isinstance(session_id, str) else None)
+            if event.sequence > since_sequence
+        ][:limit]
+        return make_response(
+            request_id,
+            {
+                "subscribed": True,
+                "replay": events,
+                "current_sequence": store.current_sequence(),
+            },
+        )
+
     if method in PLANNED_METHODS:
         return make_error_response(
             request_id,
@@ -228,3 +305,18 @@ def _dispatch_request(
         message=f"unknown runtime method: {method}",
         retryable=False,
     )
+
+
+def _stored_event_to_dict(event) -> dict[str, Any]:
+    return {
+        "sequence": event.sequence,
+        "id": event.id,
+        "session_id": event.session_id,
+        "actor_id": event.actor_id,
+        "source_client": event.source_client,
+        "event_type": event.event_type,
+        "payload": event.payload,
+        "correlation_id": event.correlation_id,
+        "parent_event_id": event.parent_event_id,
+        "created_at": event.created_at,
+    }

@@ -29,6 +29,8 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert data["type"] == "response"
     assert data["result"]["runtime"] == "jarvis"
     assert "session.create" in data["result"]["capabilities"]
+    assert "approval.request" in data["result"]["capabilities"]
+    assert "event.subscribe" in data["result"]["capabilities"]
 
 
 def test_runtime_session_create_writes_event_store(tmp_path):
@@ -211,6 +213,66 @@ def test_runtime_pty_input_resize_and_kill(tmp_path):
     assert input_response.json()["result"]["accepted"] is True
     assert resize_response.json()["result"]["rows"] == 24
     assert isinstance(kill_response.json()["result"]["returncode"], int)
+
+
+def test_runtime_approval_lifecycle_and_event_subscription(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-1",
+                "summary": "Run targeted tests",
+                "operation": "uv run pytest tests/test_runtime_app.py",
+                "risk": "medium",
+                "scope": {"command": "uv run pytest tests/test_runtime_app.py"},
+            },
+            request_id="req_1",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    list_response = client.post(
+        "/rpc",
+        json=make_request("approval.list", {"status": "pending"}, request_id="req_2"),
+    )
+    respond_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {"approval_id": approval["id"], "status": "approved", "reason": "targeted"},
+            request_id="req_3",
+        ),
+    )
+    subscribe_response = client.post(
+        "/rpc",
+        json=make_request(
+            "event.subscribe",
+            {"session_id": "session-1", "since_sequence": 0, "limit": 10},
+            request_id="req_4",
+        ),
+    )
+
+    assert approval["status"] == "pending"
+    assert list_response.json()["result"]["approvals"][0]["id"] == approval["id"]
+    assert respond_response.json()["result"]["approval"]["status"] == "approved"
+    replay_types = [event["event_type"] for event in subscribe_response.json()["result"]["replay"]]
+    assert replay_types == ["approval.requested", "approval.responded"]
+
+
+def test_runtime_approval_errors_are_structured(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+
+    response = client.post(
+        "/rpc",
+        json=make_request("approval.request", {"session_id": "session-1", "summary": ""}, request_id="req_1"),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["error"]["code"] == "invalid_approval"
 
 
 def test_runtime_internal_errors_return_structured_error(tmp_path):

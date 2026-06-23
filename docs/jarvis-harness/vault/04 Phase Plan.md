@@ -37,10 +37,11 @@ Completed:
 - Runtime policy classifier with hardline block, approval, and allow decisions.
 - FastAPI runtime app with `/health`, `/rpc`, WebSocket RPC, session creation, command classification, and planned-method stubs.
 - Policy-gated PTY supervisor with create, input, resize, kill, cleanup, and runtime RPC wiring.
+- Approval lifecycle service with persistent request/respond events, approval projections, runtime RPC methods, and `event.subscribe` replay framing.
 
 In progress:
 
-- Event streaming and approval lifecycle design.
+- Live WebSocket stream multiplexing.
 
 ## Phase 2 Managed PTYs
 
@@ -58,11 +59,19 @@ Completed:
 
 ## Phase 3 Permissions
 
+Status: implementation started.
+
 Deliver:
 
 - Policy profiles.
 - Approval lifecycle.
 - Hardline blocklist.
+
+Completed:
+
+- Persistent approval request and response events.
+- One-shot approval response guard.
+- Runtime `approval.request`, `approval.list`, and `approval.respond`.
 
 ## Phase 4 Voice
 

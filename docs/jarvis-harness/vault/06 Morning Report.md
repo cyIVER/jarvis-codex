@@ -26,11 +26,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated runtime FastAPI app slice with HTTP RPC, WebSocket RPC, session creation, policy classification, and explicit planned-method responses.
 - Committed and pushed runtime API skeleton in `6a9d518`.
 - Implemented and validated managed PTY supervision with policy-gated spawn, input, resize, kill, cleanup, and runtime RPC wiring.
+- Committed and pushed managed PTY supervision in `21ef4ab`.
+- Implemented and validated approval lifecycle and `event.subscribe` replay framing.
 
 ## Pending
 
-- Commit and push managed PTY supervision.
-- Continue event streaming and approval lifecycle implementation.
+- Commit and push approval lifecycle and event replay framing.
+- Continue live WebSocket stream multiplexing and approval event push.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
