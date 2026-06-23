@@ -60,7 +60,7 @@ The current release is a governed local operating substrate:
 
 ## Unresolved Product Decisions
 
-- Whether to push the 17 local commits to `origin/main`.
+- Whether to push local commits to `origin/main` after validation.
 - Whether generated Remotion PNG/MP4 files should be copied to a release artifact location or remain local ignored outputs.
 - Whether the next package should be Worktrunk lane CLI design, voice ingress discovery, or release artifact packaging.
 - Whether project-local `skills.config` should remain deferred until more routing evidence appears.

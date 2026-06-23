@@ -16,10 +16,13 @@ pattern: product-readiness-triage
 - [x] PM-003 - Read-only safe handoff queue summary
   Loop action: added safe handoff module, CLI summary, JSON mode, tests, and docs.
   Human decision: no command runner without a separate PRD.
-- [ ] PM-004 - Plan viewer browser smoke
-  Loop action: in progress; headless Chromium smoke test added.
+- [x] PM-004 - Plan viewer browser smoke
+  Loop action: added headless Chromium smoke test and committed browser-smoke package.
   Human decision: keep browser launch out of production CLI automation.
-- [ ] PM-005 - Worktrunk lane CLI design
+- [x] PM-005 - Loop Engineering autonomous workflow
+  Loop action: added `LOOP.md`, loop state, budget, run log, safety gates, and pattern registry.
+  Human decision: L1 report-first loop only; no unattended mutation.
+- [ ] PM-006 - Worktrunk lane CLI design
   Loop action: pending PRD; lane mutation remains approval-gated.
   Human decision: not approved for implementation yet.
 
@@ -36,4 +39,4 @@ pattern: product-readiness-triage
 - Loop audit recognizes only generic loop scaffolding names, so Jarvis-specific reviewer/governance controls need to be interpreted alongside the score.
 
 ---
-Run log: 2026-06-23 | findings: loop workflow missing | actions: added LOOP/STATE/budget/run-log/safety scaffolding | escalations: 0
+Run log: 2026-06-23 | findings: browser smoke and loop workflow gaps | actions: committed browser smoke and L1 loop workflow | escalations: 0
