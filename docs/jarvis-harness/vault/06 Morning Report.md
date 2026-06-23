@@ -140,7 +140,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed approval-gated loop lifecycle records in `5414bf4`.
 - Ran final integrated validation: governance PASS, 228 tests passed.
 - Ran AG loop lifecycle safety review; no execution-authority issue was found.
-- Refreshed Codeburn snapshot: month `$605.32`, 6495 calls.
+- Implemented and validated HUD controls for requesting loop lifecycle approvals and recording approved loop start, pause, resume, and stop state.
+- Committed and pushed HUD loop lifecycle controls in `f9f240e`.
+- Ran final integrated validation: governance PASS, 228 tests passed with browser smoke covering loop start approval and record flow.
+- Ran AG HUD loop control safety review; no auto-approval or execution-authority issue was found.
+- Refreshed Codeburn snapshot: month `$607.31`, 6510 calls.
 
 ## Pending
 

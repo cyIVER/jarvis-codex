@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 03:30 EDT
+updated: 2026-06-23 03:34 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -66,7 +66,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only mobile private-network preflight committed and pushed as `731340f`.
 - Read-only Gemini Live feasibility check committed and pushed as `cdc112a`.
 - Approval-gated loop lifecycle records committed and pushed as `5414bf4`.
-- Current Codeburn snapshot: month `$605.32`, 6495 calls.
+- HUD loop lifecycle controls committed and pushed as `f9f240e`.
+- Current Codeburn snapshot: month `$607.31`, 6510 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -93,6 +94,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Swarm plans are semantic planning records only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - Swarm lifecycle records consume matching approvals but remain state only; they do not launch agents, Worktrunk, PTYs, shell commands, or workflows.
 - Loop lifecycle records consume matching approvals but remain state only; they do not launch agents, Worktrunk, PTYs, shell commands, or runtime workflows.
+- HUD loop lifecycle controls request approval and record approved state only; they do not auto-approve or execute.
 - HUD swarm lifecycle controls request approvals and record approved lifecycle state only; they do not auto-approve or execute.
 - Electron HUD scaffold loads the runtime as a client only; the renderer has no Node integration or shell authority.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
