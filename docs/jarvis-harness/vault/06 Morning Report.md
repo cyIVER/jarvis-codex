@@ -215,6 +215,9 @@ This note backs the morning HTML dashboard.
 - Ran Antigravity challenge review on the evidence ledger and hardened state-local artifact hashing, malformed JSONL handling, invalid-gate rejection, and non-authoritative record semantics.
 - Ran final targeted validation: governance PASS, loop readiness PASS, and 300 tests passed.
 - Committed release gate evidence ledger in `f1f3ab9`.
+- Implemented and validated read-only `jarvis-codex release gate-status --json` to summarize open release gates and evidence counts without closing gates.
+- Ran final targeted validation: governance PASS, loop readiness PASS, and 302 tests passed.
+- Committed release gate status summary in `c41eb57`.
 
 ## Pending
 

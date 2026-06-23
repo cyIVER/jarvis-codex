@@ -82,7 +82,10 @@ pattern: product-readiness-triage
 - [x] PM-025 - Release gate evidence ledger
   Loop action: added state-only `release evidence add/list --json` for operator and reviewer evidence metadata, with state-local artifact hashing, invalid-gate rejection, malformed JSONL resilience, and no gate closure.
   Human decision: evidence records support review only; they do not execute validations, approve publication, or close external/device/signing gates.
-- [ ] PM-026 - Next product slice
+- [x] PM-026 - Release gate status summary
+  Loop action: added read-only `release gate-status --json` to summarize open gates, evidence counts, latest reviewer metadata, and human-acceptance requirements.
+  Human decision: gate status is reporting only; evidence presence never closes gates automatically.
+- [ ] PM-027 - Next product slice
   Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, Gemini Live network validation, and background scheduling.
   Human decision: not selected yet.
 
@@ -109,3 +112,4 @@ Run log: 2026-06-23 | findings: loop lifecycle records did not perform a bounded
 Run log: 2026-06-23 | findings: swarm lifecycle records still did not launch role panes | actions: added approval-gated `swarm.launch` with exact role command/profile/cwd scope and hardline policy preservation | escalations: 0
 Run log: 2026-06-23 | findings: external security review remained an unsurfaced release gate | actions: added read-only external security review packet and JSON summary with human-attestation close condition | escalations: 0
 Run log: 2026-06-23 | findings: remaining external gates needed a safe evidence intake path | actions: added state-only release evidence ledger with state-local artifact hashing and no gate closure authority | escalations: 0
+Run log: 2026-06-23 | findings: release evidence needed a non-authoritative status summary | actions: added read-only gate status command that reports open gates and evidence counts without closure | escalations: 0
