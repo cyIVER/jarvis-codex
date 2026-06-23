@@ -9,6 +9,7 @@ Implemented and validated in the local FastAPI runtime:
 - ACP-style JSON-RPC request, response, event, and stream frames.
 - SQLite/WAL runtime event store with session and approval projections.
 - Runtime policy classification and hardline command blocking.
+- Non-writing policy profile catalog through `profile.list`.
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
@@ -71,7 +72,7 @@ Status: PASS
 Checks passed: 156
 Warnings: 0
 Failures: 0
-164 passed
+165 passed
 ```
 
 The pytest run may report the existing Starlette `TestClient` deprecation warning.

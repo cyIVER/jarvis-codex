@@ -66,6 +66,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
     assert "runtime.readiness" in data["result"]["capabilities"]
+    assert "profile.list" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -193,6 +194,22 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     assert data["checks"]["stt_runtime_path_constraints"] is True
     assert data["checks"]["voice_execution_authority"] is False
     assert "electron_packaging" in data["remaining_gaps"]
+    assert not state.exists()
+
+
+def test_runtime_profile_list_reports_policy_catalog_without_writing_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("profile.list", request_id="req_1"))
+
+    data = response.json()["result"]
+    profile_ids = {profile["id"] for profile in data["profiles"]}
+    assert data["default_profile"] == "observe"
+    assert data["writes_state"] is False
+    assert profile_ids == {"observe", "dev-loop", "swarm", "high-risk-runtime"}
+    assert all(profile["description"] for profile in data["profiles"])
     assert not state.exists()
 
 

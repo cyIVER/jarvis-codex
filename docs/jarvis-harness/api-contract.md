@@ -78,6 +78,8 @@ Policy:
 - `profile.set`
 - `command.classify`
 
+`profile.list` is implemented as a non-writing profile catalog. `profile.set` remains planned because changing a session profile is stateful and requires a separate event/projection decision.
+
 Voice:
 
 - `voice.start`

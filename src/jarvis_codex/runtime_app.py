@@ -30,7 +30,29 @@ from .pty_supervisor import PtyNotFoundError, PtyPolicyError, PtySupervisor
 from .voice_audio import VoiceAudioBuffer, VoiceAudioError, transcribe_with_local_adapter
 from .voice_intent import propose_voice_intent
 
-POLICY_PROFILES = {"observe", "dev-loop", "swarm", "high-risk-runtime"}
+POLICY_PROFILE_DETAILS = {
+    "observe": {
+        "label": "Observe",
+        "description": "Read-only inspection, search, status checks, and non-mutating diagnostics.",
+        "execution": "read-only",
+    },
+    "dev-loop": {
+        "label": "Dev Loop",
+        "description": "Targeted development-loop commands such as direct pytest runs after policy classification.",
+        "execution": "bounded-local",
+    },
+    "swarm": {
+        "label": "Swarm",
+        "description": "High-coordination planning mode for future multi-agent fanout. Execution remains approval-gated.",
+        "execution": "approval-gated",
+    },
+    "high-risk-runtime": {
+        "label": "High-risk Runtime",
+        "description": "Runtime, network, service, git mutation, and destructive operations. Human approval is required.",
+        "execution": "approval-required",
+    },
+}
+POLICY_PROFILES = set(POLICY_PROFILE_DETAILS)
 LOCAL_STT_COMMAND_ENV = "JARVIS_LOCAL_STT_COMMAND"
 PLANNED_METHODS = {
     "loop.pause",
@@ -38,7 +60,6 @@ PLANNED_METHODS = {
     "loop.start",
     "loop.stop",
     "message.list",
-    "profile.list",
     "profile.set",
     "prompt.cancel",
     "prompt.send",
@@ -321,6 +342,7 @@ def _dispatch_request(
                     "telemetry.codeburn_status",
                     "runtime.health",
                     "runtime.readiness",
+                    "profile.list",
                     "command.classify",
                     "pty.create",
                     "pty.input",
@@ -377,6 +399,20 @@ def _dispatch_request(
 
     if method == "telemetry.codeburn_status":
         return make_response(request_id, {"codeburn": read_codeburn_status().to_dict()})
+
+    if method == "profile.list":
+        profiles = [
+            {"id": profile_id, **POLICY_PROFILE_DETAILS[profile_id]}
+            for profile_id in sorted(POLICY_PROFILE_DETAILS)
+        ]
+        return make_response(
+            request_id,
+            {
+                "profiles": profiles,
+                "default_profile": "observe",
+                "writes_state": False,
+            },
+        )
 
     if method == "session.create":
         session_id = str(params.get("session_id") or f"session_{uuid.uuid4().hex[:12]}")
