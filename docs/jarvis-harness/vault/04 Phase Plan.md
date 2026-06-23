@@ -99,6 +99,7 @@ Completed:
 - MediaRecorder fallback audio chunks stored under runtime state for later local STT.
 - Approval-gated local STT adapter execution for saved audio chunks, with transcript events marked as non-execution-authority.
 - Voice intent proposal layer for command proposals, Codex handoffs, Antigravity handoffs, notes, and unknown transcript review, all without execution authority.
+- HUD proposal preview and approval-request action for voice intent proposals, with no command execution.
 
 ## Phase 5 Swarm And Loops
 

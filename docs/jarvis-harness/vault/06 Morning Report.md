@@ -44,11 +44,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated voice intent proposals with transcript-to-command safety boundaries.
 - Committed and pushed voice intent proposal layer in `dc9eb7f`.
 - Implemented and validated live semantic runtime event push over WebSocket.
+- Committed and pushed live semantic runtime event push in `479aeda`.
+- Implemented and validated HUD proposal preview and approval-request action for voice intent proposals.
 
 ## Pending
 
-- Commit and push live semantic runtime event push.
-- Continue transcript proposal approval UI and command preview boundaries.
+- Commit and push voice proposal approval UI.
+- Continue command preview approval lifecycle and Codex/Antigravity pane launch boundaries.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

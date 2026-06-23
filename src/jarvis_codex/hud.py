@@ -317,6 +317,8 @@ HUD_HTML = """<!doctype html>
         <div class="panel-body voice">
           <button id="mic-toggle" class="voice-button" type="button">Mic</button>
           <div id="voice-log" class="log">Microphone is disabled until you click the button and approve browser permission.</div>
+          <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
+          <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
           <button id="refresh-approvals" type="button">Refresh Approvals</button>
         </div>
       </div>
@@ -333,7 +335,9 @@ HUD_JS = r"""(() => {
   const socketStatus = document.getElementById("socket-status");
   const voiceStatus = document.getElementById("voice-status");
   const voiceLog = document.getElementById("voice-log");
+  const proposalPreview = document.getElementById("proposal-preview");
   const micToggle = document.getElementById("mic-toggle");
+  const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
   let socket;
   let requestSeq = 0;
@@ -343,6 +347,7 @@ HUD_JS = r"""(() => {
   let audioSequence = 0;
   let utteranceId = null;
   let stoppingRecorder = false;
+  let lastVoiceProposal = null;
 
   function log(line) {
     const stamp = new Date().toLocaleTimeString();
@@ -392,6 +397,8 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && frame.result.proposal) {
         const proposal = frame.result.proposal;
+        lastVoiceProposal = proposal;
+        renderVoiceProposal(proposal);
         log(`Voice intent proposal: ${proposal.intent_type} -> ${proposal.summary}`);
         voiceLog.textContent = `Intent proposal: ${proposal.intent_type}. ${proposal.execution_authority ? "Execution authority present" : "No execution authority"}.`;
         return;
@@ -413,6 +420,34 @@ HUD_JS = r"""(() => {
 
   document.getElementById("refresh-approvals").addEventListener("click", () => {
     request("approval.list", { status: "pending" });
+  });
+
+  requestProposalApproval.addEventListener("click", () => {
+    if (!lastVoiceProposal) {
+      log("No voice intent proposal is available for approval.");
+      return;
+    }
+    const operation = lastVoiceProposal.command
+      ? lastVoiceProposal.command
+      : `${lastVoiceProposal.intent_type}:${lastVoiceProposal.target}:${lastVoiceProposal.summary}`;
+    const risk = lastVoiceProposal.policy && lastVoiceProposal.policy.risk
+      ? lastVoiceProposal.policy.risk
+      : (lastVoiceProposal.intent_type === "command_proposal" ? "high" : "medium");
+    request("approval.request", {
+      session_id: "hud",
+      summary: `Review voice proposal: ${lastVoiceProposal.summary}`,
+      operation,
+      risk,
+      scope: {
+        source: "voice.intent_propose",
+        proposal_id: lastVoiceProposal.proposal_id,
+        intent_type: lastVoiceProposal.intent_type,
+        target: lastVoiceProposal.target,
+        command: lastVoiceProposal.command || "",
+        execution_authority: false
+      }
+    });
+    log("Approval requested for voice intent proposal. No command was executed.");
   });
 
   micToggle.addEventListener("click", async () => {
@@ -507,6 +542,20 @@ HUD_JS = r"""(() => {
       }
     };
     recognition.start();
+  }
+
+  function renderVoiceProposal(proposal) {
+    const command = proposal.command ? `\nCommand proposal: ${proposal.command}` : "";
+    const policy = proposal.policy ? `\nPolicy: ${proposal.policy.status} (${proposal.policy.reason})` : "";
+    proposalPreview.textContent = [
+      `Intent: ${proposal.intent_type}`,
+      `Target: ${proposal.target}`,
+      `Summary: ${proposal.summary}`,
+      `Approval required: ${proposal.approval_required}`,
+      `Execution authority: ${proposal.execution_authority}`,
+      command.trim(),
+      policy.trim()
+    ].filter(Boolean).join("\n");
   }
 
   function startMediaRecorderFallback() {

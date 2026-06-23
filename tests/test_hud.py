@@ -13,6 +13,8 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
     assert "Jarvis Harness" in response.text
     assert 'id="mic-toggle"' in response.text
+    assert 'id="proposal-preview"' in response.text
+    assert 'id="request-proposal-approval"' in response.text
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
@@ -38,6 +40,11 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert 'request("approval.list", { status: "pending" })' in response.text
     assert "Voice intent proposal" in response.text
     assert "No execution authority" in response.text
+    assert "lastVoiceProposal" in response.text
+    assert "Review voice proposal" in response.text
+    assert "No command was executed" in response.text
+    assert 'source: "voice.intent_propose"' in response.text
+    assert "renderVoiceProposal(proposal)" in response.text
     assert "Event: ${frame.event_type}" in response.text
     assert 'frame.event_type.startsWith("approval.")' in response.text
     assert "Execution requires an explicit runtime command and policy decision" in response.text
