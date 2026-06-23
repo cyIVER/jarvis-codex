@@ -104,7 +104,7 @@ The current release is a governed local operating substrate:
 - `tests/test_release.py` covers external security evidence-brief safety boundaries and release checklist routing without closing the external review gate.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
 - `tests/test_whisper_cpp_adapter.py` covers the included `whisper.cpp` adapter wrapper, including `--check-only`, with a fake local binary.
-- Global architecture validation has zero errors.
+- GitHub CI passes the validation-only workflow: Python tests, project-local Codex governance validation, loop readiness verification, and Remotion static validation.
 
 ## Unresolved Product Decisions
 
