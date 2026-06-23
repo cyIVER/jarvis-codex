@@ -40,6 +40,7 @@ class PtySpawnResult:
     command: str
     profile: PolicyProfile
     policy: PolicyDecision
+    approval_granted: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -48,6 +49,7 @@ class PtySpawnResult:
             "command": self.command,
             "profile": self.profile,
             "policy": self.policy.to_dict(),
+            "approval_granted": self.approval_granted,
         }
 
 
@@ -181,9 +183,10 @@ class PtySupervisor:
         *,
         profile: PolicyProfile = "observe",
         cwd: Path | str | None = None,
+        approval_granted: bool = False,
     ) -> PtySpawnResult:
         decision = classify_command(command, profile)
-        if not decision.allowed:
+        if decision.blocked or (not decision.allowed and not (approval_granted and decision.approval_required)):
             raise PtyPolicyError(decision)
 
         argv = shlex.split(decision.command)
@@ -240,6 +243,7 @@ class PtySupervisor:
             command=decision.command,
             profile=profile,
             policy=decision,
+            approval_granted=approval_granted and decision.approval_required,
         )
 
     def get(self, channel_id: str) -> ManagedPty:

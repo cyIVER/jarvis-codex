@@ -62,6 +62,8 @@ PTY:
 - `pty.kill`
 - `pty.restart`
 
+`pty.create` accepts an optional `approval_id`. The approval must already be approved and must exactly match the requested command through its operation or scoped command. This does not bypass hardline policy blocks.
+
 Approval:
 
 - `approval.list`

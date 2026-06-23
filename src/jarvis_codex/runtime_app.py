@@ -325,8 +325,17 @@ def _dispatch_request(
         profile = str(params.get("profile") or "observe")
         if profile not in POLICY_PROFILES:
             return make_error_response(request_id, code="invalid_profile", message="unknown policy profile")
-        result = pty_supervisor.spawn(command, profile=profile)  # type: ignore[arg-type]
-        return make_response(request_id, result.to_dict())
+        approval_id = str(params.get("approval_id") or "")
+        try:
+            result = pty_supervisor.spawn(command, profile=profile)  # type: ignore[arg-type]
+        except PtyPolicyError as exc:
+            if not _approval_allows_command(store, approval_id, command):
+                raise
+            result = pty_supervisor.spawn(command, profile=profile, approval_granted=True)  # type: ignore[arg-type]
+        data = result.to_dict()
+        if result.approval_granted:
+            data["approval_id"] = approval_id
+        return make_response(request_id, data)
 
     if method == "pty.input":
         channel_id = str(params.get("channel_id") or "")
@@ -652,3 +661,20 @@ def _append_and_publish(
     event = store.append_event(**kwargs)
     event_broadcaster.publish(event)
     return event
+
+
+def _approval_allows_command(store: JarvisEventStore, approval_id: str, command: str) -> bool:
+    if not approval_id.strip():
+        return False
+    approval = store.approval(approval_id)
+    if approval is None or approval.get("status") != "approved":
+        return False
+    expected = _normalize_command(command)
+    operation = _normalize_command(str(approval.get("operation") or ""))
+    scope = approval.get("scope") if isinstance(approval.get("scope"), dict) else {}
+    scoped_command = _normalize_command(str(scope.get("command") or ""))
+    return expected in {operation, scoped_command}
+
+
+def _normalize_command(command: str) -> str:
+    return " ".join(command.strip().split())

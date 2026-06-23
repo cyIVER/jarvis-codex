@@ -45,6 +45,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No command was executed" in response.text
     assert 'source: "voice.intent_propose"' in response.text
     assert "renderVoiceProposal(proposal)" in response.text
+    assert "PANE_LAUNCHES" in response.text
+    assert 'source: "hud.pane.prepare"' in response.text
+    assert "pane launch approval requested. No PTY was started." in response.text
     assert "Event: ${frame.event_type}" in response.text
     assert 'frame.event_type.startsWith("approval.")' in response.text
-    assert "Execution requires an explicit runtime command and policy decision" in response.text

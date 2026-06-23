@@ -62,6 +62,7 @@ Completed:
 - Runtime RPC wiring for `pty.create`, `pty.input`, `pty.resize`, and `pty.kill`.
 - Policy block and approval-required responses before process spawn.
 - PTY output stream frames over WebSocket.
+- Approval-matched `pty.create` path for approval-required commands, with hardline blocks still enforced.
 
 ## Phase 3 Permissions
 

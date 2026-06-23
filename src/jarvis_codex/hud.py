@@ -348,6 +348,26 @@ HUD_JS = r"""(() => {
   let utteranceId = null;
   let stoppingRecorder = false;
   let lastVoiceProposal = null;
+  const PANE_LAUNCHES = {
+    codex: {
+      label: "Codex",
+      command: "codex",
+      risk: "high",
+      summary: "Launch Codex in a runtime-supervised PTY pane"
+    },
+    antigravity: {
+      label: "Antigravity",
+      command: "agy",
+      risk: "high",
+      summary: "Launch Antigravity in a runtime-supervised PTY pane"
+    },
+    codeburn: {
+      label: "Codeburn",
+      command: "node /home/iveri/.local/share/ai-env/native-tools/codeburn/dist/cli.js status",
+      risk: "medium",
+      summary: "Launch Codeburn telemetry in a runtime-supervised PTY pane"
+    }
+  };
 
   function log(line) {
     const stamp = new Date().toLocaleTimeString();
@@ -414,7 +434,25 @@ HUD_JS = r"""(() => {
   document.querySelectorAll("[data-pane]").forEach((button) => {
     button.addEventListener("click", () => {
       const pane = button.getAttribute("data-pane");
-      log(`${pane} pane prepared. Execution requires an explicit runtime command and policy decision.`);
+      const launch = PANE_LAUNCHES[pane];
+      if (!launch) {
+        log(`${pane} pane is not configured.`);
+        return;
+      }
+      request("approval.request", {
+        session_id: "hud",
+        summary: launch.summary,
+        operation: launch.command,
+        risk: launch.risk,
+        scope: {
+          source: "hud.pane.prepare",
+          pane,
+          command: launch.command,
+          runtime_supervised: true,
+          execution_authority: false
+        }
+      });
+      log(`${launch.label} pane launch approval requested. No PTY was started.`);
     });
   });
 

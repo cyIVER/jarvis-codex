@@ -46,11 +46,13 @@ This note backs the morning HTML dashboard.
 - Implemented and validated live semantic runtime event push over WebSocket.
 - Committed and pushed live semantic runtime event push in `479aeda`.
 - Implemented and validated HUD proposal preview and approval-request action for voice intent proposals.
+- Committed and pushed voice proposal approval UI in `29c3c65`.
+- Implemented and validated approval-matched PTY launch boundary for Codex/Antigravity pane commands.
 
 ## Pending
 
-- Commit and push voice proposal approval UI.
-- Continue command preview approval lifecycle and Codex/Antigravity pane launch boundaries.
+- Commit and push approval-matched PTY launch boundary.
+- Continue Codex/Antigravity pane launch UX and approval response controls.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard

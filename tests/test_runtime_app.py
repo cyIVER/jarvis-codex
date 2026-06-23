@@ -180,6 +180,111 @@ def test_runtime_pty_create_surfaces_approval_requirements(tmp_path):
     assert data["error"]["approval_required"] is True
 
 
+def test_runtime_pty_create_uses_matching_approved_approval_record(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    command = "python3 -c \"print('approved pty')\""
+
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-1",
+                "summary": "Launch approved PTY",
+                "operation": command,
+                "risk": "medium",
+                "scope": {"command": command},
+            },
+            request_id="req_1",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            request_id="req_2",
+        ),
+    )
+    create_response = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": command, "profile": "observe", "approval_id": approval["id"]},
+            request_id="req_3",
+        ),
+    )
+
+    try:
+        data = create_response.json()["result"]
+        channel_id = data["channel_id"]
+        app.state.pty_supervisor.get(channel_id).wait(timeout=2)
+        deadline = time.time() + 2
+        text = ""
+        while time.time() < deadline and "approved pty" not in text:
+            text += "".join(chunk.chunk for chunk in app.state.pty_supervisor.drain_output(channel_id))
+            time.sleep(0.02)
+    finally:
+        app.state.pty_supervisor.close_all()
+
+    assert data["approval_granted"] is True
+    assert data["approval_id"] == approval["id"]
+    assert data["policy"]["status"] == "approval_required"
+    assert "approved pty" in text
+
+
+def test_runtime_pty_create_rejects_mismatched_or_blocked_approval(tmp_path):
+    app = create_app(tmp_path / "state")
+    client = TestClient(app)
+    approved_command = "python3 -c \"print('approved')\""
+
+    request_response = client.post(
+        "/rpc",
+        json=make_request(
+            "approval.request",
+            {
+                "session_id": "session-1",
+                "summary": "Launch approved PTY",
+                "operation": approved_command,
+                "risk": "medium",
+                "scope": {"command": approved_command},
+            },
+            request_id="req_1",
+        ),
+    )
+    approval = request_response.json()["result"]["approval"]
+    client.post(
+        "/rpc",
+        json=make_request(
+            "approval.respond",
+            {"approval_id": approval["id"], "status": "approved", "reason": "operator approved"},
+            request_id="req_2",
+        ),
+    )
+
+    mismatch = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": "python3 -c \"print('different')\"", "profile": "observe", "approval_id": approval["id"]},
+            request_id="req_3",
+        ),
+    )
+    blocked = client.post(
+        "/rpc",
+        json=make_request(
+            "pty.create",
+            {"command": "git reset --hard HEAD", "profile": "dev-loop", "approval_id": approval["id"]},
+            request_id="req_4",
+        ),
+    )
+
+    assert mismatch.json()["error"]["code"] == "approval_required"
+    assert blocked.json()["error"]["code"] == "policy_blocked"
+
+
 def test_runtime_pty_input_resize_and_kill(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)

@@ -99,6 +99,8 @@ Each process must have:
 - Runtime clients request actions; the runtime enforces policy.
 - PTY input is never trusted as approval by itself.
 - High-risk commands require explicit approval events before execution.
+- `pty.create` may consume an approved approval record only when the approval operation or scoped command exactly matches the requested command.
+- Hardline-blocked commands remain blocked even if an approval ID is supplied.
 - Runtime state writes go through the event store.
 - UI clients may render commands but must not execute them locally.
 

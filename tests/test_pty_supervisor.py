@@ -49,6 +49,31 @@ def test_spawn_requires_approval_for_observe_profile_non_read_only_command():
     assert exc.value.decision.approval_required is True
 
 
+def test_spawn_allows_approval_required_command_when_approval_granted():
+    supervisor = PtySupervisor()
+    result = supervisor.spawn("python3 -c \"print('approved')\"", profile="observe", approval_granted=True)
+
+    try:
+        supervisor.get(result.channel_id).wait(timeout=2)
+        text = _collect_text(supervisor, result.channel_id)
+    finally:
+        supervisor.close_all()
+
+    assert "approved" in text
+    assert result.policy.approval_required is True
+    assert result.approval_granted is True
+    assert result.to_dict()["approval_granted"] is True
+
+
+def test_spawn_still_blocks_hardline_command_when_approval_granted():
+    supervisor = PtySupervisor()
+
+    with pytest.raises(PtyPolicyError) as exc:
+        supervisor.spawn("git reset --hard HEAD", profile="dev-loop", approval_granted=True)
+
+    assert exc.value.decision.blocked is True
+
+
 def test_write_input_and_drain_output_from_cat():
     supervisor = PtySupervisor()
     result = supervisor.spawn("cat", profile="observe")

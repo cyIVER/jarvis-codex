@@ -4,7 +4,7 @@ tags:
   - jarvis-harness
   - dashboard
 status: active
-updated: 2026-06-23 04:28 EDT
+updated: 2026-06-23 04:47 EDT
 ---
 
 # Jarvis Harness Dashboard
@@ -30,7 +30,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Plan-viewer harness route and queue-safety package committed and pushed as `13f2b06`.
 - Voice intent proposal layer committed and pushed as `dc9eb7f`.
 - Live semantic runtime event push committed and pushed as `479aeda`.
-- Voice proposal approval UI is validated and awaiting commit.
+- Voice proposal approval UI committed and pushed as `29c3c65`.
+- Approval-matched PTY launch boundary is validated and awaiting commit.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -52,6 +53,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Commit and push voice proposal approval UI.
-2. Continue into command preview approval lifecycle and Codex/Antigravity pane launch boundaries.
+1. Commit and push approval-matched PTY launch boundary.
+2. Continue into Codex/Antigravity pane launch UX and approval response controls.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.
