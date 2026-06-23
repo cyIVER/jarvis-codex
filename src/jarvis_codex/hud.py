@@ -105,8 +105,8 @@ HUD_HTML = """<!doctype html>
 
     body {
       margin: 0;
-      min-height: 100vh;
-      overflow-x: hidden;
+      height: 100vh;
+      overflow: hidden;
       background:
         radial-gradient(circle at 50% 18%, rgba(44, 188, 255, 0.2), transparent 24%),
         radial-gradient(circle at 80% 70%, rgba(65, 255, 197, 0.1), transparent 22%),
@@ -130,39 +130,42 @@ HUD_HTML = """<!doctype html>
     .shell {
       position: relative;
       z-index: 1;
-      width: min(1420px, calc(100% - 32px));
+      width: min(1680px, calc(100% - 24px));
+      height: 100vh;
       margin: 0 auto;
-      padding: 22px 0 34px;
+      padding: 12px 0;
       display: grid;
-      gap: 18px;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
     }
 
     header {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 18px;
+      gap: 12px;
       align-items: center;
       border-bottom: 1px solid var(--line);
-      padding-bottom: 18px;
+      padding-bottom: 10px;
     }
 
     h1 {
       margin: 0;
       color: var(--cyan);
-      font-size: clamp(34px, 5vw, 80px);
-      line-height: 0.9;
+      font-size: clamp(28px, 3vw, 48px);
+      line-height: 0.92;
       text-transform: uppercase;
     }
 
     .subtitle {
-      margin: 10px 0 0;
+      margin: 6px 0 0;
       color: var(--muted);
       max-width: 820px;
-      line-height: 1.55;
+      line-height: 1.35;
+      font-size: 14px;
     }
 
     .core {
-      width: 210px;
+      width: 96px;
       aspect-ratio: 1;
       border: 1px solid var(--line);
       border-radius: 50%;
@@ -195,14 +198,107 @@ HUD_HTML = """<!doctype html>
     .core strong {
       display: block;
       color: var(--text);
-      font-size: 30px;
+      font-size: 18px;
     }
 
-    .topology {
+    .app-layout {
       display: grid;
-      grid-template-columns: 0.9fr 1.2fr 0.9fr;
-      gap: 16px;
-      align-items: stretch;
+      grid-template-columns: 214px minmax(0, 1fr);
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .nav-pane {
+      border: 1px solid var(--line);
+      background: rgba(1, 13, 20, 0.84);
+      padding: 10px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .nav-title {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-list {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .nav-button {
+      width: 100%;
+      min-height: 44px;
+      text-align: left;
+      display: grid;
+      gap: 2px;
+    }
+
+    .nav-button small {
+      display: block;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .nav-button.active {
+      border-color: rgba(100, 242, 175, 0.8);
+      background: rgba(100, 242, 175, 0.14);
+      color: var(--green);
+    }
+
+    .nav-help {
+      min-height: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      border-top: 1px solid var(--line-soft);
+      padding-top: 10px;
+    }
+
+    .page-stack {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .page {
+      display: none;
+      height: 100%;
+      min-height: 0;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .page.active {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 12px;
+      min-height: 0;
+      align-items: start;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 10px;
     }
 
     .panel {
@@ -210,6 +306,7 @@ HUD_HTML = """<!doctype html>
       background: var(--panel);
       box-shadow: 0 0 34px rgba(76, 220, 255, 0.07);
       min-width: 0;
+      min-height: 0;
     }
 
     .panel h2 {
@@ -221,7 +318,10 @@ HUD_HTML = """<!doctype html>
       text-transform: uppercase;
     }
 
-    .panel-body { padding: 14px; }
+    .panel-body {
+      padding: 14px;
+      min-height: 0;
+    }
 
     .status-grid {
       display: grid;
@@ -290,7 +390,7 @@ HUD_HTML = """<!doctype html>
     button.danger { border-color: rgba(255, 107, 122, 0.5); }
 
     .console {
-      height: 360px;
+      max-height: 42vh;
       overflow: auto;
       padding: 14px;
       background: #02070d;
@@ -323,7 +423,9 @@ HUD_HTML = """<!doctype html>
     }
 
     .log {
-      min-height: 120px;
+      min-height: 86px;
+      max-height: 34vh;
+      overflow: auto;
       border: 1px solid var(--line-soft);
       padding: 12px;
       color: var(--muted);
@@ -331,14 +433,73 @@ HUD_HTML = """<!doctype html>
       line-height: 1.5;
     }
 
+    select,
+    input,
+    textarea {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line-soft);
+      background: rgba(1, 13, 20, 0.88);
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .quick-start {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-step {
+      border: 1px solid var(--line-soft);
+      background: rgba(1, 13, 20, 0.74);
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .quick-step strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
     @media (max-width: 1000px) {
       header,
-      .topology {
+      .app-layout,
+      .page-grid,
+      .flow-grid,
+      .quick-start {
         grid-template-columns: 1fr;
       }
 
+      .shell {
+        height: 100vh;
+      }
+
+      .nav-pane {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+      }
+
+      .nav-list {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+      }
+
+      .nav-button {
+        min-width: 148px;
+      }
+
       .core {
-        width: 160px;
+        width: 108px;
       }
     }
   </style>
@@ -357,125 +518,198 @@ HUD_HTML = """<!doctype html>
       <div class="core" aria-label="runtime core status"><span><strong>ONLINE</strong>Runtime Core</span></div>
     </header>
 
-    <section class="topology">
-      <div class="panel">
-        <h2>Runtime Status</h2>
-        <div class="panel-body status-grid">
-          <div class="metric"><small>Socket</small><strong id="socket-status">offline</strong></div>
-          <div class="metric"><small>Policy</small><strong>gated</strong></div>
-          <div class="metric"><small>Voice</small><strong id="voice-status">idle</strong></div>
-          <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
-          <div class="metric"><small>Agents</small><strong id="agent-provider-status">unknown</strong></div>
-          <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
-          <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
-          <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
-          <div class="metric"><small>Mobile</small><strong id="mobile-access-status">unknown</strong></div>
-          <div class="metric"><small>Release Gates</small><strong id="release-gate-status">unknown</strong></div>
-          <div class="metric"><small>Release Plan</small><strong id="release-checklist-status">unknown</strong></div>
+    <section class="app-layout" aria-label="Jarvis workspace">
+      <nav class="nav-pane" aria-label="Jarvis pages">
+        <div class="nav-title">Operator Navigation</div>
+        <div class="nav-list" role="tablist" aria-label="Jarvis page tabs">
+          <button class="nav-button active" type="button" role="tab" aria-selected="true" data-page-target="overview">Overview<small>Status and panes</small></button>
+          <button class="nav-button" type="button" role="tab" aria-selected="false" data-page-target="voice">Voice<small>Mic and speech</small></button>
+          <button class="nav-button" type="button" role="tab" aria-selected="false" data-page-target="session">Session<small>Prompt history</small></button>
+          <button class="nav-button" type="button" role="tab" aria-selected="false" data-page-target="swarm">Swarm<small>Plans and launches</small></button>
+          <button class="nav-button" type="button" role="tab" aria-selected="false" data-page-target="loop">Loop<small>Lifecycle and commands</small></button>
+          <button class="nav-button" type="button" role="tab" aria-selected="false" data-page-target="release">Release<small>Gates and evidence</small></button>
         </div>
-        <div id="readiness-gaps" class="log">Readiness summary pending.</div>
-        <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
-        <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
-        <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
-        <select id="release-evidence-gate" aria-label="Release evidence gate">
-          <option value="actual_mobile_device_validation">actual_mobile_device_validation</option>
-          <option value="networked_gemini_live_validation">networked_gemini_live_validation</option>
-          <option value="electron_packaging_and_signing">electron_packaging_and_signing</option>
-          <option value="release_packaging_and_signing">release_packaging_and_signing</option>
-          <option value="external_security_review">external_security_review</option>
-          <option value="unattended_loop_scheduling">unattended_loop_scheduling</option>
-        </select>
-        <input id="release-evidence-reviewer" placeholder="Reviewer/operator" value="operator">
-        <textarea id="release-evidence-summary" rows="2" placeholder="Evidence summary. This does not close the gate."></textarea>
-        <button id="record-release-evidence" type="button">Record Evidence Metadata</button>
-        <div id="release-evidence-status" class="log">Evidence metadata is state-only and does not authorize release.</div>
-        <button id="refresh-readiness" type="button">Refresh Readiness</button>
-      </div>
+        <div class="nav-help">Use pages like a shell workspace: speak or type an intent, record state, request approvals, then launch only through approved runtime controls.</div>
+      </nav>
 
-      <div class="panel">
-        <h2>Harness Panes</h2>
-        <div class="panel-body pane-list">
-          <div class="agent-pane"><div><strong>Codex</strong><span>Implementation and verification lane</span></div><button data-pane="codex">Prepare</button></div>
-          <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
-          <div class="agent-pane"><div><strong>Codeburn</strong><span>Fixed no-shell usage telemetry lane</span></div><button id="refresh-codeburn" type="button">Status</button></div>
-        </div>
-        <div id="agent-provider-list" class="log">Agent provider readiness pending. Status checks do not launch providers.</div>
-        <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
-      </div>
-
-      <div class="panel">
-        <h2>Voice Control</h2>
-        <div class="panel-body voice">
-          <button id="mic-toggle" class="voice-button" type="button">Mic</button>
-          <button id="speak-status" type="button">Speak Status</button>
-          <input id="stt-model-id" type="text" value="tiny.en" aria-label="Local STT model id">
-          <button id="request-transcription-approval" type="button">Request Audio Transcription Approval</button>
-          <input id="stt-approval-id" type="text" placeholder="Paste approved audio transcription approval id">
-          <button id="transcribe-captured-audio" type="button">Transcribe Approved Audio</button>
-          <div id="voice-log" class="log">Microphone is disabled until you click the button and approve browser permission.</div>
-          <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
-          <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
-          <button id="refresh-approvals" type="button">Refresh Approvals</button>
-          <div id="approvals-list" class="log">No pending approvals loaded.</div>
-          <div id="approved-launches" class="log">Approved pane launches will appear here after approval.</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>Session Continuity</h2>
-      <div class="panel-body">
-        <div class="agent-pane">
-          <div><strong id="active-session">No active session selected</strong><span>Session context is local to this HUD until selected or created.</span></div>
-          <div>
-            <select id="session-profile" aria-label="Session policy profile"></select>
-            <button id="create-session" type="button">Create HUD Session</button>
-            <button id="set-session-profile" type="button">Set Profile</button>
+      <div class="page-stack">
+        <section id="page-overview" class="page active" data-page="overview" aria-label="Overview page">
+          <div class="quick-start">
+            <div class="quick-step"><strong>1. Create or select a session</strong>Session state keeps prompts, approvals, and lifecycle records together.</div>
+            <div class="quick-step"><strong>2. Speak or type intent</strong>Voice and prompt records do not execute commands by themselves.</div>
+            <div class="quick-step"><strong>3. Approve exact actions</strong>Only approval-gated runtime controls can launch supervised PTYs.</div>
           </div>
-        </div>
-        <div id="sessions-list" class="log">Active sessions will appear here.</div>
-        <textarea id="prompt-text" class="log" rows="4" placeholder="Record a prompt in session history. This does not execute Codex, Antigravity, PTY, or Worktrunk."></textarea>
-        <button id="send-prompt" type="button">Record Prompt</button>
-        <textarea id="swarm-objective" class="log" rows="4" placeholder="Record a planning-only swarm objective. This does not launch agents, Worktrunk, PTYs, or commands."></textarea>
-        <button id="record-swarm-plan" type="button">Record Swarm Plan</button>
-        <button id="request-swarm-start-approval" type="button">Request Swarm Start Approval</button>
-        <input id="swarm-lifecycle-approval-id" type="text" placeholder="Paste approved swarm lifecycle approval id">
-        <button id="record-swarm-start" type="button">Record Approved Swarm Start</button>
-        <button id="request-swarm-stop-approval" type="button">Request Swarm Stop Approval</button>
-        <button id="record-swarm-stop" type="button">Record Approved Swarm Stop</button>
-        <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
-        <div class="agent-pane">
-          <div><strong>Swarm Role Launch</strong><span>Approval-gated role-labeled PTY launch. Runtime policy still applies.</span></div>
-          <div>
-            <input id="swarm-launch-role-id" type="text" value="codex-executor" aria-label="Swarm launch role id">
-            <input id="swarm-launch-profile" type="text" value="swarm" aria-label="Swarm launch policy profile">
+          <div class="page-grid">
+            <div class="panel">
+              <h2>Runtime Status</h2>
+              <div class="panel-body status-grid">
+                <div class="metric"><small>Socket</small><strong id="socket-status">offline</strong></div>
+                <div class="metric"><small>Policy</small><strong>gated</strong></div>
+                <div class="metric"><small>Voice</small><strong id="voice-status">idle</strong></div>
+                <div class="metric"><small>Approvals</small><strong id="approval-count">0</strong></div>
+                <div class="metric"><small>Agents</small><strong id="agent-provider-status">unknown</strong></div>
+                <div class="metric"><small>Codeburn</small><strong id="codeburn-status">unknown</strong></div>
+                <div class="metric"><small>PWA</small><strong id="pwa-status">checking</strong></div>
+                <div class="metric"><small>Readiness</small><strong id="readiness-status">unknown</strong></div>
+                <div class="metric"><small>Mobile</small><strong id="mobile-access-status">unknown</strong></div>
+                <div class="metric"><small>Release Gates</small><strong id="release-gate-status">unknown</strong></div>
+                <div class="metric"><small>Release Plan</small><strong id="release-checklist-status">unknown</strong></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h2>Harness Panes</h2>
+              <div class="panel-body pane-list">
+                <div class="agent-pane"><div><strong>Codex</strong><span>Implementation and verification lane</span></div><button data-pane="codex">Prepare</button></div>
+                <div class="agent-pane"><div><strong>Antigravity</strong><span>Architecture and adversarial review lane</span></div><button data-pane="antigravity">Prepare</button></div>
+                <div class="agent-pane"><div><strong>Codeburn</strong><span>Fixed no-shell usage telemetry lane</span></div><button id="refresh-codeburn" type="button">Status</button></div>
+              </div>
+              <div id="agent-provider-list" class="log">Agent provider readiness pending. Status checks do not launch providers.</div>
+              <div id="console" class="console" aria-live="polite">Jarvis runtime console ready.</div>
+            </div>
           </div>
-        </div>
-        <input id="swarm-launch-cwd" type="text" placeholder="Optional cwd; leave blank for runtime default">
-        <textarea id="swarm-launch-command" class="log" rows="2" placeholder="Exact role command to launch after matching approval. Example: pwd"></textarea>
-        <button id="request-swarm-launch-approval" type="button">Request Swarm Launch Approval</button>
-        <input id="swarm-launch-approval-id" type="text" placeholder="Paste approved swarm.launch approval id">
-        <button id="launch-approved-swarm" type="button">Launch Approved Swarm Role</button>
-        <div id="swarm-launch-status" class="log">Swarm role launch is disabled until a swarm lifecycle start is recorded and a matching approval is consumed. Displayed commands are not execution authority.</div>
-        <textarea id="loop-objective" class="log" rows="3" placeholder="Record a loop lifecycle objective. This does not launch agents, PTYs, Worktrunk, shell, or workflows."></textarea>
-        <button id="request-loop-start-approval" type="button">Request Loop Start Approval</button>
-        <input id="loop-lifecycle-approval-id" type="text" placeholder="Paste approved loop lifecycle approval id">
-        <button id="record-loop-start" type="button">Record Approved Loop Start</button>
-        <button id="request-loop-pause-approval" type="button">Request Loop Pause Approval</button>
-        <button id="record-loop-pause" type="button">Record Approved Loop Pause</button>
-        <button id="request-loop-resume-approval" type="button">Request Loop Resume Approval</button>
-        <button id="record-loop-resume" type="button">Record Approved Loop Resume</button>
-        <button id="request-loop-stop-approval" type="button">Request Loop Stop Approval</button>
-        <button id="record-loop-stop" type="button">Record Approved Loop Stop</button>
-        <div id="loop-lifecycle-status" class="log">Loop lifecycle controls record approved state only. They do not start autonomous execution.</div>
-        <textarea id="command-proposal" class="log" rows="3" placeholder="Propose a command for policy review. This records a proposal only; it does not request approval or execute."></textarea>
-        <button id="record-command-proposal" type="button">Record Command Proposal</button>
-        <div id="command-proposal-status" class="log">Command proposals are classified and stored as planning state only.</div>
-        <input id="history-search" type="search" placeholder="Search semantic history">
-        <button id="search-history" type="button">Search History</button>
-        <div id="history-search-results" class="log">Search results will appear here. Search is read-only.</div>
-        <button id="refresh-session-history" type="button">Refresh Session History</button>
-        <div id="session-history" class="log">Semantic session history will appear here. This is not an execution queue.</div>
+        </section>
+
+        <section id="page-voice" class="page" data-page="voice" aria-label="Voice page">
+          <div class="panel">
+            <h2>Voice Control</h2>
+            <div class="panel-body voice">
+              <button id="mic-toggle" class="voice-button" type="button">Mic</button>
+              <button id="speak-status" type="button">Speak Status</button>
+              <input id="stt-model-id" type="text" value="tiny.en" aria-label="Local STT model id">
+              <button id="request-transcription-approval" type="button">Request Audio Transcription Approval</button>
+              <input id="stt-approval-id" type="text" placeholder="Paste approved audio transcription approval id">
+              <button id="transcribe-captured-audio" type="button">Transcribe Approved Audio</button>
+              <div id="voice-log" class="log">Microphone is disabled until you click the button and approve browser permission.</div>
+              <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
+              <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
+              <button id="refresh-approvals" type="button">Refresh Approvals</button>
+              <div id="approvals-list" class="log">No pending approvals loaded.</div>
+              <div id="approved-launches" class="log">Approved pane launches will appear here after approval.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-session" class="page" data-page="session" aria-label="Session page">
+          <div class="panel">
+            <h2>Session Continuity</h2>
+            <div class="panel-body control-grid">
+              <div class="agent-pane">
+                <div><strong id="active-session">No active session selected</strong><span>Session context is local to this HUD until selected or created.</span></div>
+                <div>
+                  <select id="session-profile" aria-label="Session policy profile"></select>
+                  <button id="create-session" type="button">Create HUD Session</button>
+                  <button id="set-session-profile" type="button">Set Profile</button>
+                </div>
+              </div>
+              <div id="sessions-list" class="log">Active sessions will appear here.</div>
+              <textarea id="prompt-text" class="log" rows="4" placeholder="Record a prompt in session history. This does not execute Codex, Antigravity, PTY, or Worktrunk."></textarea>
+              <button id="send-prompt" type="button">Record Prompt</button>
+              <input id="history-search" type="search" placeholder="Search semantic history">
+              <button id="search-history" type="button">Search History</button>
+              <div id="history-search-results" class="log">Search results will appear here. Search is read-only.</div>
+              <button id="refresh-session-history" type="button">Refresh Session History</button>
+              <div id="session-history" class="log">Semantic session history will appear here. This is not an execution queue.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-swarm" class="page" data-page="swarm" aria-label="Swarm page">
+          <div class="flow-grid">
+            <div class="panel">
+              <h2>Swarm Planning</h2>
+              <div class="panel-body control-grid">
+                <textarea id="swarm-objective" class="log" rows="4" placeholder="Record a planning-only swarm objective. This does not launch agents, Worktrunk, PTYs, or commands."></textarea>
+                <button id="record-swarm-plan" type="button">Record Swarm Plan</button>
+                <button id="request-swarm-start-approval" type="button">Request Swarm Start Approval</button>
+                <input id="swarm-lifecycle-approval-id" type="text" placeholder="Paste approved swarm lifecycle approval id">
+                <button id="record-swarm-start" type="button">Record Approved Swarm Start</button>
+                <button id="request-swarm-stop-approval" type="button">Request Swarm Stop Approval</button>
+                <button id="record-swarm-stop" type="button">Record Approved Swarm Stop</button>
+                <div id="swarm-plan-status" class="log">Swarm planning is semantic state only. No agents are launched from this control.</div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Swarm Role Launch</h2>
+              <div class="panel-body control-grid">
+                <div class="agent-pane">
+                  <div><strong>Swarm Role Launch</strong><span>Approval-gated role-labeled PTY launch. Runtime policy still applies.</span></div>
+                  <div>
+                    <input id="swarm-launch-role-id" type="text" value="codex-executor" aria-label="Swarm launch role id">
+                    <input id="swarm-launch-profile" type="text" value="swarm" aria-label="Swarm launch policy profile">
+                  </div>
+                </div>
+                <input id="swarm-launch-cwd" type="text" placeholder="Optional cwd; leave blank for runtime default">
+                <textarea id="swarm-launch-command" class="log" rows="2" placeholder="Exact role command to launch after matching approval. Example: pwd"></textarea>
+                <button id="request-swarm-launch-approval" type="button">Request Swarm Launch Approval</button>
+                <input id="swarm-launch-approval-id" type="text" placeholder="Paste approved swarm.launch approval id">
+                <button id="launch-approved-swarm" type="button">Launch Approved Swarm Role</button>
+                <div id="swarm-launch-status" class="log">Swarm role launch is disabled until a swarm lifecycle start is recorded and a matching approval is consumed. Displayed commands are not execution authority.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-loop" class="page" data-page="loop" aria-label="Loop page">
+          <div class="flow-grid">
+            <div class="panel">
+              <h2>Loop Lifecycle</h2>
+              <div class="panel-body control-grid">
+                <textarea id="loop-objective" class="log" rows="3" placeholder="Record a loop lifecycle objective. This does not launch agents, PTYs, Worktrunk, shell, or workflows."></textarea>
+                <button id="request-loop-start-approval" type="button">Request Loop Start Approval</button>
+                <input id="loop-lifecycle-approval-id" type="text" placeholder="Paste approved loop lifecycle approval id">
+                <button id="record-loop-start" type="button">Record Approved Loop Start</button>
+                <button id="request-loop-pause-approval" type="button">Request Loop Pause Approval</button>
+                <button id="record-loop-pause" type="button">Record Approved Loop Pause</button>
+                <button id="request-loop-resume-approval" type="button">Request Loop Resume Approval</button>
+                <button id="record-loop-resume" type="button">Record Approved Loop Resume</button>
+                <button id="request-loop-stop-approval" type="button">Request Loop Stop Approval</button>
+                <button id="record-loop-stop" type="button">Record Approved Loop Stop</button>
+                <div id="loop-lifecycle-status" class="log">Loop lifecycle controls record approved state only. They do not start autonomous execution.</div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Command Proposal</h2>
+              <div class="panel-body control-grid">
+                <textarea id="command-proposal" class="log" rows="3" placeholder="Propose a command for policy review. This records a proposal only; it does not request approval or execute."></textarea>
+                <button id="record-command-proposal" type="button">Record Command Proposal</button>
+                <div id="command-proposal-status" class="log">Command proposals are classified and stored as planning state only.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-release" class="page" data-page="release" aria-label="Release page">
+          <div class="flow-grid">
+            <div class="panel">
+              <h2>Release Gates</h2>
+              <div class="panel-body control-grid">
+                <div id="readiness-gaps" class="log">Readiness summary pending.</div>
+                <div id="mobile-access-panel" class="log">Mobile access readiness pending. Displayed commands are proposals only.</div>
+                <div id="release-gate-panel" class="log">Release gate status pending. Evidence records do not close gates.</div>
+                <div id="release-checklist-panel" class="log">Release readiness checklist pending. Displayed commands are proposals only.</div>
+                <button id="refresh-readiness" type="button">Refresh Readiness</button>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Evidence Metadata</h2>
+              <div class="panel-body control-grid">
+                <select id="release-evidence-gate" aria-label="Release evidence gate">
+                  <option value="actual_mobile_device_validation">actual_mobile_device_validation</option>
+                  <option value="networked_gemini_live_validation">networked_gemini_live_validation</option>
+                  <option value="electron_packaging_and_signing">electron_packaging_and_signing</option>
+                  <option value="release_packaging_and_signing">release_packaging_and_signing</option>
+                  <option value="external_security_review">external_security_review</option>
+                  <option value="unattended_loop_scheduling">unattended_loop_scheduling</option>
+                </select>
+                <input id="release-evidence-reviewer" placeholder="Reviewer/operator" value="operator">
+                <textarea id="release-evidence-summary" rows="2" placeholder="Evidence summary. This does not close the gate."></textarea>
+                <button id="record-release-evidence" type="button">Record Evidence Metadata</button>
+                <div id="release-evidence-status" class="log">Evidence metadata is state-only and does not authorize release.</div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -562,6 +796,8 @@ HUD_JS = r"""(() => {
   const recordReleaseEvidence = document.getElementById("record-release-evidence");
   const releaseEvidenceStatus = document.getElementById("release-evidence-status");
   const refreshReadiness = document.getElementById("refresh-readiness");
+  const navButtons = Array.from(document.querySelectorAll("[data-page-target]"));
+  const pages = Array.from(document.querySelectorAll("[data-page]"));
   let socket;
   let requestSeq = 0;
   const requestIndex = new Map();
@@ -633,6 +869,22 @@ HUD_JS = r"""(() => {
 
   function selectedProfileId() {
     return sessionProfile.value || "observe";
+  }
+
+  function showPage(name) {
+    for (const page of pages) {
+      page.classList.toggle("active", page.dataset.page === name);
+    }
+    for (const button of navButtons) {
+      const active = button.dataset.pageTarget === name;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    }
+    log(`Page selected: ${name}.`);
+  }
+
+  for (const button of navButtons) {
+    button.addEventListener("click", () => showPage(button.dataset.pageTarget));
   }
 
   function swarmLaunchRoles() {

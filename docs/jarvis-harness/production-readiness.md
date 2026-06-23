@@ -33,7 +33,7 @@ Implemented and validated in the local FastAPI runtime:
 - Runtime-managed PTY creation, input, resize, kill, and output streaming.
 - Approval request, approval response, pending/approved approval listing, and approval-matched PTY launch.
 - Same-origin WebSocket validation and per-runtime HUD token gating for approval decisions and approved action consumption.
-- Runtime-served HUD shell for Codex, Antigravity, Codeburn, approvals, voice, sessions, and PWA status.
+- Runtime-served screen-sized HUD shell with operator navigation pages for Codex, Antigravity, Codeburn, approvals, voice, sessions, loops, release gates, and PWA status.
 - HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
 - HUD mobile access readiness panel backed by non-writing mobile host discovery.
 - Browser click-to-arm microphone flow with browser STT where available.

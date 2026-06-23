@@ -12,6 +12,14 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert response.headers["content-type"].startswith("text/html")
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
     assert "Jarvis Harness" in response.text
+    assert 'class="nav-pane"' in response.text
+    assert 'data-page-target="overview"' in response.text
+    assert 'data-page-target="voice"' in response.text
+    assert 'data-page-target="session"' in response.text
+    assert 'data-page-target="swarm"' in response.text
+    assert 'data-page-target="loop"' in response.text
+    assert 'data-page-target="release"' in response.text
+    assert "Use pages like a shell workspace" in response.text
     assert 'id="mic-toggle"' in response.text
     assert 'id="speak-status"' in response.text
     assert 'id="proposal-preview"' in response.text
@@ -117,6 +125,8 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "SpeechRecognition" in response.text
     assert "speechSynthesis" in response.text
     assert "SpeechSynthesisUtterance" in response.text
+    assert "showPage(name)" in response.text
+    assert "Page selected" in response.text
     assert "speakRuntimeStatus" in response.text
     assert "No local TTS command was run" in response.text
     assert "MediaRecorder" in response.text
