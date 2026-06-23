@@ -36,7 +36,7 @@ pattern: product-readiness-triage
   Human decision: no artifact copy, publish, upload, or release bundle without explicit approval.
 - [x] PM-010 - GitHub CI and review templates
   Loop action: added validation-only GitHub CI, PR template, issue template, and guardrail tests.
-  Human decision: no render, publish, release upload, or runtime execution in CI.
+  Human decision: no render, publish, release upload, or runtime execution in CI; workflow actions use current Node 24-compatible major versions.
 - [ ] PM-011 - Next product slice
   Loop action: pending prioritization between voice ingress discovery, release publication planning, and broader release readiness review.
   Human decision: not selected yet.

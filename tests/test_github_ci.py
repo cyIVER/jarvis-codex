@@ -14,6 +14,10 @@ def test_ci_runs_project_validation_without_release_rendering():
     assert "npm run typecheck" in workflow
     assert "npm audit --audit-level=high" in workflow
     assert "permissions:\n  contents: read" in workflow
+    assert "actions/checkout@v7" in workflow
+    assert "actions/setup-python@v6" in workflow
+    assert "astral-sh/setup-uv@v8" in workflow
+    assert "actions/setup-node@v6" in workflow
     assert "npm run render" not in workflow
     assert "npm run still" not in workflow
     assert "git push" not in workflow
