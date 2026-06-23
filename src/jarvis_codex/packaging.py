@@ -23,6 +23,8 @@ class PackagingPreflight:
     packaging_scripts_present: bool
     package_artifact_present: bool
     package_artifact_paths: list[str]
+    installer_artifact_present: bool
+    installer_artifact_paths: list[str]
     signing_signal_present: bool
     install_performed: bool
     package_build_performed: bool
@@ -49,6 +51,7 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     node_modules = electron_dir / "node_modules"
     builder_config = electron_dir / "electron-builder.json"
     package_artifact_paths = _package_artifacts(electron_dir)
+    installer_artifact_paths = _installer_artifacts(electron_dir)
 
     package_data = _package_data(package_json)
     electron_version = _dev_dependency_version(package_data, "electron")
@@ -98,11 +101,14 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
     if package_build_ready and not package_artifact_paths:
         recommended_commands.append("npm run package")
     if package_build_ready:
-        recommended_commands.append("npm run make")
+        if not installer_artifact_paths:
+            recommended_commands.append("npm run make")
     else:
         remaining_gates.append("add reviewed Electron Builder dependency, config, and package/make scripts")
     if package_artifact_paths:
         remaining_gates.append("review local package artifact before make/sign/distribution")
+    if installer_artifact_paths:
+        remaining_gates.append("review unsigned local installer artifact before signing/distribution")
     remaining_gates.extend(
         [
             "choose Windows/macOS/Linux artifact targets",
@@ -126,6 +132,8 @@ def build_packaging_preflight(root: Path, env: Mapping[str, str] | None = None) 
         packaging_scripts_present=packaging_scripts_present,
         package_artifact_present=bool(package_artifact_paths),
         package_artifact_paths=package_artifact_paths,
+        installer_artifact_present=bool(installer_artifact_paths),
+        installer_artifact_paths=installer_artifact_paths,
         signing_signal_present=signing_signal_present,
         install_performed=False,
         package_build_performed=False,
@@ -175,3 +183,10 @@ def _package_artifacts(electron_dir: Path) -> list[str]:
     if executable.is_file():
         paths.append("tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud")
     return paths
+
+
+def _installer_artifacts(electron_dir: Path) -> list[str]:
+    dist = electron_dir / "dist"
+    if not dist.exists():
+        return []
+    return [str(path.relative_to(electron_dir.parent.parent)) for path in sorted(dist.glob("*.AppImage")) if path.is_file()]

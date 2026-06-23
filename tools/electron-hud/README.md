@@ -29,6 +29,8 @@ These commands write package artifacts under the ignored `tools/electron-hud/dis
 
 The non-signing unpacked Linux package path has been locally validated with `npm run package`. The generated `dist/` contents are local evidence only and must remain uncommitted unless a later release-artifact plan explicitly approves them.
 
+The unsigned Linux AppImage path has also been locally validated with `npm run make`. The generated AppImage is local evidence only. It is not signed, reviewed for distribution, copied to a release location, or publication-ready.
+
 Safety boundaries:
 
 - Loads `http://127.0.0.1:8765` by default.

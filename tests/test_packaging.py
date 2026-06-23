@@ -155,3 +155,18 @@ def test_packaging_preflight_detects_local_unpacked_artifact(tmp_path: Path) -> 
     assert "npm run package" not in preflight.recommended_commands
     assert "npm run make" in preflight.recommended_commands
     assert "review local package artifact before make/sign/distribution" in preflight.remaining_gates
+
+
+def test_packaging_preflight_detects_unsigned_appimage_artifact(tmp_path: Path) -> None:
+    write(tmp_path / "tools/electron-hud/package.json", json.dumps(electron_package(with_builder=True)))
+    write(tmp_path / "tools/electron-hud/electron-builder.json", "{}")
+    write(tmp_path / "tools/electron-hud/package-lock.json", "{}")
+    write(tmp_path / "tools/electron-hud/dist/linux-unpacked/jarvis-codex-electron-hud")
+    write(tmp_path / "tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage")
+
+    preflight = build_packaging_preflight(tmp_path, {})
+
+    assert preflight.installer_artifact_present is True
+    assert preflight.installer_artifact_paths == ["tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage"]
+    assert "npm run make" not in preflight.recommended_commands
+    assert "review unsigned local installer artifact before signing/distribution" in preflight.remaining_gates

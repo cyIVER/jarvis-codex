@@ -15,7 +15,8 @@
     "target": [
       "AppImage"
     ],
-    "category": "Development"
+    "category": "Development",
+    "syncDesktopName": true
   },
   "mac": {
     "target": [

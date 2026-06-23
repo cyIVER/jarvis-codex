@@ -69,6 +69,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
     root = Path(__file__).resolve().parents[2] if repo_root is None else repo_root
     packaging_preflight = build_packaging_preflight(root)
     electron_package_artifact = packaging_preflight.package_artifact_present
+    electron_installer_artifact = packaging_preflight.installer_artifact_present
     remaining_gaps = [
         "iphone_private_network_validation",
         "approved_gemini_live_network_test",
@@ -104,6 +105,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
             "gemini_validation_plan": True,
             "packaging_preflight": True,
             "electron_package_artifact": electron_package_artifact,
+            "electron_installer_artifact": electron_installer_artifact,
             "local_stt_discovery": True,
             "mobile_host_discovery": True,
         },

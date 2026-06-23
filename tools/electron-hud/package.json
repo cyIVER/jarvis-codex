@@ -11,6 +11,7 @@
     "directory": "tools/electron-hud"
   },
   "main": "main.js",
+  "desktopName": "JarvisCodex",
   "scripts": {
     "start": "electron .",
     "package": "electron-builder --dir --config electron-builder.json",

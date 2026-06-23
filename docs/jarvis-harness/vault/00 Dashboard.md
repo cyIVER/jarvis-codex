@@ -78,7 +78,8 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Read-only local STT discovery is available through `jarvis-codex voice discover --json`.
 - Read-only mobile host discovery recommends `172.28.39.152` as the current WSL private-interface candidate.
 - Local dependency audits for `tools/electron-hud` and `video/remotion` report zero high-or-worse npm vulnerabilities.
-- Current Codeburn snapshot: month `$636.42`, 6754 calls.
+- Unsigned Electron AppImage generation produced a local ignored `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage` artifact.
+- Current Codeburn snapshot: month `$638.21`, 6767 calls.
 - Runtime foundation selected: [[02 Architecture#Runtime]].
 - Event store selected: [[02 Architecture#Event Store]].
 - Mobile v1 selected: private-network PWA.
@@ -115,6 +116,7 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 - Current local STT discovery result is `NEEDS_SETUP` because no local `whisper-cli` or ggml model candidate was found.
 - Mobile host discovery is candidate selection only; it does not start the runtime, probe the iPhone, open a browser, approve non-loopback serving, or prove reachability.
 - Local dependency audits are not a replacement for external security review, signing review, or runtime threat modeling.
+- Local unsigned AppImage artifacts are not signed, reviewed, copied, or distribution-ready release artifacts.
 - Mobile preflight is read-only host classification only; it does not prove actual iPhone reachability, probe the network, launch services, or write state.
 - Mobile validation planner is an evidence checklist only; it does not prove actual iPhone reachability, probe the network, launch services, open browsers, write state, or grant execution authority.
 - Command proposals classify and store proposed operations only; they do not create approvals, launch PTYs, mutate Worktrunk, or execute commands.
@@ -129,6 +131,6 @@ Build a Claude Code style JARVIS harness that coordinates Codex, Antigravity, Co
 
 ## Next
 
-1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron installer/sign/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
+1. Continue with remaining production gaps: real iPhone private-network validation using operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, signed release packaging, and safe runtime operator polish.
 2. Keep final dashboard current if additional overnight slices land.
 3. Keep voice/STT feasibility, plan-viewer, and HUD design tied to the runtime API contract.

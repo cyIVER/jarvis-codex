@@ -167,17 +167,18 @@ This note backs the morning HTML dashboard.
 - Installed Electron HUD local dependencies under ignored `tools/electron-hud/node_modules/`; verified `electron --version` reports `v42.4.1`.
 - Updated packaging preflight to drop the install gate when local `node_modules` exists while preserving package/sign/artifact gates.
 - Ran final integrated validation: governance PASS, 248 tests passed.
-- Refreshed Codeburn snapshot: month `$636.42`, 6754 calls.
+- Refreshed Codeburn snapshot: month `$638.21`, 6767 calls.
 - Added Electron Builder `26.15.3`, `electron-builder.json`, and reviewed package/make scripts so packaging preflight can recommend `npm run package` and `npm run make` while keeping package execution, signing, and artifact distribution gated.
 - Ran `npm run package`; Electron Builder produced a local ignored `tools/electron-hud/dist/linux-unpacked` artifact. The artifact is not signed, copied, reviewed for distribution, or publication-ready.
 - Added read-only `jarvis-codex voice discover --json` for local `whisper-cli` and ggml model discovery without microphone access, audio processing, downloads, cloud calls, runtime start, or state writes.
 - Ran `jarvis-codex voice discover --json`; this machine currently reports `NEEDS_SETUP` because no local `whisper-cli` or ggml model candidate was found.
 - Added read-only `jarvis-codex mobile discover --json`; this machine currently recommends `172.28.39.152` as a private-interface candidate without probing, serving, opening browsers, or writing state.
 - Ran `npm audit --audit-level=high` in `tools/electron-hud` and `video/remotion`; both reported zero vulnerabilities.
+- Ran `npm run make`; Electron Builder produced a local ignored unsigned AppImage at `tools/electron-hud/dist/Jarvis Codex-0.1.0.AppImage`. It is not signed, copied, reviewed, or publication-ready.
 
 ## Pending
 
-- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron installer/sign/distribution flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
+- Remaining production gaps: real iPhone private-network validation with operator evidence, approved Gemini Live network test, Electron signing/distribution flow, actual swarm agent launch design, actual loop execution design, and signed release packaging.
 - Keep dashboard current as phases progress.
 
 ## Morning Dashboard
