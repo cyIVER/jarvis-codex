@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
+from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
 from .state import JarvisState
 
 
@@ -32,6 +33,8 @@ def main() -> int:
 
     handoff = sub.add_parser("handoff", help="Generate a Codex handoff")
     handoff.add_argument("--objective", default="Continue Jarvis Codex work")
+    handoff.add_argument("--queue-summary", action="store_true", help="Print a safe handoff summary from the planning queue")
+    handoff.add_argument("--json", action="store_true", help="Print queue summary as JSON; only valid with --queue-summary")
 
     hardware = sub.add_parser("hardware", help="Inspect local acceleration capabilities")
     hardware.add_argument(
@@ -62,6 +65,15 @@ def main() -> int:
         print(json.dumps({"approval": request.id}, sort_keys=True))
         return 0
     if args.command == "handoff":
+        if args.json and not args.queue_summary:
+            parser.error("handoff --json is only valid with --queue-summary")
+        if args.queue_summary:
+            safe_handoff = build_safe_handoff(Path(args.state))
+            if args.json:
+                print(render_safe_handoff_json(safe_handoff), end="")
+            else:
+                print(render_safe_handoff_markdown(safe_handoff), end="")
+            return 0
         path = state.write_handoff(args.objective)
         print(json.dumps({"handoff": str(path)}, sort_keys=True))
         return 0

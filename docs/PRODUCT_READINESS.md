@@ -41,7 +41,7 @@ The current release is a governed local operating substrate:
 | Rank | Initiative | Why Now | Confidence | Do Next |
 | ---: | --- | --- | --- | --- |
 | 1 | End-to-end local workflow rehearsal | Proves the platform works as a user-facing loop, not just components. | High | Run capture, approval, handoff, plan viewer, doctor, and Remotion review as one scripted checklist. |
-| 2 | Safe handoff / execution gateway design | Converts planning queue into controlled action proposals without weakening governance. | Medium | Draft a read-only design and tests before implementing any runner. |
+| 2 | Safe handoff / execution gateway design | Converts planning queue into controlled action proposals without weakening governance. | Medium | Read-only queue handoff is implemented; do not add a runner without a separate PRD. |
 | 3 | Plan viewer browser smoke automation | Existing tests cover package/static behavior; browser rendering should be checked before UI-heavy release claims. | Medium | Add a Playwright or lightweight browser smoke only if dependency policy is approved. |
 | 4 | Worktrunk lane CLI design | Lane scoring exists, but CLI mutation must remain gated. | Medium | Write PRD/acceptance criteria before adding `lane` subcommands. |
 | 5 | Voice ingress and Codex App Server bridge | Important product direction, but higher runtime and approval risk. | Low | Keep as discovery until state, queue, and handoff loop is proven. |
@@ -66,4 +66,4 @@ The current release is a governed local operating substrate:
 
 ## Recommendation
 
-Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is now covered by `tests/test_workflow_rehearsal.py`; the next PM-approved slice should use `docs/SAFE_HANDOFF_GATEWAY_PRD.md` to implement a read-only handoff generator before any command runner is considered.
+Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`; the safe handoff gateway PRD is implemented as a read-only queue summary, not a command runner.

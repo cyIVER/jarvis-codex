@@ -127,10 +127,10 @@ Rollback or inspection:
 
 ## Proposed First Implementation Slice
 
-1. Add a pure Python module that reads queue state and returns a structured handoff object.
-2. Add CLI read-only command such as `jarvis-codex handoff queue-summary` only if command naming is separately approved.
-3. Add tests for missing queue, invalid queue, valid queue, no write default, and no execution helpers.
-4. Update docs after the read-only implementation is validated.
+1. Add a pure Python module that reads queue state and returns a structured handoff object. Implemented as `jarvis_codex.safe_handoff`.
+2. Add CLI read-only command. Implemented as `jarvis-codex handoff --queue-summary` with optional `--json`.
+3. Add tests for missing queue, invalid queue, valid queue, no write default, and no execution helpers. Implemented in `tests/test_safe_handoff.py`.
+4. Keep command execution out of scope until a separate runner PRD is approved.
 
 ## Open Decisions
 
