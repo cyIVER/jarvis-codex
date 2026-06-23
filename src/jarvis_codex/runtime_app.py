@@ -95,6 +95,7 @@ def build_runtime_readiness(repo_root: Path | None = None) -> dict[str, Any]:
         "approved_gemini_live_network_test",
         "signed_release_artifacts",
         "external_security_review",
+        "unattended_loop_scheduling",
     ]
     if electron_package_artifact:
         remaining_gaps.insert(0, "electron_sign_and_distribution_flow")

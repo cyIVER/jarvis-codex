@@ -1383,6 +1383,7 @@ def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
     else:
         assert "electron_package_sign_flow" in data["remaining_gaps"]
     assert "approved_gemini_live_network_test" in data["remaining_gaps"]
+    assert "unattended_loop_scheduling" in data["remaining_gaps"]
     assert "actual_loop_execution" not in data["remaining_gaps"]
     assert not state.exists()
 
