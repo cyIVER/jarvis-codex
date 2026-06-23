@@ -59,6 +59,7 @@ def test_runtime_initialize_rpc_reports_capabilities(tmp_path):
     assert "session.get" in data["result"]["capabilities"]
     assert "session.list" in data["result"]["capabilities"]
     assert "telemetry.codeburn_status" in data["result"]["capabilities"]
+    assert "runtime.readiness" in data["result"]["capabilities"]
     assert "approval.request" in data["result"]["capabilities"]
     assert "event.subscribe" in data["result"]["capabilities"]
     assert "voice.submit" in data["result"]["capabilities"]
@@ -169,6 +170,23 @@ def test_runtime_codeburn_status_returns_compact_telemetry(tmp_path, monkeypatch
     assert data["shell"] is False
 
 
+def test_runtime_readiness_reports_foundation_without_writing_state(tmp_path):
+    state = tmp_path / "state"
+    app = create_app(state)
+    client = TestClient(app)
+
+    response = client.post("/rpc", json=make_request("runtime.readiness", request_id="req_1"))
+
+    data = response.json()["result"]
+    assert data["status"] == "foundation-ready"
+    assert data["production_complete"] is False
+    assert data["writes_state"] is False
+    assert data["checks"]["approval_replay_protection"] is True
+    assert data["checks"]["voice_execution_authority"] is False
+    assert "electron_packaging" in data["remaining_gaps"]
+    assert not state.exists()
+
+
 def test_runtime_session_create_rejects_unknown_profile(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
@@ -208,7 +226,7 @@ def test_runtime_planned_methods_are_explicitly_not_implemented(tmp_path):
     app = create_app(tmp_path / "state")
     client = TestClient(app)
 
-    for index, method in enumerate(("pty.restart", "session.resume", "prompt.send", "loop.start", "runtime.readiness")):
+    for index, method in enumerate(("pty.restart", "session.resume", "prompt.send", "loop.start")):
         response = client.post("/rpc", json=make_request(method, request_id=f"req_{index}"))
 
         assert response.status_code == 200

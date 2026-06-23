@@ -64,9 +64,11 @@ This note backs the morning HTML dashboard.
 - Implemented safety hardening for AG findings: one-shot approvals, server-configured STT adapter, narrowed dev-loop execution, and telemetry-only Codeburn HUD path.
 - Committed and pushed AG-triggered runtime safety hardening in `89b09fc`.
 - Ran final integrated validation: governance PASS, 158 tests passed, Codeburn snapshot captured, and HUD/PWA browser smoke passed.
+- Implemented non-writing `runtime.readiness` RPC for current foundation status and remaining release gaps.
 
 ## Pending
 
+- Validate and commit runtime readiness RPC.
 - Remaining production gaps: Electron packaging, actual iPhone private-network validation, Gemini OAuth feasibility, local TTS, swarm command surfaces, and release packaging.
 - Keep dashboard current as phases progress.
 

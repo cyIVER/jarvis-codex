@@ -41,7 +41,6 @@ PLANNED_METHODS = {
     "prompt.cancel",
     "prompt.send",
     "pty.restart",
-    "runtime.readiness",
     "session.archive",
     "session.cancel",
     "session.fork",
@@ -296,6 +295,7 @@ def _dispatch_request(
                     "session.list",
                     "telemetry.codeburn_status",
                     "runtime.health",
+                    "runtime.readiness",
                     "command.classify",
                     "pty.create",
                     "pty.input",
@@ -319,6 +319,31 @@ def _dispatch_request(
             {
                 "status": "ok",
                 "current_sequence": store.current_sequence(),
+            },
+        )
+
+    if method == "runtime.readiness":
+        return make_response(
+            request_id,
+            {
+                "status": "foundation-ready",
+                "production_complete": False,
+                "writes_state": False,
+                "checks": {
+                    "policy_profiles": sorted(POLICY_PROFILES),
+                    "pwa_assets": True,
+                    "approval_replay_protection": True,
+                    "voice_execution_authority": False,
+                    "codeburn_shell": False,
+                },
+                "remaining_gaps": [
+                    "electron_packaging",
+                    "iphone_private_network_validation",
+                    "gemini_oauth_feasibility",
+                    "local_tts_adapter",
+                    "swarm_command_surfaces",
+                    "release_packaging",
+                ],
             },
         )
 

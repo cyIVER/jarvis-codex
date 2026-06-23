@@ -88,6 +88,7 @@ Completed:
 - Runtime-served PWA manifest, SVG icon, service worker, and HUD PWA status metric.
 - Production readiness runbook documenting implemented surface, remaining release gaps, validation baseline, browser smoke checks, and mobile gates.
 - AG challenge hardening: approvals are consumed on approved PTY launch, runtime STT requires a matching approval id plus server-configured adapter, dev-loop no longer allows arbitrary Python/Node execution, and Codeburn is telemetry-only in the HUD.
+- Non-writing `runtime.readiness` RPC reporting current foundation status and remaining release gaps.
 
 ## Phase 4 Voice
 

@@ -19,6 +19,7 @@ Implemented and validated in the local FastAPI runtime:
 - Session listing, session lookup, HUD session selection, and explicit HUD session creation.
 - Fixed no-shell Codeburn telemetry adapter exposed through runtime RPC.
 - Private-network PWA shell assets: manifest, SVG icon, service worker, and mobile viewport support.
+- Non-writing `runtime.readiness` RPC that reports current foundation status and remaining release gaps.
 
 ## Not Yet Production-Complete
 
