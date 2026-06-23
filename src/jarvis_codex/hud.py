@@ -390,6 +390,10 @@ HUD_HTML = """<!doctype html>
         <div class="panel-body voice">
           <button id="mic-toggle" class="voice-button" type="button">Mic</button>
           <button id="speak-status" type="button">Speak Status</button>
+          <input id="stt-model-id" type="text" value="tiny.en" aria-label="Local STT model id">
+          <button id="request-transcription-approval" type="button">Request Audio Transcription Approval</button>
+          <input id="stt-approval-id" type="text" placeholder="Paste approved audio transcription approval id">
+          <button id="transcribe-captured-audio" type="button">Transcribe Approved Audio</button>
           <div id="voice-log" class="log">Microphone is disabled until you click the button and approve browser permission.</div>
           <div id="proposal-preview" class="log">Voice intent proposals will appear here. They do not execute commands.</div>
           <button id="request-proposal-approval" type="button">Request Proposal Approval</button>
@@ -458,6 +462,10 @@ HUD_JS = r"""(() => {
   const proposalPreview = document.getElementById("proposal-preview");
   const micToggle = document.getElementById("mic-toggle");
   const speakStatus = document.getElementById("speak-status");
+  const sttModelId = document.getElementById("stt-model-id");
+  const requestTranscriptionApproval = document.getElementById("request-transcription-approval");
+  const sttApprovalId = document.getElementById("stt-approval-id");
+  const transcribeCapturedAudio = document.getElementById("transcribe-captured-audio");
   const requestProposalApproval = document.getElementById("request-proposal-approval");
   const approvalCount = document.getElementById("approval-count");
   const agentProviderStatus = document.getElementById("agent-provider-status");
@@ -513,6 +521,8 @@ HUD_JS = r"""(() => {
   let mediaRecorder = null;
   let audioSequence = 0;
   let utteranceId = null;
+  let lastAudioPath = "";
+  let lastAudioUtteranceId = "";
   let stoppingRecorder = false;
   let lastVoiceProposal = null;
   let lastReadiness = null;
@@ -731,6 +741,25 @@ HUD_JS = r"""(() => {
       }
       if (frame.type === "response" && frame.result && Object.prototype.hasOwnProperty.call(frame.result, "production_complete")) {
         renderReadiness(frame.result);
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.audio && frame.result.audio.path) {
+        lastAudioPath = frame.result.audio.path;
+        lastAudioUtteranceId = frame.result.audio.utterance_id || "";
+        voiceLog.textContent = `Captured local audio chunk ${lastAudioUtteranceId || ""}. Transcription requires approval.`;
+        log(`Audio chunk stored locally at ${lastAudioPath}. No transcription ran.`);
+        refreshSessionHistory();
+        requestIndex.delete(frame.id);
+        return;
+      }
+      if (frame.type === "response" && frame.result && frame.result.transcription) {
+        const eventPayload = frame.result.event && frame.result.event.payload ? frame.result.event.payload : {};
+        const text = eventPayload.text || frame.result.transcription.transcript || "";
+        voiceLog.textContent = `Approved local STT transcript: ${text}`;
+        log("Approved local STT transcription completed. Transcript event recorded without execution authority.");
+        request("approval.list", { status: "approved" });
+        refreshSessionHistory();
         requestIndex.delete(frame.id);
         return;
       }
@@ -1106,6 +1135,11 @@ HUD_JS = r"""(() => {
   approvedLaunches.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
+    const voiceApprovalId = target.dataset.voiceTranscribeApprovalId;
+    if (voiceApprovalId) {
+      runApprovedAudioTranscription(voiceApprovalId);
+      return;
+    }
     const approvalId = target.dataset.approvalId;
     const command = target.dataset.command;
     const profile = target.dataset.profile || "observe";
@@ -1145,6 +1179,62 @@ HUD_JS = r"""(() => {
     });
     log("Approval requested for voice intent proposal. No command was executed.");
   });
+
+  function selectedSttModelId() {
+    return (sttModelId.value || "tiny.en").trim() || "tiny.en";
+  }
+
+  function requestAudioTranscriptionApproval() {
+    if (!lastAudioPath) {
+      voiceLog.textContent = "Record a local audio chunk before requesting transcription approval.";
+      log("Audio transcription approval requires a captured runtime audio path.");
+      return;
+    }
+    const modelId = selectedSttModelId();
+    request("approval.request", {
+      session_id: currentSessionId(),
+      summary: `Transcribe captured local audio ${lastAudioUtteranceId || ""}`.trim(),
+      operation: "voice.transcribe_audio",
+      risk: "medium",
+      scope: {
+        source: "voice.transcribe_audio",
+        audio_file: lastAudioPath,
+        model_id: modelId,
+        execution_authority: false
+      }
+    });
+    voiceLog.textContent = `Audio transcription approval requested for model id ${modelId}. No transcription has run.`;
+    log("Audio transcription approval requested. No local STT adapter was started.");
+  }
+
+  function runApprovedAudioTranscription(approvalId = "") {
+    const effectiveApprovalId = (approvalId || sttApprovalId.value || "").trim();
+    if (!lastAudioPath) {
+      voiceLog.textContent = "No captured local audio path is available for transcription.";
+      log("Approved audio transcription requires a captured runtime audio path.");
+      return;
+    }
+    if (!effectiveApprovalId) {
+      voiceLog.textContent = "Paste or select an approved audio transcription approval id first.";
+      log("Approved audio transcription requires an approval id.");
+      return;
+    }
+    sttApprovalId.value = effectiveApprovalId;
+    const modelId = selectedSttModelId();
+    request("voice.transcribe_audio", privilegedParams({
+      session_id: currentSessionId(),
+      audio_file: lastAudioPath,
+      model_id: modelId,
+      approval_id: effectiveApprovalId,
+      provider: "local-stt-adapter",
+      timeout_seconds: 120
+    }));
+    voiceLog.textContent = `Approved local STT requested with model id ${modelId}.`;
+    log("Approved local STT transcription requested through runtime policy gates.");
+  }
+
+  requestTranscriptionApproval.addEventListener("click", requestAudioTranscriptionApproval);
+  transcribeCapturedAudio.addEventListener("click", () => runApprovedAudioTranscription());
 
   micToggle.addEventListener("click", async () => {
     if (micStream) {
@@ -1413,11 +1503,17 @@ HUD_JS = r"""(() => {
     const launches = approvals
       .map((approval) => ({ approval, command: approvedLaunchCommand(approval) }))
       .filter((item) => item.command);
-    if (!launches.length) {
-      approvedLaunches.textContent = "No approved pane launches are ready.";
+    const voiceTranscriptions = approvals.filter((approval) => {
+      const scope = approval.scope || {};
+      return approval.status === "approved"
+        && approval.operation === "voice.transcribe_audio"
+        && scope.source === "voice.transcribe_audio";
+    });
+    if (!launches.length && !voiceTranscriptions.length) {
+      approvedLaunches.textContent = "No approved pane launches or voice transcriptions are ready.";
       return;
     }
-    approvedLaunches.innerHTML = launches.map(({ approval, command }) => {
+    const launchMarkup = launches.map(({ approval, command }) => {
       const profile = approval.scope && approval.scope.profile ? approval.scope.profile : "observe";
       return `
         <section class="approval-item">
@@ -1427,7 +1523,20 @@ HUD_JS = r"""(() => {
           <button type="button" data-approval-id="${escapeHtml(approval.id)}" data-command="${escapeHtml(command)}" data-profile="${escapeHtml(profile)}">Launch Approved PTY</button>
         </section>
       `;
-    }).join("");
+    });
+    const voiceMarkup = voiceTranscriptions.map((approval) => {
+      const scope = approval.scope || {};
+      return `
+        <section class="approval-item">
+          <strong>${escapeHtml(approval.summary || approval.id)}</strong>
+          <div>Approved voice audio: ${escapeHtml(scope.audio_file || "")}</div>
+          <div>Model id: ${escapeHtml(scope.model_id || selectedSttModelId())}</div>
+          <div>Transcription remains runtime-token gated and does not grant command execution authority.</div>
+          <button type="button" data-voice-transcribe-approval-id="${escapeHtml(approval.id)}">Transcribe Approved Audio</button>
+        </section>
+      `;
+    });
+    approvedLaunches.innerHTML = [...launchMarkup, ...voiceMarkup].join("");
   }
 
   function startMediaRecorderFallback() {

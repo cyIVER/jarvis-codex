@@ -186,6 +186,8 @@ This note backs the morning HTML dashboard.
 - Refreshed Codeburn snapshot: month `$646.59`, 6841 calls.
 - Added server-resolved `model_id` support for `voice.transcribe_audio`; the runtime can use `JARVIS_LOCAL_STT_MODELS_DIR` without accepting arbitrary client model paths.
 - Added tests for valid model-id transcription, unsafe model-id rejection before adapter execution, and direct cache path rejection without `model_id`.
+- Added HUD controls for requesting transcription approval on the latest captured local audio chunk and running approved local STT with a safe `model_id`.
+- Refreshed Codeburn snapshot: month `$654.66`, 6908 calls.
 
 ## Pending
 

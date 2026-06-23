@@ -58,8 +58,11 @@ pattern: product-readiness-triage
 - [x] PM-017 - Runtime STT model-id boundary
   Loop action: added server-resolved `model_id` support for `voice.transcribe_audio` so runtime audio can use a configured local model directory without accepting arbitrary client model paths.
   Human decision: clients still cannot supply adapter commands or arbitrary filesystem model paths; transcription remains approval-gated.
-- [ ] PM-018 - Next product slice
-  Loop action: pending prioritization between HUD control wiring for model-id transcription, operator release review, and broader release readiness review.
+- [x] PM-018 - HUD approved local STT controls
+  Loop action: added HUD controls to request approval for the last captured local audio chunk and run approved local STT transcription through `model_id`.
+  Human decision: the HUD still separates microphone permission, audio storage, approval, and transcription; no command execution authority is granted.
+- [ ] PM-019 - Next product slice
+  Loop action: pending prioritization between real browser microphone operator test, iPhone private-network validation, operator release review, and broader release readiness review.
   Human decision: not selected yet.
 
 ## Watch List
@@ -79,3 +82,4 @@ pattern: product-readiness-triage
 Run log: 2026-06-23 | findings: voice ingress needed actual STT instead of transcript-only deferral | actions: added approval-gated local executable STT adapter path | escalations: 0
 Run log: 2026-06-23 | findings: local STT cache was missing | actions: installed whisper.cpp v1.9.1 user-cache binary, downloaded `ggml-tiny.en.bin`, probed JFK sample, captured approved sample transcript into temp state | escalations: 0
 Run log: 2026-06-23 | findings: runtime STT needed a model cache path that did not let clients pass arbitrary filesystem paths | actions: added server-resolved `model_id` support under `JARVIS_LOCAL_STT_MODELS_DIR` with traversal and direct-cache-path tests | escalations: 0
+Run log: 2026-06-23 | findings: HUD lacked a button path from captured audio chunks to approved local STT | actions: added transcription approval request and approved transcription controls for the latest captured audio path | escalations: 0

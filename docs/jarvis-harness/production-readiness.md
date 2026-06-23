@@ -30,7 +30,7 @@ Implemented and validated in the local FastAPI runtime:
 - HUD runtime readiness status and remaining-gap summary backed by the non-writing `runtime.readiness` RPC.
 - Browser click-to-arm microphone flow with browser STT where available.
 - Browser-managed spoken runtime status through `speechSynthesis` after a user click.
-- Local audio chunk storage and approval-gated local STT adapter execution.
+- Local audio chunk storage, approval request controls, approved local STT adapter execution controls, and server-resolved STT model ids.
 - Read-only local STT asset discovery through `jarvis-codex voice discover --json` without microphone access, audio processing, model download, runtime start, cloud calls, or state writes.
 - Approval-gated local TTS adapter execution with server-configured command, runtime token, text-hash approval binding, and runtime-owned output paths.
 - Voice intent proposals that do not execute commands.

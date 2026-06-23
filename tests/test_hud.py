@@ -74,6 +74,10 @@ def test_hud_root_serves_jarvis_shell(tmp_path):
     assert "Codex" in response.text
     assert "Antigravity" in response.text
     assert "Codeburn" in response.text
+    assert 'id="stt-model-id"' in response.text
+    assert 'id="request-transcription-approval"' in response.text
+    assert 'id="stt-approval-id"' in response.text
+    assert 'id="transcribe-captured-audio"' in response.text
     assert "/assets/hud.js" in response.text
 
 
@@ -93,6 +97,7 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No local TTS command was run" in response.text
     assert "MediaRecorder" in response.text
     assert 'request("voice.audio_chunk"' in response.text
+    assert 'request("voice.transcribe_audio"' in response.text
     assert 'request("voice.submit"' in response.text
     assert 'request("voice.intent_propose"' in response.text
     assert 'request("voice.provider_status")' in response.text
@@ -168,6 +173,10 @@ def test_hud_javascript_connects_runtime_and_requests_microphone(tmp_path):
     assert "No execution authority" in response.text
     assert "lastVoiceProposal" in response.text
     assert "Review voice proposal" in response.text
+    assert "Transcribe captured local audio" in response.text
+    assert "model_id: modelId" in response.text
+    assert "data-voice-transcribe-approval-id" in response.text
+    assert "Transcription remains runtime-token gated" in response.text
     assert "No command was executed" in response.text
     assert 'source: "voice.intent_propose"' in response.text
     assert "renderVoiceProposal(proposal)" in response.text
