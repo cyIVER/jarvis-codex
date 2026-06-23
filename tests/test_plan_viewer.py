@@ -1,9 +1,15 @@
 import json
 
+from jarvis_codex.state import JarvisState
 from jarvis_codex.plan_viewer import (
+    INDEX_HTML,
+    PlanViewerHandler,
+    approve_next_steps_queue,
     build_current_state,
     document_sources,
+    load_approved_queue,
     load_next_steps_selection,
+    next_steps_queue_path,
     next_steps_state_path,
     save_next_steps_selection,
 )
@@ -42,6 +48,92 @@ def test_next_steps_selection_file_shape(tmp_path):
     data = json.loads(next_steps_state_path(state).read_text(encoding="utf-8"))
     assert data["selected"] == ["voice-notification-hardening"]
     assert data["brief"] == "brief"
+
+
+class FakeApproveQueueRequest:
+    path = "/api/approve-queue"
+
+    def __init__(self, state_dir):
+        self.state_dir = state_dir
+        self.sent = []
+
+    def _send(self, status, body, content_type):
+        self.sent.append((status, body, content_type))
+
+
+def test_approve_queue_post_writes_queue_file(tmp_path):
+    state = tmp_path / "state"
+    save_next_steps_selection(state, ["hardware-runtime-gate"], "# Brief")
+
+    request = FakeApproveQueueRequest(state)
+    PlanViewerHandler.do_POST(request)
+
+    assert request.sent[0][0] == 200
+    queue = json.loads(next_steps_queue_path(state).read_text(encoding="utf-8"))
+    assert queue["selected"] == ["hardware-runtime-gate"]
+    assert queue["brief"] == "# Brief"
+    assert queue["source"] == "plan_viewer"
+    assert queue["purpose"] == "planning"
+    assert queue["execution_authority"] is False
+
+
+def test_approve_queue_post_returns_400_without_selection(tmp_path):
+    request = FakeApproveQueueRequest(tmp_path / "state")
+
+    PlanViewerHandler.do_POST(request)
+
+    assert request.sent == [(400, b"nothing selected", "text/plain")]
+    assert not next_steps_queue_path(tmp_path / "state").exists()
+
+
+def test_approve_queue_helper_and_current_state_read_consistently(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    state = tmp_path / "state"
+    save_next_steps_selection(state, ["hardware-runtime-gate"], "# Brief")
+
+    monkeypatch.setattr("jarvis_codex.plan_viewer.run_git", lambda args, cwd: "")
+    approved = approve_next_steps_queue(state)
+    current = build_current_state(repo, state)
+
+    assert load_approved_queue(state) == approved
+    assert current["continuity"]["queued_state"] == approved
+    assert current["continuity"]["queued_state"]["execution_authority"] is False
+
+
+def test_invalid_queue_json_does_not_break_current_state(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    state = tmp_path / "state"
+    queue_path = next_steps_queue_path(state)
+    queue_path.parent.mkdir(parents=True)
+    queue_path.write_text("{not json", encoding="utf-8")
+
+    monkeypatch.setattr("jarvis_codex.plan_viewer.run_git", lambda args, cwd: "")
+    current = build_current_state(repo, state)
+
+    assert load_approved_queue(state) is None
+    assert current["continuity"]["queued_state"] is None
+
+
+def test_recent_handoffs_reads_temp_state_and_handles_absent_directory(tmp_path):
+    state = JarvisState(tmp_path / "state")
+    assert state.recent_handoffs() == []
+
+    state.handoffs.mkdir(parents=True)
+    (state.handoffs / "handoff-2.md").write_text("second", encoding="utf-8")
+    (state.handoffs / "handoff-1.md").write_text("first", encoding="utf-8")
+
+    assert state.recent_handoffs(limit=1) == [{"id": "handoff-2.md", "text": "second"}]
+
+
+def test_displayed_commands_are_not_execution_paths():
+    assert "git push origin main" in INDEX_HTML
+    assert "Display-only check or proposal" in INDEX_HTML
+    assert "does not authorize command execution" in INDEX_HTML
+    assert "eval(" not in INDEX_HTML
+    assert "exec(" not in INDEX_HTML
+    assert "subprocess" not in INDEX_HTML
 
 
 def test_build_current_state_uses_repo_and_docs(tmp_path, monkeypatch):

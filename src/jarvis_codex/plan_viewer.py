@@ -10,13 +10,16 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
-
-
+from jarvis_codex.state import JarvisState
 SAFE_STEP_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 
 
 def next_steps_state_path(state_dir: Path) -> Path:
     return state_dir / "next-steps" / "selection.json"
+
+
+def next_steps_queue_path(state_dir: Path) -> Path:
+    return state_dir / "next-steps" / "queue.json"
 
 
 def load_next_steps_selection(state_dir: Path) -> dict[str, object]:
@@ -50,6 +53,54 @@ def save_next_steps_selection(state_dir: Path, selected: list[object], brief: ob
     return data
 
 
+def load_approved_queue(state_dir: Path) -> dict[str, object] | None:
+    path = next_steps_queue_path(state_dir)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    selected = raw.get("selected", [])
+    if not isinstance(selected, list):
+        selected = []
+    safe_selected = [item for item in selected if isinstance(item, str) and SAFE_STEP_ID.match(item)]
+    approved_at = raw.get("approved_at")
+    if not isinstance(approved_at, int):
+        return None
+    brief = raw.get("brief", "")
+    queue_id = raw.get("id", "")
+    source = raw.get("source", "plan_viewer")
+    return {
+        "id": queue_id if isinstance(queue_id, str) else "",
+        "selected": safe_selected,
+        "brief": brief if isinstance(brief, str) else "",
+        "approved_at": approved_at,
+        "source": source if isinstance(source, str) else "plan_viewer",
+        "execution_authority": False,
+        "purpose": "planning",
+    }
+
+
+def approve_next_steps_queue(state_dir: Path) -> dict[str, object]:
+    data = load_next_steps_selection(state_dir)
+    if not data.get("selected"):
+        raise ValueError("nothing selected")
+    queue_data = {
+        "id": f"queue_{int(time.time())}",
+        "selected": data["selected"],
+        "brief": data["brief"],
+        "approved_at": int(time.time()),
+        "source": "plan_viewer",
+        "execution_authority": False,
+        "purpose": "planning",
+    }
+    queue_path = next_steps_queue_path(state_dir)
+    queue_path.parent.mkdir(parents=True, exist_ok=True)
+    queue_path.write_text(json.dumps(queue_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return queue_data
+
+
 def document_sources(repo_dir: Path, plan_dir: Path) -> list[dict[str, str]]:
     docs = [{"id": path.name, "label": path.name, "path": str(path)} for path in sorted(plan_dir.glob("*.mdx"))]
     white_paper = repo_dir / "docs" / "JARVIS_WHITE_PAPER.md"
@@ -74,6 +125,15 @@ def build_current_state(repo_dir: Path, state_dir: Path) -> dict[str, object]:
     worktrees = [line for line in run_git(["worktree", "list"], repo_dir).splitlines() if line.strip()]
     tracked_state = [line for line in run_git(["ls-files", "state"], repo_dir).splitlines() if line.strip()]
     selection = load_next_steps_selection(state_dir)
+    
+    # Continuity Card Info
+    jarvis_state = JarvisState(state_dir)
+    episodes = jarvis_state.recent_episodes(limit=5)
+    approvals = [a for a in jarvis_state.approval_requests() if a.get("status") == "pending"]
+    handoffs = jarvis_state.recent_handoffs(limit=1)
+    
+    queue = load_approved_queue(state_dir)
+    
     return {
         "branch": status.splitlines()[0] if status else "",
         "dirty": len(status.splitlines()) > 1,
@@ -89,6 +149,12 @@ def build_current_state(repo_dir: Path, state_dir: Path) -> dict[str, object]:
         )),
         "hardware_gate_doc": (repo_dir / "docs/RUNTIME_GATES.md").exists(),
         "notification_policy_module": (repo_dir / "src/jarvis_codex/notifications.py").exists(),
+        "continuity": {
+            "episodes": episodes,
+            "unresolved_approvals": approvals,
+            "last_handoff": handoffs[0] if handoffs else None,
+            "queued_state": queue,
+        }
     }
 
 
@@ -818,16 +884,62 @@ INDEX_HTML = """<!doctype html>
       return [
         '# Proceed Brief',
         '',
-        'Selected next steps:',
+        'Selected planning items:',
         ...steps.map((step, index) => `${index + 1}. ${step.title} [${step.priority}, ${step.status}]`),
         '',
         'Execution notes:',
-        ...steps.map((step) => `- ${step.title}: ${step.summary} Owner: ${step.owner}. Check: ${step.command}`),
+        ...steps.map((step) => `- ${step.title}: ${step.summary} Owner: ${step.owner}. Display-only check or proposal: ${step.command}`),
         '',
         'Boundaries:',
+        '- This brief is planning state only. It does not authorize command execution.',
         '- Ask before push, merge, rebase, branch deletion, worktree removal, hook edits, shell integration, or GPU/Docker execution.',
         '- Keep generated runtime state out of Git.',
       ].join('\\n');
+    }
+
+    function renderContinuityCard() {
+      if (!currentState || !currentState.continuity) return '';
+      const c = currentState.continuity;
+      const episodesHtml = c.episodes.length 
+        ? c.episodes.map(e => `<li><code>${escapeHtml(e.id)}</code>: ${escapeHtml(e.text)}</li>`).join('')
+        : '<li>No recent episodes.</li>';
+      const approvalsHtml = c.unresolved_approvals.length
+        ? c.unresolved_approvals.map(a => `<li><code>${escapeHtml(a.id)}</code>: ${escapeHtml(a.summary)}</li>`).join('')
+        : '<li>No pending approvals.</li>';
+      const handoffHtml = c.last_handoff
+        ? `<p><strong>${escapeHtml(c.last_handoff.id)}</strong></p><pre>${escapeHtml(c.last_handoff.text.slice(0, 200))}...</pre>`
+        : '<p>No recent handoffs.</p>';
+
+      const queueHtml = c.queued_state
+        ? `<p><strong>Planning approval:</strong> ${new Date(c.queued_state.approved_at * 1000).toLocaleString()}</p><p><strong>Items:</strong> ${c.queued_state.selected.length}</p><p>This queue is not execution authority.</p>`
+        : '<p>No approved queue.</p>';
+
+      return `
+        <section class="state-band">
+          <div class="band-header">
+            <h2>State Continuity</h2>
+            <p>Recent session history and pending decisions.</p>
+          </div>
+          <div class="state-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+            <section class="state-card">
+              <h3>Durable Queue</h3>
+              <div style="font-size:13px; color:#c5cedb;">${queueHtml}</div>
+            </section>
+            <section class="state-card">
+              <h3>Unresolved Approvals</h3>
+              <ul style="margin:0; padding-left:20px; font-size:13px; color:#c5cedb;">${approvalsHtml}</ul>
+            </section>
+            <section class="state-card">
+              <h3>Last 5 Episodes</h3>
+              <ul style="margin:0; padding-left:20px; font-size:13px; color:#c5cedb;">${episodesHtml}</ul>
+            </section>
+            <section class="state-card">
+              <h3>Last Handoff Summary</h3>
+              <div style="font-size:13px; color:#c5cedb;">${handoffHtml}</div>
+            </section>
+          </div>
+        </section>
+      `;
     }
 
     function renderCurrentState() {
@@ -897,6 +1009,7 @@ INDEX_HTML = """<!doctype html>
             </div>
             ${renderCurrentState()}
           </section>
+          ${renderContinuityCard()}
           <section class="state-band">
             <div class="band-header">
               <h2>Desired End State</h2>
@@ -935,6 +1048,7 @@ INDEX_HTML = """<!doctype html>
               <p>${counts.selected ? `${counts.selected} step${counts.selected === 1 ? '' : 's'} selected.` : 'No steps selected.'}</p>
               <textarea class="brief" id="proceedBrief" readonly>${escapeHtml(buildProceedBrief(selectedSteps()))}</textarea>
               <button class="primary" id="copyBrief">Copy Brief</button>
+              <button class="primary" id="approveQueue" style="background:#fbbf24; color:#061014; border-color:#fbbf24;">Approve Planning Queue</button>
               <button class="secondary" id="clearSelection">Clear Selection</button>
             </aside>
           </div>
@@ -956,6 +1070,17 @@ INDEX_HTML = """<!doctype html>
       doc.querySelector('#clearSelection').addEventListener('click', () => {
         saveSelection(new Set());
         renderNextSteps(activeCategory);
+      });
+      doc.querySelector('#approveQueue').addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/approve-queue', { method: 'POST' });
+          if (!res.ok) throw new Error('approve failed');
+          status.textContent = 'Planning queue approved';
+          await loadCurrentState();
+          renderNextSteps(activeCategory);
+        } catch {
+          status.textContent = 'Error approving queue';
+        }
       });
       doc.querySelector('#copyBrief').addEventListener('click', async () => {
         const brief = doc.querySelector('#proceedBrief').value;
@@ -1046,6 +1171,16 @@ class PlanViewerHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/approve-queue":
+            try:
+                queue_data = approve_next_steps_queue(self.state_dir)
+                self._send(200, json.dumps(queue_data).encode("utf-8"), "application/json")
+            except ValueError:
+                self._send(400, b"nothing selected", "text/plain")
+            except OSError:
+                self._send(500, b"could not save queue", "text/plain")
+            return
+            
         if parsed.path != "/api/next-steps":
             self._send(404, b"not found", "text/plain")
             return

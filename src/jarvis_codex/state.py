@@ -84,6 +84,16 @@ class JarvisState:
     def approval_requests(self) -> list[dict[str, Any]]:
         return self._read_jsonl(self.approvals / "approvals.jsonl")
 
+    def recent_handoffs(self, limit: int = 1) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        for file in sorted(self.handoffs.glob("*.md"), reverse=True)[:limit]:
+            try:
+                text = file.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            items.append({"id": file.name, "text": text})
+        return items
+
     def write_handoff(self, objective: str = "Continue Jarvis Codex work") -> Path:
         self.init()
         now = _now()
@@ -176,4 +186,3 @@ def _now() -> int:
 
 def _new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
-
