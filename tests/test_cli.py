@@ -58,6 +58,7 @@ def test_doctor_default_compact_output_has_no_governance(tmp_path, monkeypatch, 
         "episodes": 0,
         "handoffs": 0,
         "memories": 0,
+        "release_evidence": 0,
         "state_root": str(state),
     }
     assert "codex_governance" not in data
@@ -276,6 +277,105 @@ def test_release_security_review_plan_json_is_read_only_summary(monkeypatch, cap
     assert data["scanner_run_performed"] is False
     assert data["external_review_completed"] is False
     assert data["external_security_review_required"] is True
+
+
+def test_release_evidence_add_records_metadata_without_closing_gate(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    artifact_dir = state / "release"
+    artifact_dir.mkdir(parents=True)
+    artifact = artifact_dir / "security-review-attestation.txt"
+    artifact.write_text("external reviewer holds release", encoding="utf-8")
+
+    code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "external_security_review",
+            "--summary",
+            "Reviewer returned hold pending fixes.",
+            "--reviewer",
+            "external-reviewer",
+            "--artifact",
+            str(artifact),
+            "--json",
+        ],
+    )
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    evidence = data["evidence"]
+    assert data["state_write_performed"] is True
+    assert evidence["gate"] == "external_security_review"
+    assert evidence["reviewer"] == "external-reviewer"
+    assert evidence["artifact_path"] == str(artifact.resolve())
+    assert evidence["artifact_size_bytes"] == artifact.stat().st_size
+    assert evidence["artifact_sha256"]
+    assert evidence["execution_authority"] is False
+    assert evidence["release_gate_closed"] is False
+    assert (state / "release" / "evidence.jsonl").exists()
+
+
+def test_release_evidence_list_is_state_only_summary(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    add_code = run_cli(
+        monkeypatch,
+        [
+            "--state",
+            str(state),
+            "release",
+            "evidence",
+            "add",
+            "--gate",
+            "actual_mobile_device_validation",
+            "--summary",
+            "Operator captured iPhone evidence.",
+            "--json",
+        ],
+    )
+    assert add_code == 0
+    capsys.readouterr()
+
+    list_code = run_cli(monkeypatch, ["--state", str(state), "release", "evidence", "list", "--json"])
+
+    assert list_code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["execution_authority"] is False
+    assert len(data["release_evidence"]) == 1
+    assert data["release_evidence"][0]["gate"] == "actual_mobile_device_validation"
+    assert data["release_evidence"][0]["release_gate_closed"] is False
+    assert "writes_state" not in data["release_evidence"][0]
+
+
+def test_release_evidence_add_rejects_external_artifact_path(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    artifact = tmp_path / "outside-state-release.txt"
+    artifact.write_text("sensitive-ish external evidence", encoding="utf-8")
+
+    with pytest.raises(ValueError) as exc_info:
+        run_cli(
+            monkeypatch,
+            [
+                "--state",
+                str(state),
+                "release",
+                "evidence",
+                "add",
+                "--gate",
+                "external_security_review",
+                "--summary",
+                "External file should be rejected.",
+                "--artifact",
+                str(artifact),
+                "--json",
+            ],
+        )
+
+    assert "selected state release directory" in str(exc_info.value)
 
 
 def test_release_commands_require_json(monkeypatch):

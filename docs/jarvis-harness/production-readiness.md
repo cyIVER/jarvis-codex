@@ -64,6 +64,7 @@ Implemented and validated in the local FastAPI runtime:
 - Read-only release packaging preflight through `jarvis-codex release packaging-preflight --json`; it reports Electron package, dependency, and signing readiness without installing, building, signing, copying artifacts, launching services, or writing files.
 - Read-only release artifact evidence through `jarvis-codex release artifact-evidence --json`; it reports size/SHA-256 for the committed Electron icon and ignored local Electron artifacts without building, signing, copying, publishing, launching services, or writing files.
 - Read-only external security review packet through `jarvis-codex release security-review-plan --json`; it maps OWASP ASVS/WSTG review surfaces without running scanners, launching services, probing networks, building packages, signing artifacts, or writing files.
+- State-only release evidence ledger through `jarvis-codex --state <state-dir> release evidence add/list --json`; it records operator or reviewer evidence metadata and optional artifact hashes without copying artifacts, launching validations, or closing gates.
 
 ## Not Yet Production-Complete
 
@@ -121,6 +122,7 @@ The following remain future or incomplete production gates:
 - Packaging preflight must not run npm, install dependencies, build installers, sign artifacts, copy outputs, launch services, or write files.
 - Release artifact evidence must not build, sign, copy, publish, launch services, mutate Git, or write files. Hash evidence is not publication approval.
 - Security review planning must not run scanners, launch services, probe networks, build packages, sign artifacts, mutate Git, write files, or claim that review is complete.
+- Release evidence records must not be treated as execution authority, proof of test execution, publication approval, or automatic gate closure. Human acceptance remains required for external/device/signing gates.
 - Local dependency audits are evidence only; they are not a replacement for external security review, signing review, or runtime threat modeling.
 
 ## Required Local Validation

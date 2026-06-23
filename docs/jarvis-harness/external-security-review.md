@@ -64,6 +64,14 @@ The reviewer should return:
 - Explicit sign-off or hold recommendation for release packaging and private-network/mobile exposure.
 - List of tests, commands, manual evidence, and source files reviewed.
 
+Record reviewer metadata only after the artifact is available:
+
+```bash
+jarvis-codex --state <state-dir> release evidence add --gate external_security_review --summary "<summary>" --reviewer "<reviewer>" --artifact <path> --json
+```
+
+This records metadata and an optional artifact hash. Hashed artifacts must already live under `<state-dir>/release/`; the command does not copy arbitrary files, close the gate, or accept the review on its own.
+
 ## Release Gate
 
 `external_security_review` remains open until an external reviewer completes the review, any required fixes are implemented, the validation suite is rerun, and the operator accepts an explicit external reviewer attestation artifact.

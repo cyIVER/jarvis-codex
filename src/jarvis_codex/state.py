@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import time
 import uuid
 from dataclasses import asdict, dataclass
@@ -34,6 +35,31 @@ class ApprovalRequest:
     status: str = "pending"
 
 
+@dataclass(frozen=True)
+class ReleaseEvidence:
+    id: str
+    created_at: int
+    gate: str
+    summary: str
+    reviewer: str
+    artifact_path: str | None
+    artifact_size_bytes: int | None
+    artifact_sha256: str | None
+    status: str = "submitted"
+    execution_authority: bool = False
+    release_gate_closed: bool = False
+
+
+RELEASE_EVIDENCE_GATES = {
+    "actual_mobile_device_validation",
+    "electron_packaging_and_signing",
+    "external_security_review",
+    "networked_gemini_live_validation",
+    "release_packaging_and_signing",
+    "unattended_loop_scheduling",
+}
+
+
 class JarvisState:
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -42,9 +68,10 @@ class JarvisState:
         self.approvals = root / "approvals"
         self.handoffs = root / "handoffs"
         self.logs = root / "logs"
+        self.release = root / "release"
 
     def init(self) -> None:
-        for path in (self.inbox, self.memory, self.approvals, self.handoffs, self.logs):
+        for path in (self.inbox, self.memory, self.approvals, self.handoffs, self.logs, self.release):
             path.mkdir(parents=True, exist_ok=True)
             gitkeep = path / ".gitkeep"
             if not gitkeep.exists():
@@ -84,6 +111,50 @@ class JarvisState:
     def approval_requests(self) -> list[dict[str, Any]]:
         return self._read_jsonl(self.approvals / "approvals.jsonl")
 
+    def release_evidence(self) -> list[dict[str, Any]]:
+        return self._read_jsonl(self.release / "evidence.jsonl")
+
+    def record_release_evidence(
+        self,
+        gate: str,
+        summary: str,
+        reviewer: str = "operator",
+        artifact: Path | None = None,
+    ) -> ReleaseEvidence:
+        self.init()
+        normalized_gate = gate.strip()
+        if normalized_gate not in RELEASE_EVIDENCE_GATES:
+            raise ValueError(f"gate must be one of: {', '.join(sorted(RELEASE_EVIDENCE_GATES))}")
+        normalized_summary = summary.strip()
+        if not normalized_summary:
+            raise ValueError("release evidence summary cannot be empty")
+        normalized_reviewer = reviewer.strip() or "operator"
+        artifact_path: str | None = None
+        artifact_size_bytes: int | None = None
+        artifact_sha256: str | None = None
+        if artifact is not None:
+            resolved_artifact = artifact.resolve()
+            resolved_release_root = self.release.resolve()
+            if resolved_release_root not in (resolved_artifact, *resolved_artifact.parents):
+                raise ValueError("artifact must be under the selected state release directory before hashing")
+            artifact_path = str(resolved_artifact)
+            if not resolved_artifact.is_file():
+                raise ValueError("artifact must be an existing file")
+            artifact_size_bytes = resolved_artifact.stat().st_size
+            artifact_sha256 = _sha256(resolved_artifact)
+        evidence = ReleaseEvidence(
+            id=_new_id("evidence"),
+            created_at=_now(),
+            gate=normalized_gate,
+            summary=normalized_summary,
+            reviewer=normalized_reviewer,
+            artifact_path=artifact_path,
+            artifact_size_bytes=artifact_size_bytes,
+            artifact_sha256=artifact_sha256,
+        )
+        self._append_jsonl(self.release / "evidence.jsonl", asdict(evidence))
+        return evidence
+
     def recent_handoffs(self, limit: int = 1) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         for file in sorted(self.handoffs.glob("*.md"), reverse=True)[:limit]:
@@ -108,6 +179,7 @@ class JarvisState:
             "memories": len(self.memories()),
             "approvals": len(self.approval_requests()),
             "handoffs": len(list(self.handoffs.glob("*.md"))),
+            "release_evidence": self._count_jsonl_records(self.release / "evidence.jsonl"),
         }
 
     def _write_json(self, path: Path, data: dict[str, Any]) -> None:
@@ -142,6 +214,21 @@ class JarvisState:
             if isinstance(value, dict):
                 items.append(value)
         return items
+
+    def _count_jsonl_records(self, path: Path) -> int:
+        if not path.exists():
+            return 0
+        count = 0
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, dict):
+                count += 1
+        return count
 
 
 def render_handoff(
@@ -185,3 +272,11 @@ def _now() -> int:
 
 def _new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

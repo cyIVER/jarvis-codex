@@ -16,6 +16,7 @@ Jarvis Codex should be a local-first operating layer for Codex work that preserv
 The current release is a governed local operating substrate:
 
 - state, memory, approval, handoff, hardware, doctor, and plan-viewer CLI surfaces
+- state-only release evidence ledger for operator and external-reviewer validation metadata
 - project-local Codex governance agents and skills
 - portable governance validator and `doctor --governance`
 - read-only doctor inspection
@@ -70,6 +71,7 @@ The current release is a governed local operating substrate:
 - `tests/test_cli.py` covers read-only JSON lane list and score commands.
 - `tests/test_lanes.py` covers read-only lane inventory across an isolated temporary git repo with multiple worktrees.
 - `tests/test_release.py` covers the expanded read-only release manifest, publication approval labels, and generated asset approval labels.
+- `tests/test_state.py` and `tests/test_cli.py` cover state-only release evidence recording without copied artifacts or gate closure.
 - `tests/test_github_ci.py` covers the validation-only CI and review-template guardrails.
 - `tests/test_loop_readiness.py` covers the local loop readiness verifier and runtime-authority marker checks.
 - `tests/test_voice.py` covers transcript capture, STT asset discovery, STT readiness probes, approval-gated local STT adapter execution, and adapter failure paths.
@@ -85,4 +87,4 @@ The current release is a governed local operating substrate:
 
 ## Recommendation
 
-Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, the static plan viewer has headless browser smoke coverage, Worktrunk lane CLI review is read-only JSON output with isolated real-worktree coverage, and release artifact review is manifest-only until a specific copy or publication action is approved.
+Treat the platform as production-ready for local governed review and planning workflows. Do not claim autonomous execution readiness. The end-to-end local workflow rehearsal is covered by `tests/test_workflow_rehearsal.py`, the safe handoff gateway PRD is implemented as a read-only queue summary, the static plan viewer has headless browser smoke coverage, Worktrunk lane CLI review is read-only JSON output with isolated real-worktree coverage, release artifact review is manifest-only until a specific copy or publication action is approved, and release evidence records are metadata only until a human accepts the relevant external gate.

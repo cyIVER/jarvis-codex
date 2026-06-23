@@ -17,7 +17,7 @@ from .packaging import build_packaging_preflight
 from .release import build_external_security_review_plan, build_release_artifact_evidence, build_release_manifest
 from .runtime_app import build_runtime_readiness, create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
-from .state import JarvisState
+from .state import RELEASE_EVIDENCE_GATES, JarvisState
 from .voice import discover_local_stt_assets, ingest_audio_file, ingest_transcript_file, probe_audio_file
 
 
@@ -96,6 +96,16 @@ def main() -> int:
     release_security = release_sub.add_parser("security-review-plan", help="Print a read-only external security review packet")
     release_security.add_argument("--root", default=".", help="Repository root to inspect")
     release_security.add_argument("--json", action="store_true", help="Print security review plan as JSON")
+    release_evidence_state = release_sub.add_parser("evidence", help="Record or list operator-supplied release-gate evidence")
+    release_evidence_sub = release_evidence_state.add_subparsers(dest="release_evidence_command", required=True)
+    release_evidence_add = release_evidence_sub.add_parser("add", help="Record release-gate evidence metadata without closing the gate")
+    release_evidence_add.add_argument("--gate", required=True, choices=sorted(RELEASE_EVIDENCE_GATES), help="Release gate this evidence supports")
+    release_evidence_add.add_argument("--summary", required=True, help="Human-readable evidence summary")
+    release_evidence_add.add_argument("--reviewer", default="operator", help="Reviewer or operator name/handle")
+    release_evidence_add.add_argument("--artifact", help="Optional local artifact path to hash; the file is not copied")
+    release_evidence_add.add_argument("--json", action="store_true", help="Print evidence record as JSON")
+    release_evidence_list = release_evidence_sub.add_parser("list", help="List release-gate evidence records")
+    release_evidence_list.add_argument("--json", action="store_true", help="Print evidence records as JSON")
     runtime = sub.add_parser("runtime", help="Run the local Jarvis runtime")
     runtime_sub = runtime.add_subparsers(dest="runtime_command", required=True)
     runtime_serve = runtime_sub.add_parser("serve", help="Serve the runtime HUD on loopback by default")
@@ -259,6 +269,15 @@ def main() -> int:
         if args.release_command == "security-review-plan":
             print(json.dumps(build_external_security_review_plan(Path(args.root)), indent=2, sort_keys=True))
             return 0
+        if args.release_command == "evidence":
+            if args.release_evidence_command == "add":
+                artifact = Path(args.artifact) if args.artifact else None
+                evidence = state.record_release_evidence(args.gate, args.summary, args.reviewer, artifact)
+                print(json.dumps({"state_write_performed": True, "evidence": evidence.__dict__}, indent=2, sort_keys=True))
+                return 0
+            if args.release_evidence_command == "list":
+                print(json.dumps({"release_evidence": state.release_evidence(), "execution_authority": False}, indent=2, sort_keys=True))
+                return 0
     if args.command == "runtime":
         if args.runtime_command == "readiness":
             if not args.json:

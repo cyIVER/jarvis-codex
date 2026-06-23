@@ -45,6 +45,24 @@ This command reads the committed Electron icon source asset and ignored local El
 
 Ignored local Electron artifacts remain non-release candidates until a separate signing, security review, artifact-copy, and distribution plan is approved.
 
+## Operator Evidence Ledger
+
+After a human operator or external reviewer completes a separately approved validation step, record metadata in local state with:
+
+```bash
+jarvis-codex --state <state-dir> release evidence add --gate <gate> --summary "<summary>" --json
+```
+
+Optionally pass `--reviewer <name>` and `--artifact <path>` to hash a local evidence artifact. For safety, hashed artifacts must already live under `<state-dir>/release/`; the command reads the file for size and SHA-256 only and does not copy it into state.
+
+List recorded evidence with:
+
+```bash
+jarvis-codex --state <state-dir> release evidence list --json
+```
+
+Evidence records are state-only review metadata. They do not close release gates, approve publication, launch tests, run mobile or Gemini validation, sign artifacts, copy artifacts, mutate Git, or grant execution authority.
+
 ## Generated Assets
 
 Generated Remotion outputs under `video/remotion/out/` are local review assets only.
