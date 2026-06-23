@@ -10,6 +10,7 @@ from .governance import validate_phase1_governance
 from .hardware import inspect_hardware, recommend_backend
 from .lanes import list_lanes, score_lane
 from .loop_readiness import validate_loop_readiness
+from .mobile import build_mobile_preflight
 from .release import build_release_manifest
 from .runtime_app import create_app
 from .safe_handoff import build_safe_handoff, render_safe_handoff_json, render_safe_handoff_markdown
@@ -90,6 +91,13 @@ def main() -> int:
         action="store_true",
         help="Allow binding outside loopback for explicitly approved private-network use",
     )
+    mobile = sub.add_parser("mobile", help="Review private-network mobile access without probing or serving")
+    mobile_sub = mobile.add_subparsers(dest="mobile_command", required=True)
+    mobile_preflight = mobile_sub.add_parser("preflight", help="Print a read-only mobile PWA access preflight")
+    mobile_preflight.add_argument("--host", default="127.0.0.1", help="Runtime host or private-network address to classify")
+    mobile_preflight.add_argument("--port", type=int, default=8765, help="Runtime port")
+    mobile_preflight.add_argument("--scheme", default="http", choices=["http", "https"], help="Runtime URL scheme")
+    mobile_preflight.add_argument("--json", action="store_true", help="Print mobile preflight as JSON")
     loop = sub.add_parser("loop", help="Review autonomous loop readiness without mutation")
     loop_sub = loop.add_subparsers(dest="loop_command", required=True)
     loop_verify = loop_sub.add_parser("verify", help="Print a read-only loop readiness report")
@@ -192,6 +200,12 @@ def main() -> int:
             if not args.allow_non_loopback and not _is_loopback_host(args.host):
                 parser.error("runtime serve binds to loopback by default; pass --allow-non-loopback for private-network use")
             uvicorn.run(create_app(Path(args.state)), host=args.host, port=args.port, log_level="info")
+            return 0
+    if args.command == "mobile":
+        if not args.json:
+            parser.error("mobile commands are JSON-only in this read-only first implementation; pass --json")
+        if args.mobile_command == "preflight":
+            print(json.dumps(build_mobile_preflight(args.host, args.port, args.scheme).to_dict(), indent=2, sort_keys=True))
             return 0
     if args.command == "loop":
         if not args.json:

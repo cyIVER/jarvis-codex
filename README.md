@@ -38,6 +38,7 @@ jarvis-codex lane score --repo . --branch main --json
 jarvis-codex release manifest --json      # review release artifacts without packaging
 jarvis-codex loop verify --json           # verify loop readiness without mutation
 jarvis-codex runtime serve                # serve the runtime HUD on 127.0.0.1:8765
+jarvis-codex mobile preflight --json      # classify private-network iPhone/PWA access without probing
 jarvis-codex doctor                       # inspect local state
 jarvis-codex doctor --governance          # include compact Codex governance validation
 jarvis-plan-viewer                        # serve the local plan and next-step selector

@@ -29,6 +29,8 @@ V1 PWA includes:
 
 - Private-network access must be explicitly enabled.
 - Runtime should bind to loopback unless mobile mode is enabled.
+- Use `jarvis-codex mobile preflight --host <private-ip-or-vpn-ip> --json` before serving a non-loopback runtime.
+- The mobile preflight is read-only. It does not launch services, probe the network, write state, or prove that an iPhone can connect.
 - Mobile sessions are separate clients with their own session IDs.
 - Mobile approvals must show the same action details as desktop.
 - Public tunnel support is not v1.
@@ -51,4 +53,3 @@ This requires Apple signing and either macOS/Xcode or a cloud build service. It 
 - PWA can submit voice/text prompts.
 - PWA can approve or reject pending gated actions.
 - Runtime does not expose a public interface by default.
-

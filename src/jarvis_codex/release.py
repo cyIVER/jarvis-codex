@@ -241,6 +241,14 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
         ),
         _artifact(
             root,
+            "src/jarvis_codex/mobile.py",
+            "mobile-preflight-source",
+            True,
+            False,
+            "Read-only mobile private-network preflight classifier for iPhone/PWA access planning.",
+        ),
+        _artifact(
+            root,
             "tests/test_hud_browser.py",
             "browser-smoke-test",
             True,
@@ -342,7 +350,7 @@ def build_release_manifest(root: Path) -> dict[str, Any]:
                 "tests/test_runtime_app.py tests/test_voice.py tests/test_whisper_cpp_adapter.py tests/test_approval.py "
                 "tests/test_event_store.py tests/test_pty_supervisor.py tests/test_policy.py tests/test_protocol.py "
                 "tests/test_governance.py tests/test_cli.py tests/test_state.py tests/test_release.py "
-                "tests/test_electron_hud_scaffold.py"
+                "tests/test_electron_hud_scaffold.py tests/test_mobile.py"
             ),
         ],
         "remaining_release_gates": [

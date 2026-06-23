@@ -390,6 +390,7 @@ def _dispatch_request(
                     "codeburn_shell": False,
                     "swarm_lifecycle_records": True,
                     "electron_hud_scaffold": True,
+                    "mobile_preflight": True,
                 },
                 "remaining_gaps": [
                     "electron_packaging_and_signing",

@@ -271,6 +271,29 @@ def test_runtime_serve_allows_non_loopback_when_explicitly_requested(tmp_path, m
     assert calls["app"] == "runtime-app"
 
 
+def test_mobile_preflight_json_is_read_only_summary(monkeypatch, capsys):
+    code = run_cli(monkeypatch, ["mobile", "preflight", "--host", "100.99.88.77", "--port", "8765", "--json"])
+
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["host_class"] == "tailscale-cgnat"
+    assert data["iphone_reachable_candidate"] is True
+    assert data["requires_allow_non_loopback"] is True
+    assert data["service_launch_performed"] is False
+    assert data["network_probe_performed"] is False
+    assert data["writes_state"] is False
+    assert data["runtime_command"].endswith("--allow-non-loopback")
+
+
+def test_mobile_preflight_requires_json(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["jarvis-codex", "mobile", "preflight"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.main()
+
+    assert exc_info.value.code == 2
+
+
 def test_loop_verify_json_returns_read_only_status(monkeypatch, capsys):
     seen = {}
 
