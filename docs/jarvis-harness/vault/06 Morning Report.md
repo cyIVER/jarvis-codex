@@ -108,7 +108,11 @@ This note backs the morning HTML dashboard.
 - Committed and pushed approval-gated local TTS adapter in `4c747cb`.
 - Ran final integrated validation: governance PASS, 198 tests passed.
 - Ran AG security review for `voice.synthesize_audio`; no TTS boundary issue was found.
-- Refreshed Codeburn snapshot: month `$585.50`, 6323 calls.
+- Implemented and validated `jarvis-codex runtime serve`, which serves the runtime HUD on loopback by default and requires explicit `--allow-non-loopback` for private-network binding.
+- Committed and pushed loopback runtime serve command in `c3db6ad`.
+- Ran final integrated validation: governance PASS, 201 tests passed.
+- Ran AG security review for `runtime serve`; no runtime boundary issue was found.
+- Refreshed Codeburn snapshot: month `$588.42`, 6348 calls.
 
 ## Pending
 
