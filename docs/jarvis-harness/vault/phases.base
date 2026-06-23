@@ -1,0 +1,17 @@
+filters:
+  and:
+    - 'file.inFolder("docs/jarvis-harness/vault")'
+    - 'file.hasTag("phases")'
+properties:
+  status:
+    displayName: "Status"
+  file.mtime:
+    displayName: "Modified"
+views:
+  - type: table
+    name: "Phase Notes"
+    order:
+      - file.name
+      - status
+      - file.mtime
+
