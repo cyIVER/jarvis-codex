@@ -33,7 +33,7 @@ cycle:
     action: Propose running the hardware preflight for a named workload.
     gate: gate-hardware-approved
     notes:
-      - `preflight_check()` and `state/logs/hardware_gate_checks.jsonl` document a decision only.
+      - "`preflight_check()` and `state/logs/hardware_gate_checks.jsonl` document a decision only."
       - A passing or approved preflight entry is not permission to execute the workload.
     
   2_protocol_lock:

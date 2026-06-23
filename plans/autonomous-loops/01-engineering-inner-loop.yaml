@@ -1,0 +1,53 @@
+schema_version: 1
+loop_type: inner_optimization
+name: Engineering Inner Loop
+status: planning_only
+description: >
+  Approval-gated planning cycle for coding agents. Inspired by the AI-Research-SKILLs
+  Two-Loop Architecture. This loop proposes task completion, test, and lane work
+  without granting authority to edit files, mutate git/worktrees, run workflows, or
+  execute commands.
+
+authority:
+  execution_authority: false
+  planning_only: true
+  approval_required_before:
+    - editing files
+    - running tests
+    - running lint
+    - spawning lanes
+    - refreshing lanes
+    - abandoning lanes
+    - mutating git
+    - mutating Worktrunk state
+    - launching services
+    - running installs or migrations
+
+trigger:
+  - state: Planning queue contains approved next-step proposals.
+  - frequency: Manual or explicitly approved loop run only.
+
+cycle:
+  1_pick_task:
+    action: Propose reading `state/next-steps/queue.json` and selecting the highest priority planning task.
+    tool: jarvis-codex lane list, only if exposed and separately approved; otherwise use read-only `git worktree list`.
+    gate: gate-brief-approved
+  
+  2_lane_proposal:
+    action: Propose whether a target worker lane should be held, refreshed, created, or abandoned.
+    tool: no mutation by default
+    gate: gate-lane-mutation
+  
+  3_plan_implementation:
+    action: Produce an approval handoff for code changes and validation commands.
+    metric: No execution until explicit approval is granted.
+    gate: gate-brief-approved
+  
+  4_measure_and_record:
+    action: Propose or write a WorkerContract only when state-write approval is present.
+    tool: read-only score_lane logic by default; log writes require approval
+    gate: gate-state-write-approved
+    
+  5_iterate:
+    action: Propose next planning step. If outcome is 'ready', recommend review; if 'blocked', document why.
+    fallback: If progress stalls, propose outer-loop synthesis.

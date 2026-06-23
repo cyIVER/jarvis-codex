@@ -1,0 +1,46 @@
+schema_version: 1
+loop_type: outer_synthesis
+name: Architecture Outer Loop
+status: planning_only
+description: >
+  Periodic, reflective synthesis cycle. Inspired by the AI-Research-SKILLs Outer Loop,
+  this loop synthesizes understanding, updates architectural contracts, and plans new direction.
+  It is where novelty and alignment are proposed for approval.
+
+authority:
+  execution_authority: false
+  planning_only: true
+  approval_required_before:
+    - editing docs
+    - editing plans
+    - editing architecture contracts
+    - creating handoff files
+    - running PM tools
+    - running workflows
+    - writing state artifacts
+
+trigger:
+  - state: Inner loop stalled OR 5+ tasks completed.
+  - condition: End of current session or handoff proposal.
+
+cycle:
+  1_review_results:
+    action: Propose read-only analysis of recent `state/logs/lane_decisions.jsonl` and `state/episodes/`.
+    focus: Identify patterns, recurring blockers, and architectural debt.
+    
+  2_update_findings:
+    action: Draft proposed findings for `docs/` and `plans/jarvis-codex-swarm/jarvis-architecture-contract.yaml`.
+    goal: Evolve the documentation narrative only after edit approval. Do not just log events, explain *why* things were built a certain way.
+    gate: gate-doc-edit-approved
+    
+  3_generate_hypotheses:
+    action: Propose PM ideation prompts or workflow inputs to address identified blockers.
+    gate: gate-workflow-approved
+    
+  4_steer_direction:
+    action: Propose new steps for the `jarvis-codex` plan viewer.
+    gate: gate-brief-approved
+    
+  5_handoff:
+    action: Draft a proposed `state/handoffs/` markdown artifact for approval.
+    gate: gate-state-write-approved
