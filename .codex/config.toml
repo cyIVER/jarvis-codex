@@ -1,8 +1,0 @@
-# Jarvis Codex project-local governance.
-# Phase 1 keeps project-local agent work read/analyze by default.
-
-sandbox_mode = "read-only"
-
-[agents]
-max_threads = 5
-max_depth = 1
